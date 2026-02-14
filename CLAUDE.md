@@ -2,6 +2,12 @@
 
 Next.js + TypeScript + shadcn/ui app. Source lives in `web/`.
 
+## UI Guidelines
+
+- **Never use low contrast text/backgrounds.** Text must always be clearly readable against its background. Avoid `text-muted-foreground/40`, `text-muted-foreground/60`, or similar near-invisible opacity values.
+- **Avoid monotonousness.** Use visual hierarchy, distinct weights, and colour to differentiate elements.
+- **Prefer clear labels** over mystery values — always label scores, counts, etc.
+
 ## shadcn CLI
 
 ```bash

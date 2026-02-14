@@ -22,7 +22,7 @@ export function SiteHeader() {
 
   return (
     <header className="shrink-0 border-b bg-card px-6 py-3">
-      <div className="flex items-center justify-between max-w-7xl mx-auto">
+      <div className="flex items-center justify-between">
         <BrandLogo />
         <div className="flex items-center gap-4">
           <Link

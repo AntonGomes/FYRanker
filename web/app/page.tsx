@@ -18,16 +18,13 @@ export default function Home() {
               <br />
               use{" "}
               <span className="bg-primary text-primary-foreground px-3 py-1 rounded-lg inline-block">
-                FY
-              </span>
-              <span className="bg-primary/90 text-primary-foreground px-3 py-1 rounded-lg inline-block">
-                Ranker
+                FYRanker
               </span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-xl">
               The smart way to rank your foundation programme preferences.
-              Upload your ORIEL export, tell us what matters, and get a
-              personalised ranking in minutes.
+              Tell us what matters and get a personalised ranking of
+              your foundation programme preferences in seconds.
             </p>
           </div>
 

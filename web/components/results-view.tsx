@@ -11,16 +11,12 @@ import {
 import {
   DndContext,
   closestCenter,
-  pointerWithin,
-  rectIntersection,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
-  useDroppable,
   DragOverlay,
   type DragStartEvent,
-  type DragOverEvent,
   type DragEndEvent,
   type CollisionDetection,
 } from "@dnd-kit/core";
@@ -29,31 +25,29 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
-  verticalListSortingStrategy,
+  rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { motion, LayoutGroup } from "framer-motion";
 import type { ScoredJob } from "@/lib/scoring";
+import { effectiveScore, computeNudgeAmount } from "@/lib/scoring";
 import type { Job, Placement } from "@/lib/parse-xlsx";
 import { JobDetailPanel, getRegionStyle } from "@/components/job-detail-panel";
+import { MoveToDialog } from "@/components/move-to-dialog";
+import { SelectionToolbar } from "@/components/selection-toolbar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   Search,
-  Lock,
-  Unlock,
   Columns2,
   X,
-  GripVertical,
-  ArrowUpToLine,
-  ArrowDownToLine,
+  ArrowUpDown,
+  Pin,
+  HelpCircle,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
-
-/* ── Constants ── */
-
-const TOP_CONTAINER = "top-droppable";
-const POOL_CONTAINER = "pool-droppable";
+import { WelcomeModal } from "@/components/welcome-modal";
 
 /* ── Types ── */
 
@@ -82,93 +76,233 @@ function getPlacementSummary(job: Job) {
   return { sites, specs: Array.from(specs) };
 }
 
-/* ── Placement row — 6 equal columns ── */
-const PlacementColumns = memo(function PlacementColumns({
-  job,
-}: {
-  job: Job;
-}) {
-  const placements: { p: Placement; n: number }[] = [];
+type PlacementEntry = { site: string; spec: string; num: number };
+
+function getJobPlacements(job: Job): {
+  fy1: PlacementEntry[];
+  fy2: PlacementEntry[];
+} {
+  const fy1: PlacementEntry[] = [];
+  const fy2: PlacementEntry[] = [];
   for (let i = 1; i <= 6; i++) {
     const key = `placement_${i}` as `placement_${1 | 2 | 3 | 4 | 5 | 6}`;
     const p = job[key];
-    if (isValidPlacement(p)) placements.push({ p, n: i });
+    if (isValidPlacement(p)) {
+      const entry = { site: p.site, spec: p.speciality, num: i };
+      if (i <= 3) fy1.push(entry);
+      else fy2.push(entry);
+    }
   }
-  if (placements.length === 0) return null;
+  return { fy1, fy2 };
+}
+
+/* ── Responsive cards-per-row hook ── */
+
+function useCardsPerRow() {
+  const [count, setCount] = useState(5);
+  useEffect(() => {
+    function update() {
+      const w = window.innerWidth;
+      if (w < 640) setCount(1);
+      else if (w < 1024) setCount(3);
+      else setCount(5);
+    }
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  return count;
+}
+
+/* ── Animated score display ── */
+function AnimatedScore({
+  value,
+  flashDirection,
+}: {
+  value: number;
+  flashDirection: "up" | "down" | null;
+}) {
+  const [displayValue, setDisplayValue] = useState(value);
+  const animRef = useRef<number | null>(null);
+  const flashKey = useRef(0);
+  const [flashClass, setFlashClass] = useState("");
+
+  useEffect(() => {
+    const start = displayValue;
+    const end = value;
+    if (Math.abs(start - end) < 0.0001) return;
+
+    const duration = 700; // ms
+    const startTime = performance.now();
+
+    if (animRef.current) cancelAnimationFrame(animRef.current);
+
+    function tick(now: number) {
+      const elapsed = now - startTime;
+      const t = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setDisplayValue(start + (end - start) * eased);
+      if (t < 1) {
+        animRef.current = requestAnimationFrame(tick);
+      }
+    }
+    animRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!flashDirection) return;
+    flashKey.current++;
+    setFlashClass(
+      flashDirection === "up" ? "animate-score-up" : "animate-score-down"
+    );
+    const timeout = setTimeout(() => setFlashClass(""), 900);
+    return () => clearTimeout(timeout);
+  }, [flashDirection]);
 
   return (
-    <div className="grid grid-cols-6 gap-px mt-1.5 rounded-md overflow-hidden bg-border/30">
-      {placements.map(({ p, n }) => (
-        <div
-          key={n}
-          className="bg-muted/20 dark:bg-muted/10 px-2 py-1.5 min-w-0"
-        >
-          <p className="text-[11px] leading-tight truncate">{p.site}</p>
-          <p className="text-[11px] leading-tight truncate text-muted-foreground">
-            {p.speciality}
-          </p>
-        </div>
-      ))}
+    <span
+      key={flashKey.current}
+      className={cn(
+        "font-mono tabular-nums text-xs font-semibold text-foreground transition-colors",
+        flashClass
+      )}
+    >
+      {displayValue.toFixed(3)}
+    </span>
+  );
+}
+
+/* ── Triangle icons for boost/bury ── */
+function TriangleUp() {
+  return (
+    <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor">
+      <path d="M9 0L17.5 12H0.5L9 0Z" />
+    </svg>
+  );
+}
+function TriangleDown() {
+  return (
+    <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor">
+      <path d="M9 12L0.5 0H17.5L9 12Z" />
+    </svg>
+  );
+}
+
+/* ── Placement row: two-line layout (hospital + specialty) ── */
+
+const PlacementRow = memo(function PlacementRow({
+  entry,
+}: {
+  entry: PlacementEntry;
+}) {
+  return (
+    <div className="flex gap-2 items-start py-0.5">
+      <span className="w-4 shrink-0 text-xs font-mono font-semibold text-muted-foreground text-right pt-0.5">
+        {entry.num}
+      </span>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold text-foreground leading-tight truncate">
+          {entry.site}
+        </p>
+        <p className="text-xs font-medium text-foreground/60 leading-tight truncate">
+          {entry.spec}
+        </p>
+      </div>
     </div>
   );
 });
 
-/* ── Droppable container wrapper ── */
-function DroppableContainer({
-  id,
-  children,
-  className,
+/* ── Single FY group: bracket on left, rows on right ── */
+const FYGroup = memo(function FYGroup({
+  label,
+  entries,
 }: {
-  id: string;
-  children: React.ReactNode;
-  className?: string;
+  label: string;
+  entries: PlacementEntry[];
 }) {
-  const { setNodeRef } = useDroppable({ id });
+  const slots: (PlacementEntry | null)[] = [
+    entries[0] ?? null,
+    entries[1] ?? null,
+    entries[2] ?? null,
+  ];
+
   return (
-    <div ref={setNodeRef} className={className}>
-      {children}
+    <div className="flex items-stretch gap-0">
+      {/* Label + left curly bracket */}
+      <div className="flex items-center shrink-0 pr-1.5">
+        <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mr-1 whitespace-nowrap">
+          {label}
+        </span>
+        <svg
+          className="text-muted-foreground/50 shrink-0"
+          width="10"
+          viewBox="0 0 10 60"
+          preserveAspectRatio="none"
+          style={{ height: "100%" }}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        >
+          <path d="M10,2 Q4,2 4,15 Q4,28 0,30 Q4,32 4,45 Q4,58 10,58" />
+        </svg>
+      </div>
+      {/* Rows */}
+      <div className="flex-1 min-w-0 flex flex-col">
+        {slots.map((entry, i) =>
+          entry ? (
+            <PlacementRow key={entry.num} entry={entry} />
+          ) : (
+            <div key={i} className="h-[30px]" />
+          )
+        )}
+      </div>
     </div>
   );
-}
+});
 
-/* ── Unified sortable row (renders differently for top-N vs pool) ── */
-const SortableRow = memo(function SortableRow({
+/* ── Placement list (FY1 + FY2 groups) ── */
+const PlacementList = memo(function PlacementList({
+  fy1,
+  fy2,
+}: {
+  fy1: PlacementEntry[];
+  fy2: PlacementEntry[];
+}) {
+  return (
+    <div className="space-y-0.5">
+      <FYGroup label="FY1" entries={fy1} />
+      <FYGroup label="FY2" entries={fy2} />
+    </div>
+  );
+});
+
+/* ── Sortable job card ── */
+const JobCard = memo(function JobCard({
   scored,
-  displayIndex,
-  isPinned,
-  isComparing,
-  isPool,
-  editingIndex,
-  editValue,
-  onEditStart,
-  onEditChange,
-  onEditKeyDown,
-  onEditBlur,
-  onTogglePin,
-  onToggleCompare,
-  onDemote,
-  onPromote,
+  rank,
+  isSelected,
   onSelectDetail,
+  onToggleSelect,
+  onBoost,
+  onBury,
+  onMoveToOpen,
+  flashDirection,
+  glowKey,
 }: {
   scored: ScoredJob;
-  displayIndex: number;
-  isPinned: boolean;
-  isComparing: boolean;
-  isPool: boolean;
-  editingIndex: number | null;
-  editValue: string;
-  onEditStart: (index: number) => void;
-  onEditChange: (value: string) => void;
-  onEditKeyDown: (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    index: number
-  ) => void;
-  onEditBlur: () => void;
-  onTogglePin: (id: string) => void;
-  onToggleCompare: (job: Job) => void;
-  onDemote: (id: string) => void;
-  onPromote: (id: string) => void;
+  rank: number;
+  isSelected: boolean;
   onSelectDetail: (job: Job) => void;
+  onToggleSelect: (jobId: string) => void;
+  onBoost: (jobId: string) => void;
+  onBury: (jobId: string) => void;
+  onMoveToOpen: (jobId: string, rank: number) => void;
+  flashDirection: "up" | "down" | null;
+  glowKey: number;
 }) {
   const {
     attributes,
@@ -185,58 +319,49 @@ const SortableRow = memo(function SortableRow({
   };
 
   const regionStyle = getRegionStyle(scored.job.region);
+  const { fy1, fy2 } = getJobPlacements(scored.job);
+  const score = effectiveScore(scored);
 
-  // Build placement columns
-  const placements: { site: string; spec: string }[] = [];
-  for (let i = 1; i <= 6; i++) {
-    const key = `placement_${i}` as `placement_${1 | 2 | 3 | 4 | 5 | 6}`;
-    const p = scored.job[key];
-    if (p.site && p.site !== "None" && p.site.trim() !== "") {
-      placements.push({ site: p.site, spec: p.speciality });
-    }
-  }
-  const col1 = placements.slice(0, 3);
-  const col2 = placements.slice(3, 6);
+  // Use glowKey to force re-mount of the glow wrapper so CSS animation replays
+  const glowClass =
+    flashDirection === "up"
+      ? "animate-card-glow-up"
+      : flashDirection === "down"
+        ? "animate-card-glow-down"
+        : "";
 
-  /* ── Pool rendering ── */
-  if (isPool) {
-    return (
+  return (
+    <motion.div
+      layoutId={scored.job.id}
+      layout="position"
+      transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
+    >
       <div
+        key={glowKey}
         ref={setNodeRef}
         style={style}
+        {...attributes}
+        {...listeners}
         className={cn(
-          "group rounded-lg border transition-all hover:shadow-md",
-          regionStyle.bg,
-          regionStyle.border,
-          isComparing && "ring-2 ring-sky-400 dark:ring-sky-500",
-          isDragging && "opacity-40 shadow-lg z-50"
+          "group rounded-lg border hover:shadow-md cursor-grab touch-none flex flex-col bg-card",
+          isSelected && "ring-2 ring-primary/50 bg-primary/5",
+          isDragging && "opacity-40 shadow-lg z-50",
+          glowClass
         )}
+        onClick={() => onSelectDetail(scored.job)}
       >
-        {/* Header row */}
-        <div className="flex items-center gap-2 px-3 py-2">
-          <button
-            {...attributes}
-            {...listeners}
-            className="cursor-grab touch-none text-muted-foreground hover:text-foreground shrink-0"
-          >
-            <GripVertical className="h-3.5 w-3.5" />
-          </button>
-
-          <button
-            onClick={() => onPromote(scored.job.id)}
-            className="text-muted-foreground hover:text-primary shrink-0 transition-colors"
-            title="Add to top list"
-          >
-            <ArrowUpToLine className="h-3.5 w-3.5" />
-          </button>
-
-          <span className="text-[11px] font-mono text-muted-foreground shrink-0">
-            #{displayIndex + 1}
+        {/* ── Header row ── */}
+        <div className="flex items-center gap-1.5 px-2 pt-2 pb-1.5 border-b border-border/40">
+          {/* Rank number */}
+          <span className="text-sm font-bold font-mono text-foreground shrink-0">
+            {rank}
           </span>
 
+          {/* Region badge */}
           <span
             className={cn(
-              "rounded-full px-1.5 py-0 text-[10px] font-medium border shrink-0",
+              "rounded-full px-1.5 py-0.5 text-[10px] font-semibold border shrink-0 ml-1.5",
+              regionStyle.bg,
               regionStyle.text,
               regionStyle.border
             )}
@@ -244,237 +369,132 @@ const SortableRow = memo(function SortableRow({
             {scored.job.region}
           </span>
 
-          <span
-            className="flex-1 text-[11px] font-mono text-muted-foreground truncate min-w-0 cursor-pointer"
-            onClick={() => onSelectDetail(scored.job)}
-          >
+          {/* Programme title */}
+          <span className="flex-1 text-xs font-mono font-medium text-foreground/80 truncate min-w-0 ml-0.5">
             {scored.job.programme_title}
           </span>
 
+          {/* Move to button */}
           <button
-            onClick={() => onToggleCompare(scored.job)}
-            className={cn(
-              "p-1 rounded transition-colors shrink-0 opacity-0 group-hover:opacity-100",
-              isComparing
-                ? "text-sky-500 opacity-100"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-            title="Compare"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMoveToOpen(scored.job.id, rank);
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="p-1.5 -m-1 rounded-md transition-colors shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            title="Move to..."
           >
-            <Columns2 className="h-3 w-3" />
-          </button>
-        </div>
-
-        {/* Placement columns */}
-        <div
-          className="px-3 pb-2 cursor-pointer"
-          onClick={() => onSelectDetail(scored.job)}
-        >
-          <PlacementColumns job={scored.job} />
-        </div>
-      </div>
-    );
-  }
-
-  /* ── Top-N rendering ── */
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        "group rounded-lg border transition-all hover:shadow-sm cursor-pointer",
-        regionStyle.bg,
-        regionStyle.border,
-        isPinned && "ring-1 ring-primary/30",
-        isComparing && "ring-2 ring-sky-400 dark:ring-sky-500",
-        isDragging && "opacity-40 shadow-lg z-50"
-      )}
-      onClick={() => onSelectDetail(scored.job)}
-    >
-      <div className="flex items-start gap-0 px-1.5 py-1">
-        {/* LHS: grip + rank/title & region */}
-        <div
-          className="flex items-start gap-1 shrink-0 pt-0.5"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            {...attributes}
-            {...listeners}
-            className="cursor-grab touch-none text-muted-foreground hover:text-foreground shrink-0 mt-0.5"
-          >
-            <GripVertical className="h-3.5 w-3.5" />
+            <ArrowUpDown className="h-4 w-4" />
           </button>
 
-          <div className="flex flex-col gap-0">
-            {/* Row 1: rank + title */}
-            <div className="flex items-center gap-1">
-              {editingIndex === displayIndex ? (
-                <input
-                  type="text"
-                  value={editValue}
-                  onChange={(e) => onEditChange(e.target.value)}
-                  onKeyDown={(e) => onEditKeyDown(e, displayIndex)}
-                  onBlur={onEditBlur}
-                  autoFocus
-                  className="w-6 rounded border bg-background px-0.5 py-0 text-center text-[10px] font-mono outline-none focus:ring-1 focus:ring-ring"
-                />
-              ) : (
-                <button
-                  onClick={() => onEditStart(displayIndex)}
-                  className="w-6 shrink-0 text-center text-[10px] font-mono text-muted-foreground hover:text-foreground hover:bg-background/60 rounded py-0 transition-colors"
-                  title="Click to type a new position"
-                >
-                  {displayIndex + 1}
-                </button>
-              )}
-              <span className="text-[10px] font-mono text-foreground/80 truncate max-w-28">
-                {scored.job.programme_title}
-              </span>
-            </div>
-            {/* Row 2: region badge */}
-            <span
+          {/* Select circle */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSelect(scored.job.id);
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="p-1.5 -m-1 shrink-0 flex items-center justify-center"
+            title={isSelected ? "Deselect" : "Select"}
+          >
+            <div
               className={cn(
-                "rounded-full px-1.5 py-0 text-[9px] font-medium border self-start ml-6",
-                regionStyle.text,
-                regionStyle.border
+                "h-4.5 w-4.5 rounded-full border-2 flex items-center justify-center transition-colors",
+                isSelected
+                  ? "bg-primary border-primary"
+                  : "border-muted-foreground/50 hover:border-primary/70"
               )}
             >
-              {scored.job.region}
+              {isSelected && (
+                <div className="h-2 w-2 rounded-full bg-primary-foreground" />
+              )}
+            </div>
+          </button>
+        </div>
+
+        {/* ── Body: Placement list ── */}
+        <div className="px-2.5 py-1.5 flex-1">
+          <PlacementList fy1={fy1} fy2={fy2} />
+        </div>
+
+        {/* ── Footer: Score box + Boost/Bury triangles ── */}
+        <div className="px-2 pb-1.5 pt-1 border-t border-border/40 flex items-center justify-end gap-1.5">
+          <div className="rounded-md bg-muted px-2 py-0.5 flex items-center gap-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-foreground/60">
+              Score
             </span>
+            <AnimatedScore value={score} flashDirection={flashDirection} />
+          </div>
+
+          {/* Boost / Bury triangles */}
+          <div className="flex flex-col shrink-0 gap-0.5">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onBoost(scored.job.id);
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="px-1 py-0.5 text-emerald-500 hover:text-emerald-400 active:scale-90 transition-all"
+              title="Boost"
+            >
+              <TriangleUp />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onBury(scored.job.id);
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="px-1 py-0.5 text-red-500 hover:text-red-400 active:scale-90 transition-all"
+              title="Bury"
+            >
+              <TriangleDown />
+            </button>
           </div>
         </div>
-
-        {/* RHS: 2-col × 3-row placements */}
-        <div className="flex-1 min-w-0 flex gap-3 ml-3">
-          {[col1, col2].map((col, ci) => (
-            <div key={ci} className="flex-1 min-w-0 flex flex-col gap-0.5">
-              {col.map((p, pi) => (
-                <div key={pi} className="min-w-0">
-                  <p className="text-[10px] leading-[13px] text-foreground/80 truncate">
-                    {p.site}
-                  </p>
-                  <p className="text-[9px] leading-[12px] text-muted-foreground truncate">
-                    {p.spec}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-
-        {/* Actions */}
-        <div
-          className="flex items-center gap-0 shrink-0 ml-1 pt-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            onClick={() => onToggleCompare(scored.job)}
-            className={cn(
-              "p-0.5 rounded transition-colors",
-              isComparing
-                ? "text-sky-500 opacity-100"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-            title="Compare"
-          >
-            <Columns2 className="h-3 w-3" />
-          </button>
-          <button
-            onClick={() => onTogglePin(scored.job.id)}
-            className={cn(
-              "p-0.5 transition-colors",
-              isPinned
-                ? "text-primary opacity-100"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {isPinned ? (
-              <Lock className="h-3 w-3" />
-            ) : (
-              <Unlock className="h-3 w-3" />
-            )}
-          </button>
-          <button
-            onClick={() => onDemote(scored.job.id)}
-            disabled={isPinned}
-            className="p-0.5 text-muted-foreground hover:text-destructive disabled:opacity-30"
-            title="Remove from top"
-          >
-            <ArrowDownToLine className="h-3 w-3" />
-          </button>
-        </div>
       </div>
-    </div>
+    </motion.div>
   );
 });
 
-/* ── Drag overlay (compact, used for both containers) ── */
+/* ── Drag overlay card (non-interactive copy shown while dragging) ── */
 const DragOverlayCard = memo(function DragOverlayCard({
   scored,
-  index,
+  rank,
+  width,
 }: {
   scored: ScoredJob;
-  index: number;
+  rank: number;
+  width?: number;
 }) {
   const regionStyle = getRegionStyle(scored.job.region);
-  const placements: { site: string; spec: string }[] = [];
-  for (let i = 1; i <= 6; i++) {
-    const key = `placement_${i}` as `placement_${1 | 2 | 3 | 4 | 5 | 6}`;
-    const p = scored.job[key];
-    if (p.site && p.site !== "None" && p.site.trim() !== "") {
-      placements.push({ site: p.site, spec: p.speciality });
-    }
-  }
-  const col1 = placements.slice(0, 3);
-  const col2 = placements.slice(3, 6);
+  const { fy1, fy2 } = getJobPlacements(scored.job);
 
   return (
     <div
-      className={cn(
-        "rounded-lg border shadow-xl ring-2 ring-primary/20",
-        regionStyle.bg,
-        regionStyle.border
-      )}
+      className="rounded-lg border shadow-xl ring-2 ring-primary/20 bg-card"
+      style={width ? { width } : undefined}
     >
-      <div className="flex items-start gap-0 px-2 py-1">
-        <div className="flex items-start gap-1 shrink-0 pt-0.5">
-          <GripVertical className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-          <div className="flex flex-col gap-0">
-            <div className="flex items-center gap-1">
-              <span className="w-6 shrink-0 text-center text-[10px] font-mono text-muted-foreground">
-                {index + 1}
-              </span>
-              <span className="text-[10px] font-mono text-foreground/80 truncate max-w-28">
-                {scored.job.programme_title}
-              </span>
-            </div>
-            <span
-              className={cn(
-                "rounded-full px-1.5 py-0 text-[9px] font-medium border self-start ml-6",
-                regionStyle.text,
-                regionStyle.border
-              )}
-            >
-              {scored.job.region}
-            </span>
-          </div>
-        </div>
-        <div className="flex-1 min-w-0 flex gap-3 ml-3">
-          {[col1, col2].map((col, ci) => (
-            <div key={ci} className="flex-1 min-w-0 flex flex-col gap-0.5">
-              {col.map((p, pi) => (
-                <div key={pi} className="min-w-0">
-                  <p className="text-[10px] leading-[13px] text-foreground/80 truncate">
-                    {p.site}
-                  </p>
-                  <p className="text-[9px] leading-[12px] text-muted-foreground truncate">
-                    {p.spec}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
+      <div className="flex items-center gap-1.5 px-2.5 pt-2 pb-1.5 border-b border-border/40">
+        <span className="text-sm font-bold font-mono text-foreground shrink-0">
+          {rank}
+        </span>
+        <span
+          className={cn(
+            "rounded-full px-1.5 py-0.5 text-[10px] font-semibold border shrink-0",
+            regionStyle.bg,
+            regionStyle.text,
+            regionStyle.border
+          )}
+        >
+          {scored.job.region}
+        </span>
+        <span className="flex-1 text-xs font-mono font-medium text-foreground/80 truncate min-w-0">
+          {scored.job.programme_title}
+        </span>
+      </div>
+      <div className="px-2.5 py-1.5">
+        <PlacementList fy1={fy1} fy2={fy2} />
       </div>
     </div>
   );
@@ -484,34 +504,60 @@ const DragOverlayCard = memo(function DragOverlayCard({
    Main results view
    ════════════════════════════════════════════════════════════ */
 export function ResultsView({ scoredJobs }: ResultsViewProps) {
-  const [topN, setTopN] = useState(20);
-  const [rankedJobs, setRankedJobs] = useState<ScoredJob[]>(scoredJobs);
+  const [rankedJobs, setRankedJobs] = useState<ScoredJob[]>(() =>
+    scoredJobs.map((sj) => ({
+      ...sj,
+      scoreAdjustment: sj.scoreAdjustment ?? 0,
+    }))
+  );
   const [selectedDetail, setSelectedDetail] = useState<Job | null>(null);
   const [compareJobs, setCompareJobs] = useState<Job[]>([]);
   const [showCompare, setShowCompare] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  // Pool filters
-  const [poolSearch, setPoolSearch] = useState("");
-  const [poolRegionFilter, setPoolRegionFilter] = useState<string>("all");
-  const [poolSpecialtyFilter, setPoolSpecialtyFilter] =
-    useState<string>("all");
+  // Boost/Bury flash tracking + glow key counter for re-triggering CSS animation
+  const glowKeyRef = useRef<Map<string, number>>(new Map());
+  const [flashMap, setFlashMap] = useState<
+    Map<string, "up" | "down">
+  >(new Map());
 
-  // Top-N state
-  const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editValue, setEditValue] = useState("");
+  // Move To dialog
+  const [moveToState, setMoveToState] = useState<{
+    jobId: string;
+    rank: number;
+  } | null>(null);
 
-  // Scroll refs
-  const poolScrollRef = useRef<HTMLDivElement>(null);
-  const topScrollRef = useRef<HTMLDivElement>(null);
+  // Multiselect
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // ── Refs for fresh state in DnD callbacks (prevents stale closures) ──
+  // Move To for bulk (from toolbar)
+  const [bulkMoveToOpen, setBulkMoveToOpen] = useState(false);
+
+  // Pin
+  const [pinnedJobIds, setPinnedJobIds] = useState<Set<string>>(new Set());
+  const [scrollDir, setScrollDir] = useState<"down" | "up">("down");
+  const lastScrollTop = useRef(0);
+
+  // Help modal
+  const [showHelp, setShowHelp] = useState(false);
+
+  // Filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [regionFilter, setRegionFilter] = useState<string>("all");
+  const [hospitalFilter, setHospitalFilter] = useState<string>("all");
+  const [specialtyFilter, setSpecialtyFilter] = useState<string>("all");
+
+  // Scroll ref
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Scroll-to-card after boost/bury/move
+  const scrollToJobIdRef = useRef<string | null>(null);
+
+  // Ref for fresh state in DnD callbacks
   const rankedJobsRef = useRef(rankedJobs);
   rankedJobsRef.current = rankedJobs;
-  const topNRef = useRef(topN);
-  topNRef.current = topN;
-  const lastOverContainerRef = useRef<string | null>(null);
+
+  const cardsPerRow = useCardsPerRow();
 
   // Sensors
   const sensors = useSensors(
@@ -521,11 +567,30 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     })
   );
 
+  /* ── Nudge amount ── */
+  const nudgeAmount = useMemo(
+    () => computeNudgeAmount(rankedJobs),
+    [rankedJobs]
+  );
+
   /* ── Derived data ── */
 
   const allRegions = useMemo(() => {
     const set = new Set<string>();
     rankedJobs.forEach((s) => set.add(s.job.region));
+    return Array.from(set).sort();
+  }, [rankedJobs]);
+
+  const allHospitals = useMemo(() => {
+    const set = new Set<string>();
+    rankedJobs.forEach((s) => {
+      for (let i = 1; i <= 6; i++) {
+        const key =
+          `placement_${i}` as `placement_${1 | 2 | 3 | 4 | 5 | 6}`;
+        const site = s.job[key].site;
+        if (site && site !== "None" && site.trim() !== "") set.add(site);
+      }
+    });
     return Array.from(set).sort();
   }, [rankedJobs]);
 
@@ -542,15 +607,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     return Array.from(set).sort();
   }, [rankedJobs]);
 
-  const topList = useMemo(
-    () => rankedJobs.slice(0, topN),
-    [rankedJobs, topN]
-  );
-  const pool = useMemo(() => rankedJobs.slice(topN), [rankedJobs, topN]);
-
-  // IDs for SortableContexts
-  const topIds = useMemo(() => topList.map((s) => s.job.id), [topList]);
-
   // O(1) lookup: id → global index in rankedJobs
   const indexById = useMemo(() => {
     const map = new Map<string, number>();
@@ -558,20 +614,29 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     return map;
   }, [rankedJobs]);
 
-  // O(1) set lookups for which container an ID belongs to
-  const topIdSet = useMemo(() => new Set(topIds), [topIds]);
+  const filteredJobs = useMemo(() => {
+    return rankedJobs.filter((s) => {
+      if (regionFilter !== "all" && s.job.region !== regionFilter) return false;
 
-  const filteredPool = useMemo(() => {
-    return pool.filter((s) => {
-      if (poolRegionFilter !== "all" && s.job.region !== poolRegionFilter)
-        return false;
+      if (hospitalFilter !== "all") {
+        let found = false;
+        for (let i = 1; i <= 6; i++) {
+          const key =
+            `placement_${i}` as `placement_${1 | 2 | 3 | 4 | 5 | 6}`;
+          if (s.job[key].site === hospitalFilter) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) return false;
+      }
 
-      if (poolSpecialtyFilter !== "all") {
+      if (specialtyFilter !== "all") {
         let hasSpec = false;
         for (let i = 1; i <= 6; i++) {
           const key =
             `placement_${i}` as `placement_${1 | 2 | 3 | 4 | 5 | 6}`;
-          if (s.job[key].speciality === poolSpecialtyFilter) {
+          if (s.job[key].speciality === specialtyFilter) {
             hasSpec = true;
             break;
           }
@@ -579,295 +644,391 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         if (!hasSpec) return false;
       }
 
-      if (poolSearch) {
-        const q = poolSearch.toLowerCase();
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
         const title = s.job.programme_title.toLowerCase();
         const region = s.job.region.toLowerCase();
-        let sites = "";
+        let haystack = "";
         for (let i = 1; i <= 6; i++) {
           const key =
             `placement_${i}` as `placement_${1 | 2 | 3 | 4 | 5 | 6}`;
-          sites += " " + s.job[key].site.toLowerCase();
-          sites += " " + s.job[key].speciality.toLowerCase();
+          haystack += " " + s.job[key].site.toLowerCase();
+          haystack += " " + s.job[key].speciality.toLowerCase();
         }
-        if (!title.includes(q) && !region.includes(q) && !sites.includes(q))
+        if (
+          !title.includes(q) &&
+          !region.includes(q) &&
+          !haystack.includes(q)
+        )
           return false;
       }
 
       return true;
     });
-  }, [pool, poolSearch, poolRegionFilter, poolSpecialtyFilter]);
+  }, [rankedJobs, searchQuery, regionFilter, hospitalFilter, specialtyFilter]);
 
-  // Pool IDs — only the *filtered* pool items that are actually rendered
-  const poolIds = useMemo(
-    () => filteredPool.map((s) => s.job.id),
-    [filteredPool]
-  );
-  const poolIdSet = useMemo(() => new Set(poolIds), [poolIds]);
-
-  // Pre-compute compare set for O(1) lookups
-  const compareIdSet = useMemo(
-    () => new Set(compareJobs.map((j) => j.id)),
-    [compareJobs]
+  // IDs for SortableContext
+  const filteredIds = useMemo(
+    () => filteredJobs.map((s) => s.job.id),
+    [filteredJobs]
   );
 
-  // Virtualize the pool
-  const poolVirtualizer = useVirtualizer({
-    count: filteredPool.length,
-    getScrollElement: () => poolScrollRef.current,
-    estimateSize: () => 98,
-    overscan: 5,
+  // Row-based virtualization
+  const rowCount = Math.ceil(filteredJobs.length / cardsPerRow);
+  const virtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 340,
+    overscan: 2,
   });
 
-  // Reset pool scroll on filter change
+  // Reset scroll on filter change
   useEffect(() => {
-    poolScrollRef.current?.scrollTo(0, 0);
-  }, [poolSearch, poolRegionFilter, poolSpecialtyFilter]);
+    scrollRef.current?.scrollTo(0, 0);
+  }, [searchQuery, regionFilter, hospitalFilter, specialtyFilter]);
+
+  // Scroll to card after boost/bury/move
+  useEffect(() => {
+    const targetId = scrollToJobIdRef.current;
+    if (!targetId) return;
+    scrollToJobIdRef.current = null;
+
+    const idx = filteredJobs.findIndex((sj) => sj.job.id === targetId);
+    if (idx === -1) return;
+    const rowIdx = Math.floor(idx / cardsPerRow);
+
+    // Small delay to let framer-motion layout animation start
+    requestAnimationFrame(() => {
+      virtualizer.scrollToIndex(rowIdx, { align: "center", behavior: "smooth" });
+    });
+  }, [filteredJobs, cardsPerRow, virtualizer]);
+
+  /* ── Pinned rows ── */
+  const pinnedRowIndices = useMemo(() => {
+    const rows: number[] = [];
+    for (let rowIdx = 0; rowIdx < rowCount; rowIdx++) {
+      const start = rowIdx * cardsPerRow;
+      const end = Math.min(start + cardsPerRow, filteredJobs.length);
+      for (let i = start; i < end; i++) {
+        if (pinnedJobIds.has(filteredJobs[i].job.id)) {
+          rows.push(rowIdx);
+          break;
+        }
+      }
+    }
+    return rows;
+  }, [filteredJobs, pinnedJobIds, cardsPerRow, rowCount]);
 
   /* ── Custom collision detection ──
-     Step 1: Use pointerWithin to find which *container* the pointer is in
-     Step 2: Use closestCenter only against items in that container
-     This cuts collision checks from ~1500 to ~20 per frame. */
+     Filter to only rendered (virtualized) items for performance. */
   const customCollisionDetection: CollisionDetection = useCallback(
     (args) => {
-      // First find which droppable container the pointer is inside
-      const pointerCollisions = pointerWithin(args);
+      const virtualItems = virtualizer.getVirtualItems();
+      const visibleIds = new Set<string>();
+      virtualItems.forEach((vRow) => {
+        const start = vRow.index * cardsPerRow;
+        const end = Math.min(start + cardsPerRow, filteredJobs.length);
+        for (let i = start; i < end; i++) {
+          visibleIds.add(filteredJobs[i].job.id);
+        }
+      });
 
-      // Look for a container-level droppable hit
-      const containerHit = pointerCollisions.find(
-        (c) => c.id === TOP_CONTAINER || c.id === POOL_CONTAINER
+      const filtered = args.droppableContainers.filter((dc) =>
+        visibleIds.has(dc.id as string)
       );
 
-      if (!containerHit) {
-        // Fallback: try rectIntersection for edge cases (e.g. overlay near border)
-        return rectIntersection(args);
+      if (filtered.length === 0) {
+        return closestCenter(args);
       }
 
-      // Filter droppableContainers to only those in the hit container + the container itself
-      const targetIds =
-        containerHit.id === TOP_CONTAINER ? topIdSet : poolIdSet;
-
-      const filtered = args.droppableContainers.filter(
-        (dc) => dc.id === containerHit.id || targetIds.has(dc.id as string)
-      );
-
-      // Now run closestCenter only against the ~20 visible items
       return closestCenter({ ...args, droppableContainers: filtered });
     },
-    [topIdSet, poolIdSet]
+    [virtualizer, filteredJobs, cardsPerRow]
   );
 
-  /* ── Actions (stabilized callbacks) ── */
+  /* ── Actions ── */
 
-  const handleEditStart = useCallback((idx: number) => {
-    setEditingIndex(idx);
-    setEditValue(String(idx + 1));
-  }, []);
-
-  const handleEditBlur = useCallback(() => setEditingIndex(null), []);
-
-  const demoteJob = useCallback(
+  /* ── Boost / Bury ── */
+  const handleBoost = useCallback(
     (jobId: string) => {
+      scrollToJobIdRef.current = jobId;
+      glowKeyRef.current.set(jobId, (glowKeyRef.current.get(jobId) ?? 0) + 1);
+      setFlashMap((prev) => {
+        const next = new Map(prev);
+        next.set(jobId, "up");
+        return next;
+      });
+      setTimeout(() => {
+        setFlashMap((prev) => {
+          const next = new Map(prev);
+          next.delete(jobId);
+          return next;
+        });
+      }, 6200);
+
       setRankedJobs((prev) => {
-        const idx = prev.findIndex((s) => s.job.id === jobId);
-        if (idx < 0 || idx >= topNRef.current) return prev;
-        if (pinnedIds.has(jobId)) return prev;
-        const newJobs = [...prev];
-        const [item] = newJobs.splice(idx, 1);
-        newJobs.splice(topNRef.current - 1, 0, item);
-        return newJobs;
+        const updated = prev.map((sj) =>
+          sj.job.id === jobId
+            ? { ...sj, scoreAdjustment: (sj.scoreAdjustment ?? 0) + nudgeAmount }
+            : sj
+        );
+        return [...updated].sort(
+          (a, b) => effectiveScore(b) - effectiveScore(a)
+        );
       });
     },
-    [pinnedIds]
+    [nudgeAmount]
   );
 
-  const promoteJob = useCallback(
+  const handleBury = useCallback(
     (jobId: string) => {
-      setRankedJobs((prev) => {
-        const idx = prev.findIndex((s) => s.job.id === jobId);
-        if (idx < 0 || idx < topNRef.current) return prev;
-        const newJobs = [...prev];
-        const [item] = newJobs.splice(idx, 1);
-        // Insert at end of top-N (last slot)
-        newJobs.splice(topNRef.current - 1, 0, item);
-        return newJobs;
+      scrollToJobIdRef.current = jobId;
+      glowKeyRef.current.set(jobId, (glowKeyRef.current.get(jobId) ?? 0) + 1);
+      setFlashMap((prev) => {
+        const next = new Map(prev);
+        next.set(jobId, "down");
+        return next;
       });
+      setTimeout(() => {
+        setFlashMap((prev) => {
+          const next = new Map(prev);
+          next.delete(jobId);
+          return next;
+        });
+      }, 6200);
+
+      setRankedJobs((prev) => {
+        const updated = prev.map((sj) =>
+          sj.job.id === jobId
+            ? { ...sj, scoreAdjustment: (sj.scoreAdjustment ?? 0) - nudgeAmount }
+            : sj
+        );
+        return [...updated].sort(
+          (a, b) => effectiveScore(b) - effectiveScore(a)
+        );
+      });
+    },
+    [nudgeAmount]
+  );
+
+  /* ── Move To ── */
+  const handleMoveTo = useCallback((jobId: string, targetRank: number) => {
+    scrollToJobIdRef.current = jobId;
+    setRankedJobs((prev) => {
+      const currentIdx = prev.findIndex((sj) => sj.job.id === jobId);
+      if (currentIdx === -1) return prev;
+      const targetIdx = Math.max(
+        0,
+        Math.min(targetRank - 1, prev.length - 1)
+      );
+      return arrayMove(prev, currentIdx, targetIdx);
+    });
+  }, []);
+
+  const openMoveTo = useCallback(
+    (jobId: string, rank: number) => {
+      setMoveToState({ jobId, rank });
     },
     []
   );
 
-  const moveInTopN = useCallback(
-    (fromIdx: number, toPosition: number) => {
-      if (toPosition < 1 || toPosition > topNRef.current) return;
-      setRankedJobs((prev) => {
-        if (pinnedIds.has(prev[fromIdx].job.id)) return prev;
-        const newJobs = [...prev];
-        const [item] = newJobs.splice(fromIdx, 1);
-        newJobs.splice(toPosition - 1, 0, item);
-        return newJobs;
-      });
-      setEditingIndex(null);
-    },
-    [pinnedIds]
-  );
-
-  const togglePin = useCallback((id: string) => {
-    setPinnedIds((prev) => {
+  /* ── Multiselect ── */
+  const toggleSelect = useCallback((jobId: string) => {
+    setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(jobId)) next.delete(jobId);
+      else next.add(jobId);
       return next;
     });
   }, []);
 
-  const toggleCompare = useCallback((job: Job) => {
-    setCompareJobs((prev) => {
-      const exists = prev.find((j) => j.id === job.id);
-      if (exists) return prev.filter((j) => j.id !== job.id);
-      if (prev.length >= 3) return prev;
-      return [...prev, job];
+  const selectRow = useCallback(
+    (rowIndex: number) => {
+      const start = rowIndex * cardsPerRow;
+      const end = Math.min(start + cardsPerRow, filteredJobs.length);
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        const rowIds = filteredJobs.slice(start, end).map((sj) => sj.job.id);
+        const allSelected = rowIds.every((id) => prev.has(id));
+        if (allSelected) rowIds.forEach((id) => next.delete(id));
+        else rowIds.forEach((id) => next.add(id));
+        return next;
+      });
+    },
+    [cardsPerRow, filteredJobs]
+  );
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
+  /* ── Bulk actions from toolbar ── */
+  const handleBulkCompare = useCallback(() => {
+    const jobs = rankedJobs
+      .filter((sj) => selectedIds.has(sj.job.id))
+      .slice(0, 3)
+      .map((sj) => sj.job);
+    setCompareJobs(jobs);
+    setShowCompare(true);
+  }, [selectedIds, rankedJobs]);
+
+  const handleBulkBoost = useCallback(() => {
+    const ids = selectedIds;
+    ids.forEach((id) => glowKeyRef.current.set(id, (glowKeyRef.current.get(id) ?? 0) + 1));
+    setFlashMap(() => {
+      const next = new Map<string, "up" | "down">();
+      ids.forEach((id) => next.set(id, "up"));
+      return next;
+    });
+    setTimeout(() => setFlashMap(new Map()), 6200);
+
+    setRankedJobs((prev) => {
+      const updated = prev.map((sj) =>
+        ids.has(sj.job.id)
+          ? { ...sj, scoreAdjustment: (sj.scoreAdjustment ?? 0) + nudgeAmount }
+          : sj
+      );
+      return [...updated].sort(
+        (a, b) => effectiveScore(b) - effectiveScore(a)
+      );
+    });
+  }, [selectedIds, nudgeAmount]);
+
+  const handleBulkBury = useCallback(() => {
+    const ids = selectedIds;
+    ids.forEach((id) => glowKeyRef.current.set(id, (glowKeyRef.current.get(id) ?? 0) + 1));
+    setFlashMap(() => {
+      const next = new Map<string, "up" | "down">();
+      ids.forEach((id) => next.set(id, "down"));
+      return next;
+    });
+    setTimeout(() => setFlashMap(new Map()), 6200);
+
+    setRankedJobs((prev) => {
+      const updated = prev.map((sj) =>
+        ids.has(sj.job.id)
+          ? { ...sj, scoreAdjustment: (sj.scoreAdjustment ?? 0) - nudgeAmount }
+          : sj
+      );
+      return [...updated].sort(
+        (a, b) => effectiveScore(b) - effectiveScore(a)
+      );
+    });
+  }, [selectedIds, nudgeAmount]);
+
+  const handleBulkMoveTo = useCallback(
+    (targetRank: number) => {
+      setRankedJobs((prev) => {
+        // Collect selected jobs in their current relative order
+        const selectedJobs = prev.filter((sj) => selectedIds.has(sj.job.id));
+        const remaining = prev.filter((sj) => !selectedIds.has(sj.job.id));
+        const insertIdx = Math.max(
+          0,
+          Math.min(targetRank - 1, remaining.length)
+        );
+        const result = [...remaining];
+        result.splice(insertIdx, 0, ...selectedJobs);
+        return result;
+      });
+    },
+    [selectedIds]
+  );
+
+  /* ── Pin row ── */
+  const togglePin = useCallback((jobId: string) => {
+    setPinnedJobIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(jobId)) next.delete(jobId);
+      else next.add(jobId);
+      return next;
     });
   }, []);
 
-  const handleRankKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
-      if (e.key === "Enter") {
-        const pos = parseInt(editValue, 10);
-        if (!isNaN(pos)) moveInTopN(index, pos);
-        setEditingIndex(null);
-      } else if (e.key === "Escape") {
-        setEditingIndex(null);
-      }
-    },
-    [editValue, moveInTopN]
-  );
-
   /* ── DnD handlers ── */
 
-  /** Determine which container an item ID belongs to (using fresh refs) */
-  const findContainer = useCallback(
-    (itemId: string): string | null => {
-      if (itemId === TOP_CONTAINER || itemId === POOL_CONTAINER) return itemId;
-      const jobs = rankedJobsRef.current;
-      const n = topNRef.current;
-      const idx = jobs.findIndex((s) => s.job.id === itemId);
-      if (idx < 0) return null;
-      return idx < n ? TOP_CONTAINER : POOL_CONTAINER;
-    },
-    []
-  );
+  const [dragWidth, setDragWidth] = useState<number | undefined>();
 
   function handleDragStart(event: DragStartEvent) {
     setActiveId(event.active.id as string);
-    lastOverContainerRef.current = findContainer(
-      event.active.id as string
-    );
+    setDragWidth(event.active.rect.current.translated?.width);
   }
 
-  /** Cross-container move: fires every time the drag pointer enters a new container */
-  function handleDragOver(event: DragOverEvent) {
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeIdStr = active.id as string;
-    const overIdStr = over.id as string;
-
-    const activeContainer = findContainer(activeIdStr);
-    const overContainer =
-      overIdStr === TOP_CONTAINER || overIdStr === POOL_CONTAINER
-        ? overIdStr
-        : findContainer(overIdStr);
-
-    if (!activeContainer || !overContainer) return;
-    if (activeContainer === overContainer) return;
-
-    // Guard: only fire on container transitions
-    if (lastOverContainerRef.current === overContainer) return;
-    lastOverContainerRef.current = overContainer;
-
-    setRankedJobs((prev) => {
-      const jobs = [...prev];
-      const n = topNRef.current;
-      const fromIdx = jobs.findIndex((s) => s.job.id === activeIdStr);
-      if (fromIdx < 0) return prev;
-
-      const [item] = jobs.splice(fromIdx, 1);
-
-      if (overContainer === TOP_CONTAINER) {
-        // Moving to top-N: find drop position within top-N
-        if (overIdStr === TOP_CONTAINER) {
-          // Dropped on the container itself → append at end of top-N
-          jobs.splice(Math.min(n - 1, jobs.length), 0, item);
-        } else {
-          const overIdx = jobs.findIndex((s) => s.job.id === overIdStr);
-          if (overIdx >= 0 && overIdx < n) {
-            jobs.splice(overIdx, 0, item);
-          } else {
-            jobs.splice(Math.min(n - 1, jobs.length), 0, item);
-          }
-        }
-      } else {
-        // Moving to pool: insert at the beginning of pool area
-        if (overIdStr === POOL_CONTAINER) {
-          jobs.splice(n, 0, item);
-        } else {
-          const overIdx = jobs.findIndex((s) => s.job.id === overIdStr);
-          if (overIdx >= 0) {
-            jobs.splice(overIdx, 0, item);
-          } else {
-            jobs.splice(n, 0, item);
-          }
-        }
-      }
-
-      return jobs;
-    });
-  }
-
-  /** Same-container reorder (fires on drop) */
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     setActiveId(null);
-    lastOverContainerRef.current = null;
 
     if (!over || active.id === over.id) return;
 
     const activeIdStr = active.id as string;
     const overIdStr = over.id as string;
 
-    const activeContainer = findContainer(activeIdStr);
-    const overContainer =
-      overIdStr === TOP_CONTAINER || overIdStr === POOL_CONTAINER
-        ? overIdStr
-        : findContainer(overIdStr);
-
-    if (!activeContainer || !overContainer) return;
-
-    // Same-container reorder
-    if (activeContainer === overContainer) {
-      setRankedJobs((prev) => {
-        const oldIndex = prev.findIndex((s) => s.job.id === activeIdStr);
-        const newIndex = prev.findIndex((s) => s.job.id === overIdStr);
-        if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex)
-          return prev;
-        return arrayMove(prev, oldIndex, newIndex);
-      });
-    }
-    // Cross-container moves are already handled in handleDragOver
+    setRankedJobs((prev) => {
+      const oldIndex = prev.findIndex((s) => s.job.id === activeIdStr);
+      const newIndex = prev.findIndex((s) => s.job.id === overIdStr);
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex)
+        return prev;
+      return arrayMove(prev, oldIndex, newIndex);
+    });
   }
 
   function handleDragCancel() {
     setActiveId(null);
-    lastOverContainerRef.current = null;
   }
+
+  /* ── Scroll direction tracking for pinned rows ── */
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const dir = el.scrollTop > lastScrollTop.current ? "down" : "up";
+    setScrollDir(dir);
+    lastScrollTop.current = el.scrollTop;
+  }, []);
 
   /* ── Overlay data ── */
   const activeScored = activeId
     ? rankedJobs.find((s) => s.job.id === activeId) ?? null
     : null;
-  const activeScoredIndex = activeId
-    ? indexById.get(activeId) ?? -1
-    : -1;
+  const activeScoredRank = activeId ? (indexById.get(activeId) ?? 0) + 1 : 0;
+
+  const hasActiveFilters =
+    searchQuery !== "" ||
+    regionFilter !== "all" ||
+    hospitalFilter !== "all" ||
+    specialtyFilter !== "all";
+
+  /* ── Helper: render a row of cards ── */
+  function renderRowCards(rowIndex: number) {
+    const startIdx = rowIndex * cardsPerRow;
+    const rowCards = filteredJobs.slice(startIdx, startIdx + cardsPerRow);
+
+    return (
+      <div
+        className="grid gap-3 w-full"
+        style={{
+          gridTemplateColumns: `repeat(${cardsPerRow}, minmax(0, 1fr))`,
+        }}
+      >
+        {rowCards.map((s) => {
+          const globalIdx = indexById.get(s.job.id) ?? 0;
+          return (
+            <JobCard
+              key={s.job.id}
+              scored={s}
+              rank={globalIdx + 1}
+              isSelected={selectedIds.has(s.job.id)}
+              onSelectDetail={setSelectedDetail}
+              onToggleSelect={toggleSelect}
+              onBoost={handleBoost}
+              onBury={handleBury}
+              onMoveToOpen={openMoveTo}
+              flashDirection={flashMap.get(s.job.id) ?? null}
+              glowKey={glowKeyRef.current.get(s.job.id) ?? 0}
+            />
+          );
+        })}
+      </div>
+    );
+  }
 
   /* ══════════════════════════════════════════
      Render
@@ -875,40 +1036,101 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
   return (
     <div className="h-screen flex flex-col bg-background">
+      <WelcomeModal externalOpen={showHelp} onExternalClose={() => setShowHelp(false)} />
       <SiteHeader />
 
-      {/* Sub-header with ranking controls */}
-      <div className="shrink-0 border-b bg-card px-4 py-2">
-        <div className="flex items-center justify-between max-w-400 mx-auto">
-          <div>
-            <p className="text-xs text-muted-foreground">
-              {rankedJobs.length} programmes · Top {topN} highlighted
-            </p>
+      {/* Filter bar */}
+      <div className="shrink-0 border-b bg-card px-4 py-3">
+        <div className="max-w-[1800px] mx-auto flex items-center gap-3 flex-wrap">
+          <p className="text-sm text-muted-foreground shrink-0">
+            {filteredJobs.length === rankedJobs.length
+              ? `${rankedJobs.length} programmes`
+              : `${filteredJobs.length} of ${rankedJobs.length} programmes`}
+          </p>
+
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search programmes, hospitals, specialties..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-md border bg-background pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring/50 placeholder:text-muted-foreground"
+            />
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-muted-foreground">Show top:</label>
-            <select
-              value={topN}
-              onChange={(e) => setTopN(Number(e.target.value))}
-              className="rounded-md border bg-background px-2 py-1 text-xs outline-none"
+
+          <select
+            value={regionFilter}
+            onChange={(e) => setRegionFilter(e.target.value)}
+            className="rounded-md border bg-background px-3 py-2 text-sm outline-none min-w-[140px]"
+          >
+            <option value="all">All Regions</option>
+            {allRegions.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={hospitalFilter}
+            onChange={(e) => setHospitalFilter(e.target.value)}
+            className="rounded-md border bg-background px-3 py-2 text-sm outline-none min-w-[160px] max-w-[220px]"
+          >
+            <option value="all">All Hospitals</option>
+            {allHospitals.map((h) => (
+              <option key={h} value={h}>
+                {h}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={specialtyFilter}
+            onChange={(e) => setSpecialtyFilter(e.target.value)}
+            className="rounded-md border bg-background px-3 py-2 text-sm outline-none min-w-[160px] max-w-[220px]"
+          >
+            <option value="all">All Specialties</option>
+            {allSpecialties.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+
+          {hasActiveFilters && (
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                setRegionFilter("all");
+                setHospitalFilter("all");
+                setSpecialtyFilter("all");
+              }}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
             >
-              <option value={10}>Top 10</option>
-              <option value={20}>Top 20</option>
-              <option value={50}>Top 50</option>
-              <option value={100}>Top 100</option>
-            </select>
-            {compareJobs.length >= 2 && (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => setShowCompare(true)}
-                className="gap-1 text-xs"
-              >
-                <Columns2 className="h-3.5 w-3.5" />
-                Compare ({compareJobs.length})
-              </Button>
-            )}
-          </div>
+              Clear filters
+            </button>
+          )}
+
+          {compareJobs.length >= 2 && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setShowCompare(true)}
+              className="gap-1 text-sm shrink-0"
+            >
+              <Columns2 className="h-4 w-4" />
+              Compare ({compareJobs.length})
+            </Button>
+          )}
+
+          <button
+            onClick={() => setShowHelp(true)}
+            className="ml-auto p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+            title="Help"
+          >
+            <HelpCircle className="h-5 w-5" />
+          </button>
         </div>
       </div>
 
@@ -1045,12 +1267,36 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         </div>
       )}
 
-      {/* ── Main content: single DndContext wrapping both panels ── */}
+      {/* Move To dialog (single card) */}
+      <MoveToDialog
+        open={moveToState !== null}
+        onOpenChange={(open) => {
+          if (!open) setMoveToState(null);
+        }}
+        currentRank={moveToState?.rank ?? 1}
+        totalJobs={rankedJobs.length}
+        onMoveTo={(target) => {
+          if (moveToState) handleMoveTo(moveToState.jobId, target);
+        }}
+      />
+
+      {/* Move To dialog (bulk) */}
+      <MoveToDialog
+        open={bulkMoveToOpen}
+        onOpenChange={setBulkMoveToOpen}
+        currentRank={1}
+        totalJobs={rankedJobs.length}
+        onMoveTo={(target) => {
+          handleBulkMoveTo(target);
+          setBulkMoveToOpen(false);
+        }}
+      />
+
+      {/* ── Main content ── */}
       <DndContext
         sensors={sensors}
         collisionDetection={customCollisionDetection}
         onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
         autoScroll={{
@@ -1059,191 +1305,232 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         }}
       >
         <div className="flex-1 flex overflow-hidden">
-          {/* ── Left: Top N ── */}
-          <div className="w-[30%] shrink-0 border-r flex flex-col bg-card/50">
-            <div className="px-4 py-3 border-b bg-card">
-              <h2 className="text-sm font-semibold flex items-center gap-2">
-                <span className="flex items-center justify-center h-5 w-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
-                  ★
-                </span>
-                Your Top {topN}
-              </h2>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                Drag to reorder · click rank # to jump · drag across to
-                pool
-              </p>
-            </div>
-
-            <DroppableContainer
-              id={TOP_CONTAINER}
-              className="flex-1 flex flex-col overflow-hidden"
-            >
-              <SortableContext
-                items={topIds}
-                strategy={verticalListSortingStrategy}
-              >
-                <div
-                  ref={topScrollRef}
-                  className="flex-1 overflow-y-auto px-2 py-2 space-y-1"
-                >
-                  {topList.map((s, index) => (
-                    <SortableRow
-                      key={s.job.id}
-                      scored={s}
-                      displayIndex={index}
-                      isPinned={pinnedIds.has(s.job.id)}
-                      isComparing={compareIdSet.has(s.job.id)}
-                      isPool={false}
-                      editingIndex={editingIndex}
-                      editValue={editValue}
-                      onEditStart={handleEditStart}
-                      onEditChange={setEditValue}
-                      onEditKeyDown={handleRankKeyDown}
-                      onEditBlur={handleEditBlur}
-                      onTogglePin={togglePin}
-                      onToggleCompare={toggleCompare}
-                      onDemote={demoteJob}
-                      onPromote={promoteJob}
-                      onSelectDetail={setSelectedDetail}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DroppableContainer>
-          </div>
-
-          {/* ── Middle: Pool (virtualized + sortable) ── */}
-          <div className="flex-1 flex flex-col min-w-0">
-            {/* Pool header + filters */}
-            <div className="px-4 py-3 border-b bg-card space-y-2">
-              <h2 className="text-sm font-semibold">
-                Remaining Programmes
-                <span className="ml-1.5 text-muted-foreground font-normal">
-                  ({filteredPool.length}
-                  {filteredPool.length !== pool.length
-                    ? ` of ${pool.length}`
-                    : ""}
-                  )
-                </span>
-              </h2>
-              <div className="flex gap-2 flex-wrap">
-                <div className="relative flex-1 min-w-30">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="Search programmes, sites, specialties..."
-                    value={poolSearch}
-                    onChange={(e) => setPoolSearch(e.target.value)}
-                    className="w-full rounded-md border bg-background pl-8 pr-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-ring/50 placeholder:text-muted-foreground"
-                  />
-                </div>
-                <select
-                  value={poolRegionFilter}
-                  onChange={(e) => setPoolRegionFilter(e.target.value)}
-                  className="rounded-md border bg-background px-2 py-1.5 text-xs outline-none min-w-30"
-                >
-                  <option value="all">All Regions</option>
-                  {allRegions.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={poolSpecialtyFilter}
-                  onChange={(e) => setPoolSpecialtyFilter(e.target.value)}
-                  className="rounded-md border bg-background px-2 py-1.5 text-xs outline-none min-w-35"
-                >
-                  <option value="all">All Specialties</option>
-                  {allSpecialties.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Pool list — virtualized with SortableContext */}
-            <DroppableContainer
-              id={POOL_CONTAINER}
-              className="flex-1 flex flex-col overflow-hidden"
-            >
-              <SortableContext
-                items={poolIds}
-                strategy={verticalListSortingStrategy}
-              >
-                <div
-                  ref={poolScrollRef}
-                  className="flex-1 overflow-y-auto"
-                >
-                  <div
-                    className="relative px-3 py-2"
-                    style={{
-                      height: `${poolVirtualizer.getTotalSize()}px`,
-                    }}
-                  >
-                    {poolVirtualizer
-                      .getVirtualItems()
-                      .map((virtualRow) => {
-                        const s = filteredPool[virtualRow.index];
-                        return (
-                          <div
-                            key={s.job.id}
-                            className="absolute left-0 right-0 px-3"
-                            style={{
-                              height: `${virtualRow.size}px`,
-                              transform: `translateY(${virtualRow.start}px)`,
-                            }}
-                          >
-                            <SortableRow
-                              scored={s}
-                              displayIndex={
-                                indexById.get(s.job.id) ?? -1
-                              }
-                              isPinned={false}
-                              isComparing={compareIdSet.has(
-                                s.job.id
-                              )}
-                              isPool={true}
-                              editingIndex={null}
-                              editValue=""
-                              onEditStart={handleEditStart}
-                              onEditChange={setEditValue}
-                              onEditKeyDown={handleRankKeyDown}
-                              onEditBlur={handleEditBlur}
-                              onTogglePin={togglePin}
-                              onToggleCompare={toggleCompare}
-                              onDemote={demoteJob}
-                              onPromote={promoteJob}
-                              onSelectDetail={setSelectedDetail}
-                            />
+          <SortableContext
+            items={filteredIds}
+            strategy={rectSortingStrategy}
+          >
+            <div className="flex-1 flex flex-col overflow-hidden relative">
+              {/* Pinned rows at top */}
+              {pinnedRowIndices.length > 0 &&
+                scrollDir === "down" && (
+                  <div className="shrink-0 z-10 shadow-md border-b">
+                    {pinnedRowIndices.map((rowIdx) => {
+                      const startIdx = rowIdx * cardsPerRow;
+                      const isEvenRow = rowIdx % 2 === 0;
+                      return (
+                        <div
+                          key={`pin-${rowIdx}`}
+                          className={cn(
+                            "flex border-b border-sheet-border/40",
+                            isEvenRow ? "bg-row-even" : "bg-row-odd"
+                          )}
+                        >
+                          <div className="w-5 shrink-0 relative border-r border-sheet-border/40 bg-sheet-border/10">
+                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+                              <span
+                                className="text-[9px] font-mono text-muted-foreground/60 select-none whitespace-nowrap"
+                                style={{
+                                  transform: "rotate(-90deg)",
+                                }}
+                              >
+                                {startIdx + 1}–
+                                {Math.min(
+                                  startIdx + cardsPerRow,
+                                  filteredJobs.length
+                                )}
+                              </span>
+                              <Pin className="h-2.5 w-2.5 text-primary fill-primary" />
+                            </div>
                           </div>
-                        );
-                      })}
+                          <div className="flex-1 px-3 py-3 flex items-center">
+                            <LayoutGroup>
+                              {renderRowCards(rowIdx)}
+                            </LayoutGroup>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
-              </SortableContext>
-            </DroppableContainer>
+                )}
 
-            {filteredPool.length === 0 && pool.length > 0 && (
-              <div className="text-center py-12 text-muted-foreground">
-                <p className="text-sm">
-                  No programmes match your filters.
-                </p>
-                <button
-                  onClick={() => {
-                    setPoolSearch("");
-                    setPoolRegionFilter("all");
-                    setPoolSpecialtyFilter("all");
-                  }}
-                  className="text-xs text-primary hover:underline mt-1"
-                >
-                  Clear all filters
-                </button>
+              {/* Scrollable area */}
+              <div
+                ref={scrollRef}
+                className="flex-1 overflow-y-auto"
+                onScroll={handleScroll}
+              >
+                <LayoutGroup>
+                  <div
+                    className="relative"
+                    style={{ height: `${virtualizer.getTotalSize()}px` }}
+                  >
+                    {virtualizer.getVirtualItems().map((virtualRow) => {
+                      const startIdx = virtualRow.index * cardsPerRow;
+                      const isEvenRow = virtualRow.index % 2 === 0;
+                      const rowIsPinned = pinnedRowIndices.includes(
+                        virtualRow.index
+                      );
+
+                      // Check if all cards in this row are selected
+                      const rowCards = filteredJobs.slice(
+                        startIdx,
+                        startIdx + cardsPerRow
+                      );
+                      const allRowSelected =
+                        rowCards.length > 0 &&
+                        rowCards.every((s) => selectedIds.has(s.job.id));
+
+                      return (
+                        <div
+                          key={virtualRow.index}
+                          className={cn(
+                            "absolute left-0 right-0 flex border-b border-sheet-border/40",
+                            isEvenRow ? "bg-row-even" : "bg-row-odd"
+                          )}
+                          style={{
+                            height: `${virtualRow.size}px`,
+                            transform: `translateY(${virtualRow.start}px)`,
+                          }}
+                        >
+                          {/* Row gutter: row number + pin + row select */}
+                          <div
+                            className="w-5 shrink-0 relative border-r border-sheet-border/40 bg-sheet-border/10 cursor-pointer hover:bg-sheet-border/20 transition-colors group/gutter"
+                            onClick={() => selectRow(virtualRow.index)}
+                          >
+                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+                              <span
+                                className="text-[9px] font-mono text-muted-foreground/60 select-none whitespace-nowrap"
+                                style={{
+                                  transform: "rotate(-90deg)",
+                                }}
+                              >
+                                {startIdx + 1}–
+                                {Math.min(
+                                  startIdx + cardsPerRow,
+                                  filteredJobs.length
+                                )}
+                              </span>
+                            </div>
+
+                            {/* Row select indicator */}
+                            {allRowSelected && (
+                              <div className="absolute top-1 left-1/2 -translate-x-1/2 h-2 w-2 rounded-full bg-primary" />
+                            )}
+
+                            {/* Pin button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Pin the first job in this row
+                                const firstJob = filteredJobs[startIdx];
+                                if (firstJob) togglePin(firstJob.job.id);
+                              }}
+                              className={cn(
+                                "absolute bottom-1 left-1/2 -translate-x-1/2 transition-opacity",
+                                rowIsPinned
+                                  ? "opacity-100 text-primary"
+                                  : "opacity-0 group-hover/gutter:opacity-60 text-muted-foreground hover:text-foreground"
+                              )}
+                              title={rowIsPinned ? "Unpin row" : "Pin row"}
+                            >
+                              <Pin
+                                className={cn(
+                                  "h-2.5 w-2.5",
+                                  rowIsPinned && "fill-primary"
+                                )}
+                              />
+                            </button>
+                          </div>
+
+                          {/* Cards */}
+                          <div className="flex-1 px-3 py-3 flex items-center">
+                            {renderRowCards(virtualRow.index)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </LayoutGroup>
+
+                {filteredJobs.length === 0 && rankedJobs.length > 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <p className="text-sm">
+                      No programmes match your filters.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setSearchQuery("");
+                        setRegionFilter("all");
+                        setHospitalFilter("all");
+                        setSpecialtyFilter("all");
+                      }}
+                      className="text-xs text-primary hover:underline mt-1"
+                    >
+                      Clear all filters
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+
+              {/* Pinned rows at bottom */}
+              {pinnedRowIndices.length > 0 &&
+                scrollDir === "up" && (
+                  <div className="shrink-0 z-10 shadow-[0_-4px_6px_-1px_rgb(0_0_0/0.1)] border-t">
+                    {pinnedRowIndices.map((rowIdx) => {
+                      const startIdx = rowIdx * cardsPerRow;
+                      const isEvenRow = rowIdx % 2 === 0;
+                      return (
+                        <div
+                          key={`pin-${rowIdx}`}
+                          className={cn(
+                            "flex border-b border-sheet-border/40",
+                            isEvenRow ? "bg-row-even" : "bg-row-odd"
+                          )}
+                        >
+                          <div className="w-5 shrink-0 relative border-r border-sheet-border/40 bg-sheet-border/10">
+                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+                              <span
+                                className="text-[9px] font-mono text-muted-foreground/60 select-none whitespace-nowrap"
+                                style={{
+                                  transform: "rotate(-90deg)",
+                                }}
+                              >
+                                {startIdx + 1}–
+                                {Math.min(
+                                  startIdx + cardsPerRow,
+                                  filteredJobs.length
+                                )}
+                              </span>
+                              <Pin className="h-2.5 w-2.5 text-primary fill-primary" />
+                            </div>
+                          </div>
+                          <div className="flex-1 px-3 py-3 flex items-center">
+                            <LayoutGroup>
+                              {renderRowCards(rowIdx)}
+                            </LayoutGroup>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+            </div>
+          </SortableContext>
+
+          {/* Selection toolbar */}
+          {selectedIds.size >= 1 && (
+            <SelectionToolbar
+              count={selectedIds.size}
+              selectedJobs={rankedJobs.filter((sj) =>
+                selectedIds.has(sj.job.id)
+              )}
+              onClear={clearSelection}
+              onCompare={handleBulkCompare}
+              onMoveTo={() => setBulkMoveToOpen(true)}
+              onBoostAll={handleBulkBoost}
+              onBuryAll={handleBulkBury}
+            />
+          )}
 
           {/* Right: Detail panel */}
           {selectedDetail && (
@@ -1260,7 +1547,8 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
           {activeScored ? (
             <DragOverlayCard
               scored={activeScored}
-              index={activeScoredIndex}
+              rank={activeScoredRank}
+              width={dragWidth}
             />
           ) : null}
         </DragOverlay>

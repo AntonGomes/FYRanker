@@ -38,6 +38,10 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-row-odd: var(--row-odd);
+  --color-row-even: var(--row-even);
+  --color-sheet-border: var(--sheet-border);
+  --color-row-tab: var(--row-tab);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -71,9 +75,9 @@
   --accent: oklch(0.91 0.07 300);
   --accent-foreground: oklch(0.2 0.06 300);
   --destructive: oklch(0.55 0.24 27);
-  /* Visible but soft borders */
-  --border: oklch(0.88 0.02 80);
-  --input: oklch(0.88 0.02 80);
+  /* Visible but soft borders — rose tint */
+  --border: oklch(0.88 0.025 320);
+  --input: oklch(0.88 0.025 320);
   --ring: oklch(0.52 0.26 300);
   /* Cheerful chart palette */
   --chart-1: oklch(0.6 0.25 300);
@@ -89,6 +93,10 @@
   --sidebar-accent-foreground: oklch(0.2 0.06 300);
   --sidebar-border: oklch(0.88 0.02 80);
   --sidebar-ring: oklch(0.52 0.26 300);
+  --row-odd: oklch(0.995 0.005 320);
+  --row-even: oklch(0.94 0.03 330);
+  --sheet-border: oklch(0.85 0.035 320);
+  --row-tab: oklch(0.72 0.16 340);
 }
 
 .dark {
@@ -131,6 +139,56 @@
   --sidebar-accent-foreground: oklch(0.92 0.02 280);
   --sidebar-border: oklch(0.32 0.04 280);
   --sidebar-ring: oklch(0.72 0.28 300);
+  --row-odd: oklch(0.19 0.04 290);
+  --row-even: oklch(0.27 0.055 310);
+  --sheet-border: oklch(0.35 0.06 310);
+  --row-tab: oklch(0.50 0.18 340);
+}
+
+@keyframes score-flash-up {
+  0% { color: inherit; }
+  30% { color: oklch(0.55 0.2 145); }
+  100% { color: inherit; }
+}
+@keyframes score-flash-down {
+  0% { color: inherit; }
+  30% { color: oklch(0.55 0.2 25); }
+  100% { color: inherit; }
+}
+.animate-score-up { animation: score-flash-up 0.9s ease-out; }
+.animate-score-down { animation: score-flash-down 0.9s ease-out; }
+
+@keyframes card-glow-up {
+  0% { outline-color: oklch(0.7 0.18 145 / 0); outline-width: 0px; }
+  4% { outline-color: oklch(0.7 0.18 145 / 0.55); outline-width: 6px; }
+  15% { outline-color: oklch(0.7 0.18 145 / 0.4); outline-width: 5px; }
+  30% { outline-color: oklch(0.7 0.18 145 / 0.25); outline-width: 5px; }
+  50% { outline-color: oklch(0.7 0.18 145 / 0.14); outline-width: 4px; }
+  65% { outline-color: oklch(0.7 0.18 145 / 0.08); outline-width: 3px; }
+  80% { outline-color: oklch(0.7 0.18 145 / 0.03); outline-width: 2px; }
+  90% { outline-color: oklch(0.7 0.18 145 / 0.01); outline-width: 1px; }
+  100% { outline-color: oklch(0.7 0.18 145 / 0); outline-width: 0px; }
+}
+@keyframes card-glow-down {
+  0% { outline-color: oklch(0.65 0.15 25 / 0); outline-width: 0px; }
+  4% { outline-color: oklch(0.65 0.15 25 / 0.55); outline-width: 6px; }
+  15% { outline-color: oklch(0.65 0.15 25 / 0.4); outline-width: 5px; }
+  30% { outline-color: oklch(0.65 0.15 25 / 0.25); outline-width: 5px; }
+  50% { outline-color: oklch(0.65 0.15 25 / 0.14); outline-width: 4px; }
+  65% { outline-color: oklch(0.65 0.15 25 / 0.08); outline-width: 3px; }
+  80% { outline-color: oklch(0.65 0.15 25 / 0.03); outline-width: 2px; }
+  90% { outline-color: oklch(0.65 0.15 25 / 0.01); outline-width: 1px; }
+  100% { outline-color: oklch(0.65 0.15 25 / 0); outline-width: 0px; }
+}
+.animate-card-glow-up {
+  animation: card-glow-up 6s linear forwards;
+  outline-style: solid;
+  outline-offset: 3px;
+}
+.animate-card-glow-down {
+  animation: card-glow-down 6s linear forwards;
+  outline-style: solid;
+  outline-offset: 3px;
 }
 
 @layer base {
