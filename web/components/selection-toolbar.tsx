@@ -108,7 +108,7 @@ export function SelectionToolbar({
                 >
                   {sj.job.region}
                 </span>
-                <span className="text-[10px] font-mono font-medium text-foreground/80 truncate flex-1 min-w-0">
+                <span className="text-[10px] font-mono font-medium text-foreground truncate flex-1 min-w-0">
                   {sj.job.programme_title}
                 </span>
               </div>

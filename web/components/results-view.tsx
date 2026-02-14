@@ -208,7 +208,7 @@ const PlacementRow = memo(function PlacementRow({
         <p className="text-xs font-semibold text-foreground leading-tight truncate">
           {entry.site}
         </p>
-        <p className="text-xs font-medium text-foreground/60 leading-tight truncate">
+        <p className="text-xs font-medium text-muted-foreground leading-tight truncate">
           {entry.spec}
         </p>
       </div>
@@ -238,7 +238,7 @@ const FYGroup = memo(function FYGroup({
           {label}
         </span>
         <svg
-          className="text-muted-foreground/50 shrink-0"
+          className="text-muted-foreground shrink-0"
           width="10"
           viewBox="0 0 10 60"
           preserveAspectRatio="none"
@@ -351,7 +351,7 @@ const JobCard = memo(function JobCard({
         onClick={() => onSelectDetail(scored.job)}
       >
         {/* ── Header row ── */}
-        <div className="flex items-center gap-1.5 px-2 pt-2 pb-1.5 border-b border-border/40">
+        <div className="flex items-center gap-1.5 px-2 pt-2 pb-1.5 border-b border-border">
           {/* Rank number */}
           <span className="text-sm font-bold font-mono text-foreground shrink-0">
             {rank}
@@ -370,7 +370,7 @@ const JobCard = memo(function JobCard({
           </span>
 
           {/* Programme title */}
-          <span className="flex-1 text-xs font-mono font-medium text-foreground/80 truncate min-w-0 ml-0.5">
+          <span className="flex-1 text-xs font-mono font-medium text-foreground truncate min-w-0 ml-0.5">
             {scored.job.programme_title}
           </span>
 
@@ -402,7 +402,7 @@ const JobCard = memo(function JobCard({
                 "h-4.5 w-4.5 rounded-full border-2 flex items-center justify-center transition-colors",
                 isSelected
                   ? "bg-primary border-primary"
-                  : "border-muted-foreground/50 hover:border-primary/70"
+                  : "border-muted-foreground hover:border-primary"
               )}
             >
               {isSelected && (
@@ -418,9 +418,9 @@ const JobCard = memo(function JobCard({
         </div>
 
         {/* ── Footer: Score box + Boost/Bury triangles ── */}
-        <div className="px-2 pb-1.5 pt-1 border-t border-border/40 flex items-center justify-end gap-1.5">
-          <div className="rounded-md bg-muted px-2 py-0.5 flex items-center gap-1.5">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-foreground/60">
+        <div className="px-2 pb-1.5 pt-1 border-t border-border flex items-center justify-end gap-1.5">
+          <div className="rounded-md bg-secondary/40 px-2 py-0.5 flex items-center gap-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
               Score
             </span>
             <AnimatedScore value={score} flashDirection={flashDirection} />
@@ -475,7 +475,7 @@ const DragOverlayCard = memo(function DragOverlayCard({
       className="rounded-lg border shadow-xl ring-2 ring-primary/20 bg-card"
       style={width ? { width } : undefined}
     >
-      <div className="flex items-center gap-1.5 px-2.5 pt-2 pb-1.5 border-b border-border/40">
+      <div className="flex items-center gap-1.5 px-2.5 pt-2 pb-1.5 border-b border-border">
         <span className="text-sm font-bold font-mono text-foreground shrink-0">
           {rank}
         </span>
@@ -489,7 +489,7 @@ const DragOverlayCard = memo(function DragOverlayCard({
         >
           {scored.job.region}
         </span>
-        <span className="flex-1 text-xs font-mono font-medium text-foreground/80 truncate min-w-0">
+        <span className="flex-1 text-xs font-mono font-medium text-foreground truncate min-w-0">
           {scored.job.programme_title}
         </span>
       </div>
@@ -1040,7 +1040,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       <SiteHeader />
 
       {/* Filter bar */}
-      <div className="shrink-0 border-b bg-card px-4 py-3">
+      <div className="shrink-0 border-b bg-gradient-to-r from-card via-secondary/10 to-card px-4 py-3">
         <div className="max-w-[1800px] mx-auto flex items-center gap-3 flex-wrap">
           <p className="text-sm text-muted-foreground shrink-0">
             {filteredJobs.length === rankedJobs.length
@@ -1321,14 +1321,14 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                         <div
                           key={`pin-${rowIdx}`}
                           className={cn(
-                            "flex border-b border-sheet-border/40",
+                            "flex border-b border-sheet-border",
                             isEvenRow ? "bg-row-even" : "bg-row-odd"
                           )}
                         >
-                          <div className="w-5 shrink-0 relative border-r border-sheet-border/40 bg-sheet-border/10">
+                          <div className="w-5 shrink-0 relative border-r border-sheet-border bg-sheet-border/20">
                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
                               <span
-                                className="text-[9px] font-mono text-muted-foreground/60 select-none whitespace-nowrap"
+                                className="text-[9px] font-mono text-muted-foreground select-none whitespace-nowrap"
                                 style={{
                                   transform: "rotate(-90deg)",
                                 }}
@@ -1384,7 +1384,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                         <div
                           key={virtualRow.index}
                           className={cn(
-                            "absolute left-0 right-0 flex border-b border-sheet-border/40",
+                            "absolute left-0 right-0 flex border-b border-sheet-border",
                             isEvenRow ? "bg-row-even" : "bg-row-odd"
                           )}
                           style={{
@@ -1394,12 +1394,12 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                         >
                           {/* Row gutter: row number + pin + row select */}
                           <div
-                            className="w-5 shrink-0 relative border-r border-sheet-border/40 bg-sheet-border/10 cursor-pointer hover:bg-sheet-border/20 transition-colors group/gutter"
+                            className="w-5 shrink-0 relative border-r border-sheet-border bg-sheet-border/20 cursor-pointer hover:bg-sheet-border/20 transition-colors group/gutter"
                             onClick={() => selectRow(virtualRow.index)}
                           >
                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
                               <span
-                                className="text-[9px] font-mono text-muted-foreground/60 select-none whitespace-nowrap"
+                                className="text-[9px] font-mono text-muted-foreground select-none whitespace-nowrap"
                                 style={{
                                   transform: "rotate(-90deg)",
                                 }}
@@ -1483,14 +1483,14 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                         <div
                           key={`pin-${rowIdx}`}
                           className={cn(
-                            "flex border-b border-sheet-border/40",
+                            "flex border-b border-sheet-border",
                             isEvenRow ? "bg-row-even" : "bg-row-odd"
                           )}
                         >
-                          <div className="w-5 shrink-0 relative border-r border-sheet-border/40 bg-sheet-border/10">
+                          <div className="w-5 shrink-0 relative border-r border-sheet-border bg-sheet-border/20">
                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
                               <span
-                                className="text-[9px] font-mono text-muted-foreground/60 select-none whitespace-nowrap"
+                                className="text-[9px] font-mono text-muted-foreground select-none whitespace-nowrap"
                                 style={{
                                   transform: "rotate(-90deg)",
                                 }}

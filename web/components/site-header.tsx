@@ -21,7 +21,7 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="shrink-0 border-b bg-card px-6 py-3">
+    <header className="shrink-0 border-b bg-gradient-to-r from-primary/5 via-card to-accent/5 px-6 py-3">
       <div className="flex items-center justify-between">
         <BrandLogo />
         <div className="flex items-center gap-4">

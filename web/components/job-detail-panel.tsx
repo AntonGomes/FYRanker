@@ -104,7 +104,7 @@ export function JobDetailPanel({ job, onClose }: JobDetailPanelProps) {
                 </div>
                 <div className="ml-7 space-y-0.5">
                   <p className="text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground/80">
+                    <span className="font-medium text-foreground">
                       Specialty:
                     </span>{" "}
                     {placement.speciality}

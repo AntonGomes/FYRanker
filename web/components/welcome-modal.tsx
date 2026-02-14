@@ -43,7 +43,7 @@ export function WelcomeModal({ externalOpen, onExternalClose }: WelcomeModalProp
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 text-sm text-foreground/90 leading-relaxed">
+        <div className="space-y-4 text-sm text-foreground leading-relaxed">
           <p>
             This is your initial ranking, calculated from the preferences you
             set in the wizard 🧙: region, hospital, and specialty priorities all
