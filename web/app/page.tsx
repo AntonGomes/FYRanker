@@ -1,46 +1,75 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import Link from "next/link";
+import { RegionFilterProvider } from "@/components/blog/region-filter-context";
+import { HeroSection } from "@/components/blog/hero-section";
+import { RegionBreakdownChart } from "@/components/blog/region-breakdown-chart";
+import { SpecialtyBubbleChart } from "@/components/blog/specialty-bubble-chart";
+import { FYComparisonChart } from "@/components/blog/fy-comparison-chart";
+import { PlacementDistributionChart } from "@/components/blog/placement-distribution-chart";
+import { CohortCalloutSection } from "@/components/blog/cohort-callout-section";
+import { CTASection } from "@/components/blog/cta-section";
+import type { BlogData } from "@/lib/blog-data";
 
+/**
+ * Landing page: pudding.cool-style interactive data blog.
+ *
+ * Loads pre-computed JSON data from /data/ and renders scroll-driven
+ * sections with interactive charts, all filterable by region.
+ */
 export default function Home() {
-  return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <SiteHeader />
+  const [data, setData] = useState<BlogData | null>(null);
 
-      <main className="flex-1 flex items-center">
-        <div className="w-full max-w-7xl mx-auto px-6 py-20 flex flex-col lg:flex-row items-center justify-between gap-12">
-          {/* Left: big text */}
-          <div className="flex-1">
-            <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold leading-[1.1] tracking-tight">
-              Don&apos;t be an
-              <br />
-              <span className="text-primary">FY Wanker</span>,
-              <br />
-              use{" "}
-              <span className="bg-primary text-primary-foreground px-3 py-1 rounded-lg inline-block">
-                FYRanker
-              </span>
-            </h1>
-            <p className="mt-6 text-lg text-muted-foreground max-w-xl">
-              The smart way to rank your foundation programme preferences.
-              Tell us what matters and get a personalised ranking of
-              your foundation programme preferences in seconds.
-            </p>
-          </div>
+  useEffect(() => {
+    async function loadAllData() {
+      const [overview, regions, specialtyTiers, fyComparison, placementDist, cohorts] =
+        await Promise.all([
+          fetch("/data/overview.json").then((r) => r.json()),
+          fetch("/data/regions.json").then((r) => r.json()),
+          fetch("/data/specialty-tiers.json").then((r) => r.json()),
+          fetch("/data/fy-comparison.json").then((r) => r.json()),
+          fetch("/data/placement-distribution.json").then((r) => r.json()),
+          fetch("/data/cohorts.json").then((r) => r.json()),
+        ]);
 
-          {/* Right: CTA */}
-          <div className="shrink-0">
-            <Link
-              href="/wizard"
-              className="inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-xl px-10 py-5 shadow-lg hover:shadow-xl hover:bg-primary/90 transition-all hover:scale-105 active:scale-100"
-            >
-              Start here →
-            </Link>
-          </div>
+      setData({
+        overview,
+        regions,
+        specialtyTiers,
+        fyComparison,
+        placementDist,
+        cohorts,
+      });
+    }
+
+    loadAllData();
+  }, []);
+
+  if (!data) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-2xl font-bold text-foreground animate-pulse">
+          Loading...
         </div>
-      </main>
+      </div>
+    );
+  }
 
-      <SiteFooter />
-    </div>
+  return (
+    <RegionFilterProvider>
+      <div className="flex flex-col bg-background">
+        <SiteHeader />
+        <HeroSection data={data.overview} />
+        <RegionBreakdownChart data={data.regions} />
+        <SpecialtyBubbleChart data={data.specialtyTiers} />
+        <FYComparisonChart data={data.fyComparison} />
+        <PlacementDistributionChart data={data.placementDist} />
+        <CohortCalloutSection data={data.cohorts} />
+        <CTASection />
+        <SiteFooter />
+      </div>
+    </RegionFilterProvider>
   );
 }

@@ -1,0 +1,199 @@
+{
+  "totalJobs": 1536,
+  "specialties": [
+    {
+      "name": "General (Internal) Medicine",
+      "distribution": {
+        "1": 767,
+        "2": 445,
+        "3": 72,
+        "4": 4
+      },
+      "byRegion": {
+        "North": {
+          "totalJobs": 570,
+          "distribution": {
+            "1": 279,
+            "2": 153,
+            "3": 28,
+            "4": 4
+          }
+        },
+        "East": {
+          "totalJobs": 120,
+          "distribution": {
+            "1": 53,
+            "2": 15,
+            "3": 3
+          }
+        },
+        "West": {
+          "totalJobs": 570,
+          "distribution": {
+            "1": 273,
+            "2": 227,
+            "3": 40
+          }
+        },
+        "South and SE": {
+          "totalJobs": 276,
+          "distribution": {
+            "1": 162,
+            "2": 50,
+            "3": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "General Surgery",
+      "distribution": {
+        "1": 934,
+        "2": 268,
+        "3": 23
+      },
+      "byRegion": {
+        "North": {
+          "totalJobs": 570,
+          "distribution": {
+            "1": 355,
+            "2": 98,
+            "3": 14
+          }
+        },
+        "East": {
+          "totalJobs": 120,
+          "distribution": {
+            "1": 66,
+            "2": 9,
+            "3": 3
+          }
+        },
+        "West": {
+          "totalJobs": 570,
+          "distribution": {
+            "1": 352,
+            "2": 140,
+            "3": 6
+          }
+        },
+        "South and SE": {
+          "totalJobs": 276,
+          "distribution": {
+            "1": 161,
+            "2": 21
+          }
+        }
+      }
+    },
+    {
+      "name": "General Practice",
+      "distribution": {
+        "1": 692,
+        "2": 6
+      },
+      "byRegion": {
+        "North": {
+          "totalJobs": 570,
+          "distribution": {
+            "1": 313,
+            "2": 3
+          }
+        },
+        "East": {
+          "totalJobs": 120,
+          "distribution": {
+            "1": 41,
+            "2": 1
+          }
+        },
+        "West": {
+          "totalJobs": 570,
+          "distribution": {
+            "1": 327
+          }
+        },
+        "South and SE": {
+          "totalJobs": 276,
+          "distribution": {
+            "1": 11,
+            "2": 2
+          }
+        }
+      }
+    },
+    {
+      "name": "Geriatric Medicine",
+      "distribution": {
+        "1": 403,
+        "2": 76
+      },
+      "byRegion": {
+        "North": {
+          "totalJobs": 570,
+          "distribution": {
+            "1": 136,
+            "2": 28
+          }
+        },
+        "East": {
+          "totalJobs": 120,
+          "distribution": {
+            "1": 48,
+            "2": 9
+          }
+        },
+        "West": {
+          "totalJobs": 570,
+          "distribution": {
+            "1": 186,
+            "2": 36
+          }
+        },
+        "South and SE": {
+          "totalJobs": 276,
+          "distribution": {
+            "1": 33,
+            "2": 3
+          }
+        }
+      }
+    },
+    {
+      "name": "Trauma and Orthopaedic Surgery",
+      "distribution": {
+        "1": 414,
+        "2": 27
+      },
+      "byRegion": {
+        "North": {
+          "totalJobs": 570,
+          "distribution": {
+            "1": 171,
+            "2": 9
+          }
+        },
+        "East": {
+          "totalJobs": 120,
+          "distribution": {
+            "1": 63,
+            "2": 12
+          }
+        },
+        "West": {
+          "totalJobs": 570,
+          "distribution": {
+            "1": 153,
+            "2": 6
+          }
+        },
+        "South and SE": {
+          "totalJobs": 276,
+          "distribution": {
+            "1": 27
+          }
+        }
+      }
+    }
+  ]
+}

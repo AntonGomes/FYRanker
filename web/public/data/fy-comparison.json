@@ -1,0 +1,1470 @@
+{
+  "fy1": {
+    "all": [
+      {
+        "name": "General (Internal) Medicine",
+        "count": 1212,
+        "pct": 78.91
+      },
+      {
+        "name": "General Surgery",
+        "count": 1180,
+        "pct": 76.82
+      },
+      {
+        "name": "Acute Internal Medicine",
+        "count": 347,
+        "pct": 22.59
+      },
+      {
+        "name": "Geriatric Medicine",
+        "count": 254,
+        "pct": 16.54
+      },
+      {
+        "name": "Trauma and Orthopaedic Surgery",
+        "count": 234,
+        "pct": 15.23
+      },
+      {
+        "name": "Intensive Care Medicine",
+        "count": 88,
+        "pct": 5.73
+      },
+      {
+        "name": "Respiratory Medicine",
+        "count": 75,
+        "pct": 4.88
+      },
+      {
+        "name": "Paediatric Surgery",
+        "count": 68,
+        "pct": 4.43
+      },
+      {
+        "name": "Emergency Medicine",
+        "count": 52,
+        "pct": 3.39
+      },
+      {
+        "name": "Paediatrics",
+        "count": 50,
+        "pct": 3.26
+      },
+      {
+        "name": "Renal Medicine",
+        "count": 49,
+        "pct": 3.19
+      },
+      {
+        "name": "Urology",
+        "count": 47,
+        "pct": 3.06
+      },
+      {
+        "name": "Cardiology",
+        "count": 45,
+        "pct": 2.93
+      },
+      {
+        "name": "Obstetrics and Gynaecology",
+        "count": 45,
+        "pct": 2.93
+      },
+      {
+        "name": "Anaesthetics",
+        "count": 45,
+        "pct": 2.93
+      },
+      {
+        "name": "Gastroenterology",
+        "count": 44,
+        "pct": 2.86
+      },
+      {
+        "name": "Plastic Surgery",
+        "count": 33,
+        "pct": 2.15
+      },
+      {
+        "name": "Vascular Surgery",
+        "count": 32,
+        "pct": 2.08
+      },
+      {
+        "name": "Infectious Diseases",
+        "count": 24,
+        "pct": 1.56
+      },
+      {
+        "name": "Neurosurgery",
+        "count": 20,
+        "pct": 1.3
+      },
+      {
+        "name": "Neurology",
+        "count": 19,
+        "pct": 1.24
+      },
+      {
+        "name": "General Psychiatry",
+        "count": 18,
+        "pct": 1.17
+      },
+      {
+        "name": "Oral and Maxillo-facial Surgery",
+        "count": 18,
+        "pct": 1.17
+      },
+      {
+        "name": "Haematology",
+        "count": 16,
+        "pct": 1.04
+      },
+      {
+        "name": "Medical Oncology",
+        "count": 15,
+        "pct": 0.98
+      },
+      {
+        "name": "Cardio-thoracic Surgery",
+        "count": 12,
+        "pct": 0.78
+      },
+      {
+        "name": "Endocrinology and Diabetes Mellitus",
+        "count": 11,
+        "pct": 0.72
+      },
+      {
+        "name": "Palliative Medicine",
+        "count": 9,
+        "pct": 0.59
+      },
+      {
+        "name": "Otolaryngology",
+        "count": 6,
+        "pct": 0.39
+      },
+      {
+        "name": "Paediatric Intensive Care Medicine",
+        "count": 6,
+        "pct": 0.39
+      },
+      {
+        "name": "Rehabilitation Medicine",
+        "count": 6,
+        "pct": 0.39
+      },
+      {
+        "name": "Clinical Oncology",
+        "count": 6,
+        "pct": 0.39
+      },
+      {
+        "name": "Old Age Psychiatry",
+        "count": 3,
+        "pct": 0.2
+      },
+      {
+        "name": "Child and Adolescent Psychiatry",
+        "count": 3,
+        "pct": 0.2
+      },
+      {
+        "name": "Ophthalmology",
+        "count": 3,
+        "pct": 0.2
+      },
+      {
+        "name": "Histopathology",
+        "count": 3,
+        "pct": 0.2
+      }
+    ],
+    "byRegion": {
+      "East": [
+        {
+          "name": "General Surgery",
+          "count": 58,
+          "pct": 48.33
+        },
+        {
+          "name": "General (Internal) Medicine",
+          "count": 55,
+          "pct": 45.83
+        },
+        {
+          "name": "Trauma and Orthopaedic Surgery",
+          "count": 48,
+          "pct": 40.0
+        },
+        {
+          "name": "Geriatric Medicine",
+          "count": 29,
+          "pct": 24.17
+        },
+        {
+          "name": "Urology",
+          "count": 18,
+          "pct": 15.0
+        },
+        {
+          "name": "Respiratory Medicine",
+          "count": 14,
+          "pct": 11.67
+        },
+        {
+          "name": "Gastroenterology",
+          "count": 14,
+          "pct": 11.67
+        },
+        {
+          "name": "Infectious Diseases",
+          "count": 12,
+          "pct": 10.0
+        },
+        {
+          "name": "Emergency Medicine",
+          "count": 12,
+          "pct": 10.0
+        },
+        {
+          "name": "Cardiology",
+          "count": 9,
+          "pct": 7.5
+        },
+        {
+          "name": "Renal Medicine",
+          "count": 8,
+          "pct": 6.67
+        },
+        {
+          "name": "Otolaryngology",
+          "count": 6,
+          "pct": 5.0
+        },
+        {
+          "name": "Medical Oncology",
+          "count": 6,
+          "pct": 5.0
+        },
+        {
+          "name": "Neurology",
+          "count": 6,
+          "pct": 5.0
+        },
+        {
+          "name": "Plastic Surgery",
+          "count": 6,
+          "pct": 5.0
+        },
+        {
+          "name": "Neurosurgery",
+          "count": 6,
+          "pct": 5.0
+        },
+        {
+          "name": "Palliative Medicine",
+          "count": 6,
+          "pct": 5.0
+        },
+        {
+          "name": "Obstetrics and Gynaecology",
+          "count": 6,
+          "pct": 5.0
+        },
+        {
+          "name": "Haematology",
+          "count": 6,
+          "pct": 5.0
+        },
+        {
+          "name": "Old Age Psychiatry",
+          "count": 3,
+          "pct": 2.5
+        },
+        {
+          "name": "Child and Adolescent Psychiatry",
+          "count": 3,
+          "pct": 2.5
+        },
+        {
+          "name": "Ophthalmology",
+          "count": 3,
+          "pct": 2.5
+        },
+        {
+          "name": "General Psychiatry",
+          "count": 3,
+          "pct": 2.5
+        },
+        {
+          "name": "Acute Internal Medicine",
+          "count": 3,
+          "pct": 2.5
+        },
+        {
+          "name": "Paediatrics",
+          "count": 3,
+          "pct": 2.5
+        }
+      ],
+      "West": [
+        {
+          "name": "General (Internal) Medicine",
+          "count": 537,
+          "pct": 94.21
+        },
+        {
+          "name": "General Surgery",
+          "count": 496,
+          "pct": 87.02
+        },
+        {
+          "name": "Acute Internal Medicine",
+          "count": 108,
+          "pct": 18.95
+        },
+        {
+          "name": "Geriatric Medicine",
+          "count": 100,
+          "pct": 17.54
+        },
+        {
+          "name": "Trauma and Orthopaedic Surgery",
+          "count": 60,
+          "pct": 10.53
+        },
+        {
+          "name": "Intensive Care Medicine",
+          "count": 52,
+          "pct": 9.12
+        },
+        {
+          "name": "Paediatric Surgery",
+          "count": 27,
+          "pct": 4.74
+        },
+        {
+          "name": "Emergency Medicine",
+          "count": 21,
+          "pct": 3.68
+        },
+        {
+          "name": "Renal Medicine",
+          "count": 12,
+          "pct": 2.11
+        },
+        {
+          "name": "Obstetrics and Gynaecology",
+          "count": 12,
+          "pct": 2.11
+        },
+        {
+          "name": "Oral and Maxillo-facial Surgery",
+          "count": 9,
+          "pct": 1.58
+        },
+        {
+          "name": "Paediatrics",
+          "count": 6,
+          "pct": 1.05
+        },
+        {
+          "name": "Respiratory Medicine",
+          "count": 6,
+          "pct": 1.05
+        },
+        {
+          "name": "Palliative Medicine",
+          "count": 3,
+          "pct": 0.53
+        },
+        {
+          "name": "Haematology",
+          "count": 3,
+          "pct": 0.53
+        },
+        {
+          "name": "Paediatric Intensive Care Medicine",
+          "count": 3,
+          "pct": 0.53
+        }
+      ],
+      "North": [
+        {
+          "name": "General Surgery",
+          "count": 450,
+          "pct": 78.95
+        },
+        {
+          "name": "General (Internal) Medicine",
+          "count": 415,
+          "pct": 72.81
+        },
+        {
+          "name": "Acute Internal Medicine",
+          "count": 174,
+          "pct": 30.53
+        },
+        {
+          "name": "Trauma and Orthopaedic Surgery",
+          "count": 99,
+          "pct": 17.37
+        },
+        {
+          "name": "Geriatric Medicine",
+          "count": 90,
+          "pct": 15.79
+        },
+        {
+          "name": "Intensive Care Medicine",
+          "count": 36,
+          "pct": 6.32
+        },
+        {
+          "name": "Obstetrics and Gynaecology",
+          "count": 27,
+          "pct": 4.74
+        },
+        {
+          "name": "Anaesthetics",
+          "count": 24,
+          "pct": 4.21
+        },
+        {
+          "name": "Respiratory Medicine",
+          "count": 23,
+          "pct": 4.04
+        },
+        {
+          "name": "Paediatric Surgery",
+          "count": 23,
+          "pct": 4.04
+        },
+        {
+          "name": "Renal Medicine",
+          "count": 23,
+          "pct": 4.04
+        },
+        {
+          "name": "Cardiology",
+          "count": 21,
+          "pct": 3.68
+        },
+        {
+          "name": "Paediatrics",
+          "count": 19,
+          "pct": 3.33
+        },
+        {
+          "name": "Emergency Medicine",
+          "count": 15,
+          "pct": 2.63
+        },
+        {
+          "name": "Vascular Surgery",
+          "count": 14,
+          "pct": 2.46
+        },
+        {
+          "name": "Infectious Diseases",
+          "count": 12,
+          "pct": 2.11
+        },
+        {
+          "name": "Gastroenterology",
+          "count": 12,
+          "pct": 2.11
+        },
+        {
+          "name": "Neurosurgery",
+          "count": 11,
+          "pct": 1.93
+        },
+        {
+          "name": "Endocrinology and Diabetes Mellitus",
+          "count": 11,
+          "pct": 1.93
+        },
+        {
+          "name": "Oral and Maxillo-facial Surgery",
+          "count": 9,
+          "pct": 1.58
+        },
+        {
+          "name": "Rehabilitation Medicine",
+          "count": 6,
+          "pct": 1.05
+        },
+        {
+          "name": "Clinical Oncology",
+          "count": 6,
+          "pct": 1.05
+        },
+        {
+          "name": "Urology",
+          "count": 5,
+          "pct": 0.88
+        },
+        {
+          "name": "Haematology",
+          "count": 4,
+          "pct": 0.7
+        },
+        {
+          "name": "Neurology",
+          "count": 4,
+          "pct": 0.7
+        },
+        {
+          "name": "General Psychiatry",
+          "count": 3,
+          "pct": 0.53
+        },
+        {
+          "name": "Paediatric Intensive Care Medicine",
+          "count": 3,
+          "pct": 0.53
+        }
+      ],
+      "South and SE": [
+        {
+          "name": "General (Internal) Medicine",
+          "count": 205,
+          "pct": 74.28
+        },
+        {
+          "name": "General Surgery",
+          "count": 176,
+          "pct": 63.77
+        },
+        {
+          "name": "Acute Internal Medicine",
+          "count": 62,
+          "pct": 22.46
+        },
+        {
+          "name": "Geriatric Medicine",
+          "count": 35,
+          "pct": 12.68
+        },
+        {
+          "name": "Respiratory Medicine",
+          "count": 32,
+          "pct": 11.59
+        },
+        {
+          "name": "Trauma and Orthopaedic Surgery",
+          "count": 27,
+          "pct": 9.78
+        },
+        {
+          "name": "Plastic Surgery",
+          "count": 27,
+          "pct": 9.78
+        },
+        {
+          "name": "Urology",
+          "count": 24,
+          "pct": 8.7
+        },
+        {
+          "name": "Paediatrics",
+          "count": 22,
+          "pct": 7.97
+        },
+        {
+          "name": "Anaesthetics",
+          "count": 21,
+          "pct": 7.61
+        },
+        {
+          "name": "Paediatric Surgery",
+          "count": 18,
+          "pct": 6.52
+        },
+        {
+          "name": "Gastroenterology",
+          "count": 18,
+          "pct": 6.52
+        },
+        {
+          "name": "Vascular Surgery",
+          "count": 18,
+          "pct": 6.52
+        },
+        {
+          "name": "Cardiology",
+          "count": 15,
+          "pct": 5.43
+        },
+        {
+          "name": "General Psychiatry",
+          "count": 12,
+          "pct": 4.35
+        },
+        {
+          "name": "Cardio-thoracic Surgery",
+          "count": 12,
+          "pct": 4.35
+        },
+        {
+          "name": "Medical Oncology",
+          "count": 9,
+          "pct": 3.26
+        },
+        {
+          "name": "Neurology",
+          "count": 9,
+          "pct": 3.26
+        },
+        {
+          "name": "Renal Medicine",
+          "count": 6,
+          "pct": 2.17
+        },
+        {
+          "name": "Emergency Medicine",
+          "count": 4,
+          "pct": 1.45
+        },
+        {
+          "name": "Histopathology",
+          "count": 3,
+          "pct": 1.09
+        },
+        {
+          "name": "Neurosurgery",
+          "count": 3,
+          "pct": 1.09
+        },
+        {
+          "name": "Haematology",
+          "count": 3,
+          "pct": 1.09
+        }
+      ]
+    }
+  },
+  "fy2": {
+    "all": [
+      {
+        "name": "General Practice",
+        "count": 698,
+        "pct": 45.44
+      },
+      {
+        "name": "Emergency Medicine",
+        "count": 357,
+        "pct": 23.24
+      },
+      {
+        "name": "General Psychiatry",
+        "count": 351,
+        "pct": 22.85
+      },
+      {
+        "name": "General (Internal) Medicine",
+        "count": 322,
+        "pct": 20.96
+      },
+      {
+        "name": "Geriatric Medicine",
+        "count": 293,
+        "pct": 19.08
+      },
+      {
+        "name": "Paediatrics",
+        "count": 244,
+        "pct": 15.89
+      },
+      {
+        "name": "Obstetrics and Gynaecology",
+        "count": 244,
+        "pct": 15.89
+      },
+      {
+        "name": "Trauma and Orthopaedic Surgery",
+        "count": 228,
+        "pct": 14.84
+      },
+      {
+        "name": "General Surgery",
+        "count": 225,
+        "pct": 14.65
+      },
+      {
+        "name": "Cardiology",
+        "count": 57,
+        "pct": 3.71
+      },
+      {
+        "name": "Respiratory Medicine",
+        "count": 52,
+        "pct": 3.39
+      },
+      {
+        "name": "Acute Internal Medicine",
+        "count": 52,
+        "pct": 3.39
+      },
+      {
+        "name": "Otolaryngology",
+        "count": 48,
+        "pct": 3.12
+      },
+      {
+        "name": "Gastroenterology",
+        "count": 44,
+        "pct": 2.86
+      },
+      {
+        "name": "Renal Medicine",
+        "count": 43,
+        "pct": 2.8
+      },
+      {
+        "name": "Intensive Care Medicine",
+        "count": 40,
+        "pct": 2.6
+      },
+      {
+        "name": "Neurosurgery",
+        "count": 39,
+        "pct": 2.54
+      },
+      {
+        "name": "Palliative Medicine",
+        "count": 39,
+        "pct": 2.54
+      },
+      {
+        "name": "Oral and Maxillo-facial Surgery",
+        "count": 36,
+        "pct": 2.34
+      },
+      {
+        "name": "Ophthalmology",
+        "count": 33,
+        "pct": 2.15
+      },
+      {
+        "name": "Medical Oncology",
+        "count": 30,
+        "pct": 1.95
+      },
+      {
+        "name": "Plastic Surgery",
+        "count": 30,
+        "pct": 1.95
+      },
+      {
+        "name": "Endocrinology and Diabetes Mellitus",
+        "count": 28,
+        "pct": 1.82
+      },
+      {
+        "name": "Infectious Diseases",
+        "count": 27,
+        "pct": 1.76
+      },
+      {
+        "name": "Neurology",
+        "count": 27,
+        "pct": 1.76
+      },
+      {
+        "name": "Urology",
+        "count": 23,
+        "pct": 1.5
+      },
+      {
+        "name": "Histopathology",
+        "count": 21,
+        "pct": 1.37
+      },
+      {
+        "name": "Academic Foundation Programme",
+        "count": 18,
+        "pct": 1.17
+      },
+      {
+        "name": "Anaesthetics",
+        "count": 18,
+        "pct": 1.17
+      },
+      {
+        "name": "Forensic Psychiatry",
+        "count": 15,
+        "pct": 0.98
+      },
+      {
+        "name": "Child and Adolescent Psychiatry",
+        "count": 15,
+        "pct": 0.98
+      },
+      {
+        "name": "Old Age Psychiatry",
+        "count": 14,
+        "pct": 0.91
+      },
+      {
+        "name": "Rheumatology",
+        "count": 12,
+        "pct": 0.78
+      },
+      {
+        "name": "Clinical Oncology",
+        "count": 12,
+        "pct": 0.78
+      },
+      {
+        "name": "Chemical Pathology",
+        "count": 11,
+        "pct": 0.72
+      },
+      {
+        "name": "Cardio-thoracic Surgery",
+        "count": 9,
+        "pct": 0.59
+      },
+      {
+        "name": "Medical Microbiology",
+        "count": 9,
+        "pct": 0.59
+      },
+      {
+        "name": "Rehabilitation Medicine",
+        "count": 9,
+        "pct": 0.59
+      },
+      {
+        "name": "Haematology",
+        "count": 9,
+        "pct": 0.59
+      },
+      {
+        "name": "Community Sexual and Reproductive Health",
+        "count": 6,
+        "pct": 0.39
+      },
+      {
+        "name": "Vascular Surgery",
+        "count": 6,
+        "pct": 0.39
+      },
+      {
+        "name": "Psychiatry of Learning Disability",
+        "count": 3,
+        "pct": 0.2
+      },
+      {
+        "name": "Dermatology",
+        "count": 3,
+        "pct": 0.2
+      }
+    ],
+    "byRegion": {
+      "East": [
+        {
+          "name": "General Practice",
+          "count": 42,
+          "pct": 35.0
+        },
+        {
+          "name": "Emergency Medicine",
+          "count": 39,
+          "pct": 32.5
+        },
+        {
+          "name": "Geriatric Medicine",
+          "count": 35,
+          "pct": 29.17
+        },
+        {
+          "name": "Trauma and Orthopaedic Surgery",
+          "count": 33,
+          "pct": 27.5
+        },
+        {
+          "name": "General (Internal) Medicine",
+          "count": 30,
+          "pct": 25.0
+        },
+        {
+          "name": "General Surgery",
+          "count": 28,
+          "pct": 23.33
+        },
+        {
+          "name": "Gastroenterology",
+          "count": 14,
+          "pct": 11.67
+        },
+        {
+          "name": "Paediatrics",
+          "count": 12,
+          "pct": 10.0
+        },
+        {
+          "name": "Cardiology",
+          "count": 12,
+          "pct": 10.0
+        },
+        {
+          "name": "Respiratory Medicine",
+          "count": 11,
+          "pct": 9.17
+        },
+        {
+          "name": "Intensive Care Medicine",
+          "count": 9,
+          "pct": 7.5
+        },
+        {
+          "name": "General Psychiatry",
+          "count": 9,
+          "pct": 7.5
+        },
+        {
+          "name": "Obstetrics and Gynaecology",
+          "count": 9,
+          "pct": 7.5
+        },
+        {
+          "name": "Renal Medicine",
+          "count": 8,
+          "pct": 6.67
+        },
+        {
+          "name": "Medical Oncology",
+          "count": 6,
+          "pct": 5.0
+        },
+        {
+          "name": "Infectious Diseases",
+          "count": 6,
+          "pct": 5.0
+        },
+        {
+          "name": "Academic Foundation Programme",
+          "count": 6,
+          "pct": 5.0
+        },
+        {
+          "name": "Histopathology",
+          "count": 3,
+          "pct": 2.5
+        },
+        {
+          "name": "Chemical Pathology",
+          "count": 3,
+          "pct": 2.5
+        },
+        {
+          "name": "Forensic Psychiatry",
+          "count": 3,
+          "pct": 2.5
+        },
+        {
+          "name": "Neurology",
+          "count": 3,
+          "pct": 2.5
+        },
+        {
+          "name": "Psychiatry of Learning Disability",
+          "count": 3,
+          "pct": 2.5
+        },
+        {
+          "name": "Plastic Surgery",
+          "count": 3,
+          "pct": 2.5
+        },
+        {
+          "name": "Neurosurgery",
+          "count": 3,
+          "pct": 2.5
+        },
+        {
+          "name": "Ophthalmology",
+          "count": 3,
+          "pct": 2.5
+        },
+        {
+          "name": "Palliative Medicine",
+          "count": 3,
+          "pct": 2.5
+        },
+        {
+          "name": "Oral and Maxillo-facial Surgery",
+          "count": 3,
+          "pct": 2.5
+        },
+        {
+          "name": "Otolaryngology",
+          "count": 3,
+          "pct": 2.5
+        },
+        {
+          "name": "Old Age Psychiatry",
+          "count": 3,
+          "pct": 2.5
+        },
+        {
+          "name": "Acute Internal Medicine",
+          "count": 3,
+          "pct": 2.5
+        }
+      ],
+      "West": [
+        {
+          "name": "General Practice",
+          "count": 327,
+          "pct": 57.37
+        },
+        {
+          "name": "Emergency Medicine",
+          "count": 177,
+          "pct": 31.05
+        },
+        {
+          "name": "General Psychiatry",
+          "count": 165,
+          "pct": 28.95
+        },
+        {
+          "name": "Geriatric Medicine",
+          "count": 154,
+          "pct": 27.02
+        },
+        {
+          "name": "General (Internal) Medicine",
+          "count": 129,
+          "pct": 22.63
+        },
+        {
+          "name": "Paediatrics",
+          "count": 129,
+          "pct": 22.63
+        },
+        {
+          "name": "Obstetrics and Gynaecology",
+          "count": 126,
+          "pct": 22.11
+        },
+        {
+          "name": "Trauma and Orthopaedic Surgery",
+          "count": 105,
+          "pct": 18.42
+        },
+        {
+          "name": "General Surgery",
+          "count": 91,
+          "pct": 15.96
+        },
+        {
+          "name": "Intensive Care Medicine",
+          "count": 19,
+          "pct": 3.33
+        },
+        {
+          "name": "Neurosurgery",
+          "count": 18,
+          "pct": 3.16
+        },
+        {
+          "name": "Cardiology",
+          "count": 18,
+          "pct": 3.16
+        },
+        {
+          "name": "Neurology",
+          "count": 18,
+          "pct": 3.16
+        },
+        {
+          "name": "Otolaryngology",
+          "count": 18,
+          "pct": 3.16
+        },
+        {
+          "name": "Anaesthetics",
+          "count": 15,
+          "pct": 2.63
+        },
+        {
+          "name": "Palliative Medicine",
+          "count": 15,
+          "pct": 2.63
+        },
+        {
+          "name": "Respiratory Medicine",
+          "count": 15,
+          "pct": 2.63
+        },
+        {
+          "name": "Acute Internal Medicine",
+          "count": 15,
+          "pct": 2.63
+        },
+        {
+          "name": "Ophthalmology",
+          "count": 12,
+          "pct": 2.11
+        },
+        {
+          "name": "Gastroenterology",
+          "count": 12,
+          "pct": 2.11
+        },
+        {
+          "name": "Renal Medicine",
+          "count": 12,
+          "pct": 2.11
+        },
+        {
+          "name": "Medical Oncology",
+          "count": 12,
+          "pct": 2.11
+        },
+        {
+          "name": "Endocrinology and Diabetes Mellitus",
+          "count": 12,
+          "pct": 2.11
+        },
+        {
+          "name": "Oral and Maxillo-facial Surgery",
+          "count": 12,
+          "pct": 2.11
+        },
+        {
+          "name": "Infectious Diseases",
+          "count": 9,
+          "pct": 1.58
+        },
+        {
+          "name": "Child and Adolescent Psychiatry",
+          "count": 9,
+          "pct": 1.58
+        },
+        {
+          "name": "Plastic Surgery",
+          "count": 9,
+          "pct": 1.58
+        },
+        {
+          "name": "Cardio-thoracic Surgery",
+          "count": 6,
+          "pct": 1.05
+        },
+        {
+          "name": "Medical Microbiology",
+          "count": 6,
+          "pct": 1.05
+        },
+        {
+          "name": "Urology",
+          "count": 6,
+          "pct": 1.05
+        },
+        {
+          "name": "Forensic Psychiatry",
+          "count": 6,
+          "pct": 1.05
+        },
+        {
+          "name": "Rheumatology",
+          "count": 6,
+          "pct": 1.05
+        },
+        {
+          "name": "Histopathology",
+          "count": 6,
+          "pct": 1.05
+        },
+        {
+          "name": "Community Sexual and Reproductive Health",
+          "count": 3,
+          "pct": 0.53
+        },
+        {
+          "name": "Dermatology",
+          "count": 3,
+          "pct": 0.53
+        },
+        {
+          "name": "Chemical Pathology",
+          "count": 3,
+          "pct": 0.53
+        },
+        {
+          "name": "Rehabilitation Medicine",
+          "count": 3,
+          "pct": 0.53
+        },
+        {
+          "name": "Old Age Psychiatry",
+          "count": 3,
+          "pct": 0.53
+        }
+      ],
+      "North": [
+        {
+          "name": "General Practice",
+          "count": 316,
+          "pct": 55.44
+        },
+        {
+          "name": "General Psychiatry",
+          "count": 174,
+          "pct": 30.53
+        },
+        {
+          "name": "General (Internal) Medicine",
+          "count": 152,
+          "pct": 26.67
+        },
+        {
+          "name": "Emergency Medicine",
+          "count": 132,
+          "pct": 23.16
+        },
+        {
+          "name": "Obstetrics and Gynaecology",
+          "count": 109,
+          "pct": 19.12
+        },
+        {
+          "name": "Geriatric Medicine",
+          "count": 102,
+          "pct": 17.89
+        },
+        {
+          "name": "Paediatrics",
+          "count": 101,
+          "pct": 17.72
+        },
+        {
+          "name": "General Surgery",
+          "count": 94,
+          "pct": 16.49
+        },
+        {
+          "name": "Trauma and Orthopaedic Surgery",
+          "count": 90,
+          "pct": 15.79
+        },
+        {
+          "name": "Acute Internal Medicine",
+          "count": 34,
+          "pct": 5.96
+        },
+        {
+          "name": "Otolaryngology",
+          "count": 27,
+          "pct": 4.74
+        },
+        {
+          "name": "Respiratory Medicine",
+          "count": 26,
+          "pct": 4.56
+        },
+        {
+          "name": "Cardiology",
+          "count": 24,
+          "pct": 4.21
+        },
+        {
+          "name": "Renal Medicine",
+          "count": 23,
+          "pct": 4.04
+        },
+        {
+          "name": "Oral and Maxillo-facial Surgery",
+          "count": 21,
+          "pct": 3.68
+        },
+        {
+          "name": "Ophthalmology",
+          "count": 18,
+          "pct": 3.16
+        },
+        {
+          "name": "Gastroenterology",
+          "count": 18,
+          "pct": 3.16
+        },
+        {
+          "name": "Neurosurgery",
+          "count": 18,
+          "pct": 3.16
+        },
+        {
+          "name": "Plastic Surgery",
+          "count": 18,
+          "pct": 3.16
+        },
+        {
+          "name": "Palliative Medicine",
+          "count": 18,
+          "pct": 3.16
+        },
+        {
+          "name": "Urology",
+          "count": 17,
+          "pct": 2.98
+        },
+        {
+          "name": "Endocrinology and Diabetes Mellitus",
+          "count": 16,
+          "pct": 2.81
+        },
+        {
+          "name": "Clinical Oncology",
+          "count": 12,
+          "pct": 2.11
+        },
+        {
+          "name": "Histopathology",
+          "count": 12,
+          "pct": 2.11
+        },
+        {
+          "name": "Infectious Diseases",
+          "count": 12,
+          "pct": 2.11
+        },
+        {
+          "name": "Intensive Care Medicine",
+          "count": 12,
+          "pct": 2.11
+        },
+        {
+          "name": "Academic Foundation Programme",
+          "count": 12,
+          "pct": 2.11
+        },
+        {
+          "name": "Medical Oncology",
+          "count": 12,
+          "pct": 2.11
+        },
+        {
+          "name": "Haematology",
+          "count": 9,
+          "pct": 1.58
+        },
+        {
+          "name": "Old Age Psychiatry",
+          "count": 8,
+          "pct": 1.4
+        },
+        {
+          "name": "Vascular Surgery",
+          "count": 6,
+          "pct": 1.05
+        },
+        {
+          "name": "Rehabilitation Medicine",
+          "count": 6,
+          "pct": 1.05
+        },
+        {
+          "name": "Forensic Psychiatry",
+          "count": 6,
+          "pct": 1.05
+        },
+        {
+          "name": "Child and Adolescent Psychiatry",
+          "count": 6,
+          "pct": 1.05
+        },
+        {
+          "name": "Rheumatology",
+          "count": 6,
+          "pct": 1.05
+        },
+        {
+          "name": "Neurology",
+          "count": 6,
+          "pct": 1.05
+        },
+        {
+          "name": "Chemical Pathology",
+          "count": 5,
+          "pct": 0.88
+        },
+        {
+          "name": "Cardio-thoracic Surgery",
+          "count": 3,
+          "pct": 0.53
+        },
+        {
+          "name": "Community Sexual and Reproductive Health",
+          "count": 3,
+          "pct": 0.53
+        },
+        {
+          "name": "Anaesthetics",
+          "count": 3,
+          "pct": 0.53
+        },
+        {
+          "name": "Medical Microbiology",
+          "count": 3,
+          "pct": 0.53
+        }
+      ],
+      "South and SE": [
+        {
+          "name": "General Practice",
+          "count": 13,
+          "pct": 4.71
+        },
+        {
+          "name": "General Surgery",
+          "count": 12,
+          "pct": 4.35
+        },
+        {
+          "name": "General (Internal) Medicine",
+          "count": 11,
+          "pct": 3.99
+        },
+        {
+          "name": "Emergency Medicine",
+          "count": 9,
+          "pct": 3.26
+        },
+        {
+          "name": "General Psychiatry",
+          "count": 3,
+          "pct": 1.09
+        },
+        {
+          "name": "Palliative Medicine",
+          "count": 3,
+          "pct": 1.09
+        },
+        {
+          "name": "Cardiology",
+          "count": 3,
+          "pct": 1.09
+        },
+        {
+          "name": "Paediatrics",
+          "count": 2,
+          "pct": 0.72
+        },
+        {
+          "name": "Geriatric Medicine",
+          "count": 2,
+          "pct": 0.72
+        }
+      ]
+    }
+  }
+}

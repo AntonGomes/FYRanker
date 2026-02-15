@@ -4,42 +4,7 @@ import type { Job } from "@/lib/parse-xlsx";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const REGION_COLORS: Record<string, { bg: string; border: string; text: string; color: string }> = {
-  West: {
-    bg: "bg-region-west-bg",
-    border: "border-region-west-border",
-    text: "text-region-west-fg",
-    color: "var(--region-west)",
-  },
-  East: {
-    bg: "bg-region-east-bg",
-    border: "border-region-east-border",
-    text: "text-region-east-fg",
-    color: "var(--region-east)",
-  },
-  North: {
-    bg: "bg-region-north-bg",
-    border: "border-region-north-border",
-    text: "text-region-north-fg",
-    color: "var(--region-north)",
-  },
-  "South and SE": {
-    bg: "bg-region-south-bg",
-    border: "border-region-south-border",
-    text: "text-region-south-fg",
-    color: "var(--region-south)",
-  },
-};
-
-function getRegionStyle(region: string) {
-  return REGION_COLORS[region] ?? {
-    bg: "bg-muted",
-    border: "border-border",
-    text: "text-muted-foreground",
-    color: "var(--border)",
-  };
-}
-
+import { getRegionStyle, REGION_COLORS } from "@/lib/region-colors";
 export { getRegionStyle, REGION_COLORS };
 
 interface JobDetailPanelProps {

@@ -1,0 +1,1323 @@
+{
+  "all": [
+    {
+      "name": "General (Internal) Medicine",
+      "count": 1288,
+      "pct": 83.85,
+      "tier": "Common",
+      "tierColor": "#64748b"
+    },
+    {
+      "name": "General Surgery",
+      "count": 1225,
+      "pct": 79.75,
+      "tier": "Common",
+      "tierColor": "#64748b"
+    },
+    {
+      "name": "General Practice",
+      "count": 698,
+      "pct": 45.44,
+      "tier": "Common",
+      "tierColor": "#64748b"
+    },
+    {
+      "name": "Geriatric Medicine",
+      "count": 479,
+      "pct": 31.18,
+      "tier": "Common",
+      "tierColor": "#64748b"
+    },
+    {
+      "name": "Trauma and Orthopaedic Surgery",
+      "count": 441,
+      "pct": 28.71,
+      "tier": "Common",
+      "tierColor": "#64748b"
+    },
+    {
+      "name": "Emergency Medicine",
+      "count": 395,
+      "pct": 25.72,
+      "tier": "Common",
+      "tierColor": "#64748b"
+    },
+    {
+      "name": "Acute Internal Medicine",
+      "count": 382,
+      "pct": 24.87,
+      "tier": "Common",
+      "tierColor": "#64748b"
+    },
+    {
+      "name": "General Psychiatry",
+      "count": 369,
+      "pct": 24.02,
+      "tier": "Common",
+      "tierColor": "#64748b"
+    },
+    {
+      "name": "Obstetrics and Gynaecology",
+      "count": 289,
+      "pct": 18.82,
+      "tier": "Common",
+      "tierColor": "#64748b"
+    },
+    {
+      "name": "Paediatrics",
+      "count": 286,
+      "pct": 18.62,
+      "tier": "Common",
+      "tierColor": "#64748b"
+    },
+    {
+      "name": "Intensive Care Medicine",
+      "count": 126,
+      "pct": 8.2,
+      "tier": "Uncommon",
+      "tierColor": "#22c55e"
+    },
+    {
+      "name": "Respiratory Medicine",
+      "count": 119,
+      "pct": 7.75,
+      "tier": "Uncommon",
+      "tierColor": "#22c55e"
+    },
+    {
+      "name": "Cardiology",
+      "count": 102,
+      "pct": 6.64,
+      "tier": "Uncommon",
+      "tierColor": "#22c55e"
+    },
+    {
+      "name": "Gastroenterology",
+      "count": 87,
+      "pct": 5.66,
+      "tier": "Uncommon",
+      "tierColor": "#22c55e"
+    },
+    {
+      "name": "Renal Medicine",
+      "count": 78,
+      "pct": 5.08,
+      "tier": "Uncommon",
+      "tierColor": "#22c55e"
+    },
+    {
+      "name": "Urology",
+      "count": 69,
+      "pct": 4.49,
+      "tier": "Uncommon",
+      "tierColor": "#22c55e"
+    },
+    {
+      "name": "Paediatric Surgery",
+      "count": 68,
+      "pct": 4.43,
+      "tier": "Uncommon",
+      "tierColor": "#22c55e"
+    },
+    {
+      "name": "Plastic Surgery",
+      "count": 63,
+      "pct": 4.1,
+      "tier": "Uncommon",
+      "tierColor": "#22c55e"
+    },
+    {
+      "name": "Anaesthetics",
+      "count": 63,
+      "pct": 4.1,
+      "tier": "Uncommon",
+      "tierColor": "#22c55e"
+    },
+    {
+      "name": "Neurosurgery",
+      "count": 58,
+      "pct": 3.78,
+      "tier": "Rare",
+      "tierColor": "#3b82f6"
+    },
+    {
+      "name": "Otolaryngology",
+      "count": 54,
+      "pct": 3.52,
+      "tier": "Rare",
+      "tierColor": "#3b82f6"
+    },
+    {
+      "name": "Oral and Maxillo-facial Surgery",
+      "count": 54,
+      "pct": 3.52,
+      "tier": "Rare",
+      "tierColor": "#3b82f6"
+    },
+    {
+      "name": "Infectious Diseases",
+      "count": 51,
+      "pct": 3.32,
+      "tier": "Rare",
+      "tierColor": "#3b82f6"
+    },
+    {
+      "name": "Palliative Medicine",
+      "count": 48,
+      "pct": 3.12,
+      "tier": "Rare",
+      "tierColor": "#3b82f6"
+    },
+    {
+      "name": "Neurology",
+      "count": 46,
+      "pct": 2.99,
+      "tier": "Rare",
+      "tierColor": "#3b82f6"
+    },
+    {
+      "name": "Medical Oncology",
+      "count": 45,
+      "pct": 2.93,
+      "tier": "Rare",
+      "tierColor": "#3b82f6"
+    },
+    {
+      "name": "Endocrinology and Diabetes Mellitus",
+      "count": 38,
+      "pct": 2.47,
+      "tier": "Rare",
+      "tierColor": "#3b82f6"
+    },
+    {
+      "name": "Vascular Surgery",
+      "count": 37,
+      "pct": 2.41,
+      "tier": "Rare",
+      "tierColor": "#3b82f6"
+    },
+    {
+      "name": "Ophthalmology",
+      "count": 36,
+      "pct": 2.34,
+      "tier": "Rare",
+      "tierColor": "#3b82f6"
+    },
+    {
+      "name": "Histopathology",
+      "count": 24,
+      "pct": 1.56,
+      "tier": "Rare",
+      "tierColor": "#3b82f6"
+    },
+    {
+      "name": "Haematology",
+      "count": 24,
+      "pct": 1.56,
+      "tier": "Rare",
+      "tierColor": "#3b82f6"
+    },
+    {
+      "name": "Cardio-thoracic Surgery",
+      "count": 21,
+      "pct": 1.37,
+      "tier": "Epic",
+      "tierColor": "#a855f7"
+    },
+    {
+      "name": "Child and Adolescent Psychiatry",
+      "count": 18,
+      "pct": 1.17,
+      "tier": "Epic",
+      "tierColor": "#a855f7"
+    },
+    {
+      "name": "Academic Foundation Programme",
+      "count": 18,
+      "pct": 1.17,
+      "tier": "Epic",
+      "tierColor": "#a855f7"
+    },
+    {
+      "name": "Old Age Psychiatry",
+      "count": 17,
+      "pct": 1.11,
+      "tier": "Epic",
+      "tierColor": "#a855f7"
+    },
+    {
+      "name": "Clinical Oncology",
+      "count": 17,
+      "pct": 1.11,
+      "tier": "Epic",
+      "tierColor": "#a855f7"
+    },
+    {
+      "name": "Forensic Psychiatry",
+      "count": 15,
+      "pct": 0.98,
+      "tier": "Epic",
+      "tierColor": "#a855f7"
+    },
+    {
+      "name": "Rehabilitation Medicine",
+      "count": 15,
+      "pct": 0.98,
+      "tier": "Epic",
+      "tierColor": "#a855f7"
+    },
+    {
+      "name": "Rheumatology",
+      "count": 12,
+      "pct": 0.78,
+      "tier": "Epic",
+      "tierColor": "#a855f7"
+    },
+    {
+      "name": "Chemical Pathology",
+      "count": 11,
+      "pct": 0.72,
+      "tier": "Epic",
+      "tierColor": "#a855f7"
+    },
+    {
+      "name": "Medical Microbiology",
+      "count": 9,
+      "pct": 0.59,
+      "tier": "Epic",
+      "tierColor": "#a855f7"
+    },
+    {
+      "name": "Community Sexual and Reproductive Health",
+      "count": 6,
+      "pct": 0.39,
+      "tier": "Legendary",
+      "tierColor": "#f59e0b"
+    },
+    {
+      "name": "Paediatric Intensive Care Medicine",
+      "count": 6,
+      "pct": 0.39,
+      "tier": "Legendary",
+      "tierColor": "#f59e0b"
+    },
+    {
+      "name": "Psychiatry of Learning Disability",
+      "count": 3,
+      "pct": 0.2,
+      "tier": "Legendary",
+      "tierColor": "#f59e0b"
+    },
+    {
+      "name": "Dermatology",
+      "count": 3,
+      "pct": 0.2,
+      "tier": "Legendary",
+      "tierColor": "#f59e0b"
+    }
+  ],
+  "byRegion": {
+    "North": [
+      {
+        "name": "General Surgery",
+        "count": 467,
+        "pct": 81.93,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "General (Internal) Medicine",
+        "count": 464,
+        "pct": 81.4,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "General Practice",
+        "count": 316,
+        "pct": 55.44,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Acute Internal Medicine",
+        "count": 194,
+        "pct": 34.04,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Trauma and Orthopaedic Surgery",
+        "count": 180,
+        "pct": 31.58,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "General Psychiatry",
+        "count": 177,
+        "pct": 31.05,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Geriatric Medicine",
+        "count": 164,
+        "pct": 28.77,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Emergency Medicine",
+        "count": 141,
+        "pct": 24.74,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Obstetrics and Gynaecology",
+        "count": 136,
+        "pct": 23.86,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Paediatrics",
+        "count": 116,
+        "pct": 20.35,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Intensive Care Medicine",
+        "count": 48,
+        "pct": 8.42,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Respiratory Medicine",
+        "count": 45,
+        "pct": 7.89,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Cardiology",
+        "count": 45,
+        "pct": 7.89,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Renal Medicine",
+        "count": 39,
+        "pct": 6.84,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Oral and Maxillo-facial Surgery",
+        "count": 30,
+        "pct": 5.26,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Gastroenterology",
+        "count": 30,
+        "pct": 5.26,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Neurosurgery",
+        "count": 28,
+        "pct": 4.91,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Anaesthetics",
+        "count": 27,
+        "pct": 4.74,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Otolaryngology",
+        "count": 27,
+        "pct": 4.74,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Endocrinology and Diabetes Mellitus",
+        "count": 26,
+        "pct": 4.56,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Infectious Diseases",
+        "count": 24,
+        "pct": 4.21,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Paediatric Surgery",
+        "count": 23,
+        "pct": 4.04,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Urology",
+        "count": 21,
+        "pct": 3.68,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Vascular Surgery",
+        "count": 19,
+        "pct": 3.33,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Ophthalmology",
+        "count": 18,
+        "pct": 3.16,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Plastic Surgery",
+        "count": 18,
+        "pct": 3.16,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Palliative Medicine",
+        "count": 18,
+        "pct": 3.16,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Clinical Oncology",
+        "count": 17,
+        "pct": 2.98,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Haematology",
+        "count": 12,
+        "pct": 2.11,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Histopathology",
+        "count": 12,
+        "pct": 2.11,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Rehabilitation Medicine",
+        "count": 12,
+        "pct": 2.11,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Academic Foundation Programme",
+        "count": 12,
+        "pct": 2.11,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Medical Oncology",
+        "count": 12,
+        "pct": 2.11,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Neurology",
+        "count": 10,
+        "pct": 1.75,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Old Age Psychiatry",
+        "count": 8,
+        "pct": 1.4,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Forensic Psychiatry",
+        "count": 6,
+        "pct": 1.05,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Child and Adolescent Psychiatry",
+        "count": 6,
+        "pct": 1.05,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Rheumatology",
+        "count": 6,
+        "pct": 1.05,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Chemical Pathology",
+        "count": 5,
+        "pct": 0.88,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Cardio-thoracic Surgery",
+        "count": 3,
+        "pct": 0.53,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Community Sexual and Reproductive Health",
+        "count": 3,
+        "pct": 0.53,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Medical Microbiology",
+        "count": 3,
+        "pct": 0.53,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Paediatric Intensive Care Medicine",
+        "count": 3,
+        "pct": 0.53,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      }
+    ],
+    "East": [
+      {
+        "name": "General Surgery",
+        "count": 78,
+        "pct": 65.0,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Trauma and Orthopaedic Surgery",
+        "count": 75,
+        "pct": 62.5,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "General (Internal) Medicine",
+        "count": 71,
+        "pct": 59.17,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Geriatric Medicine",
+        "count": 57,
+        "pct": 47.5,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Emergency Medicine",
+        "count": 51,
+        "pct": 42.5,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "General Practice",
+        "count": 42,
+        "pct": 35.0,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Gastroenterology",
+        "count": 27,
+        "pct": 22.5,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Respiratory Medicine",
+        "count": 24,
+        "pct": 20.0,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Cardiology",
+        "count": 21,
+        "pct": 17.5,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Infectious Diseases",
+        "count": 18,
+        "pct": 15.0,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Urology",
+        "count": 18,
+        "pct": 15.0,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Renal Medicine",
+        "count": 15,
+        "pct": 12.5,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Paediatrics",
+        "count": 15,
+        "pct": 12.5,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Obstetrics and Gynaecology",
+        "count": 15,
+        "pct": 12.5,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Medical Oncology",
+        "count": 12,
+        "pct": 10.0,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "General Psychiatry",
+        "count": 12,
+        "pct": 10.0,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Otolaryngology",
+        "count": 9,
+        "pct": 7.5,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Intensive Care Medicine",
+        "count": 9,
+        "pct": 7.5,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Neurology",
+        "count": 9,
+        "pct": 7.5,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Plastic Surgery",
+        "count": 9,
+        "pct": 7.5,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Neurosurgery",
+        "count": 9,
+        "pct": 7.5,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Palliative Medicine",
+        "count": 9,
+        "pct": 7.5,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Old Age Psychiatry",
+        "count": 6,
+        "pct": 5.0,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Ophthalmology",
+        "count": 6,
+        "pct": 5.0,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Academic Foundation Programme",
+        "count": 6,
+        "pct": 5.0,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Haematology",
+        "count": 6,
+        "pct": 5.0,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Acute Internal Medicine",
+        "count": 6,
+        "pct": 5.0,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Histopathology",
+        "count": 3,
+        "pct": 2.5,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Chemical Pathology",
+        "count": 3,
+        "pct": 2.5,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Forensic Psychiatry",
+        "count": 3,
+        "pct": 2.5,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Child and Adolescent Psychiatry",
+        "count": 3,
+        "pct": 2.5,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Psychiatry of Learning Disability",
+        "count": 3,
+        "pct": 2.5,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Oral and Maxillo-facial Surgery",
+        "count": 3,
+        "pct": 2.5,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      }
+    ],
+    "West": [
+      {
+        "name": "General (Internal) Medicine",
+        "count": 540,
+        "pct": 94.74,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "General Surgery",
+        "count": 498,
+        "pct": 87.37,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "General Practice",
+        "count": 327,
+        "pct": 57.37,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Geriatric Medicine",
+        "count": 222,
+        "pct": 38.95,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Emergency Medicine",
+        "count": 192,
+        "pct": 33.68,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "General Psychiatry",
+        "count": 165,
+        "pct": 28.95,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Trauma and Orthopaedic Surgery",
+        "count": 159,
+        "pct": 27.89,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Obstetrics and Gynaecology",
+        "count": 138,
+        "pct": 24.21,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Paediatrics",
+        "count": 132,
+        "pct": 23.16,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Acute Internal Medicine",
+        "count": 120,
+        "pct": 21.05,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Intensive Care Medicine",
+        "count": 69,
+        "pct": 12.11,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Paediatric Surgery",
+        "count": 27,
+        "pct": 4.74,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Oral and Maxillo-facial Surgery",
+        "count": 21,
+        "pct": 3.68,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Palliative Medicine",
+        "count": 18,
+        "pct": 3.16,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Neurosurgery",
+        "count": 18,
+        "pct": 3.16,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Cardiology",
+        "count": 18,
+        "pct": 3.16,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Neurology",
+        "count": 18,
+        "pct": 3.16,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Otolaryngology",
+        "count": 18,
+        "pct": 3.16,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Respiratory Medicine",
+        "count": 18,
+        "pct": 3.16,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Renal Medicine",
+        "count": 18,
+        "pct": 3.16,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Anaesthetics",
+        "count": 15,
+        "pct": 2.63,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Ophthalmology",
+        "count": 12,
+        "pct": 2.11,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Gastroenterology",
+        "count": 12,
+        "pct": 2.11,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Medical Oncology",
+        "count": 12,
+        "pct": 2.11,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Endocrinology and Diabetes Mellitus",
+        "count": 12,
+        "pct": 2.11,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Infectious Diseases",
+        "count": 9,
+        "pct": 1.58,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Child and Adolescent Psychiatry",
+        "count": 9,
+        "pct": 1.58,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Plastic Surgery",
+        "count": 9,
+        "pct": 1.58,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Cardio-thoracic Surgery",
+        "count": 6,
+        "pct": 1.05,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Medical Microbiology",
+        "count": 6,
+        "pct": 1.05,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Urology",
+        "count": 6,
+        "pct": 1.05,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Forensic Psychiatry",
+        "count": 6,
+        "pct": 1.05,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Rheumatology",
+        "count": 6,
+        "pct": 1.05,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Histopathology",
+        "count": 6,
+        "pct": 1.05,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Community Sexual and Reproductive Health",
+        "count": 3,
+        "pct": 0.53,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Dermatology",
+        "count": 3,
+        "pct": 0.53,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Haematology",
+        "count": 3,
+        "pct": 0.53,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Chemical Pathology",
+        "count": 3,
+        "pct": 0.53,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Rehabilitation Medicine",
+        "count": 3,
+        "pct": 0.53,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Paediatric Intensive Care Medicine",
+        "count": 3,
+        "pct": 0.53,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Old Age Psychiatry",
+        "count": 3,
+        "pct": 0.53,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      }
+    ],
+    "South and SE": [
+      {
+        "name": "General (Internal) Medicine",
+        "count": 213,
+        "pct": 77.17,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "General Surgery",
+        "count": 182,
+        "pct": 65.94,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Acute Internal Medicine",
+        "count": 62,
+        "pct": 22.46,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Geriatric Medicine",
+        "count": 36,
+        "pct": 13.04,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Respiratory Medicine",
+        "count": 32,
+        "pct": 11.59,
+        "tier": "Common",
+        "tierColor": "#64748b"
+      },
+      {
+        "name": "Trauma and Orthopaedic Surgery",
+        "count": 27,
+        "pct": 9.78,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Plastic Surgery",
+        "count": 27,
+        "pct": 9.78,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Urology",
+        "count": 24,
+        "pct": 8.7,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Paediatrics",
+        "count": 23,
+        "pct": 8.33,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Anaesthetics",
+        "count": 21,
+        "pct": 7.61,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Paediatric Surgery",
+        "count": 18,
+        "pct": 6.52,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Cardiology",
+        "count": 18,
+        "pct": 6.52,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Gastroenterology",
+        "count": 18,
+        "pct": 6.52,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Vascular Surgery",
+        "count": 18,
+        "pct": 6.52,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "General Psychiatry",
+        "count": 15,
+        "pct": 5.43,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "General Practice",
+        "count": 13,
+        "pct": 4.71,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Cardio-thoracic Surgery",
+        "count": 12,
+        "pct": 4.35,
+        "tier": "Uncommon",
+        "tierColor": "#22c55e"
+      },
+      {
+        "name": "Emergency Medicine",
+        "count": 11,
+        "pct": 3.99,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Medical Oncology",
+        "count": 9,
+        "pct": 3.26,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Neurology",
+        "count": 9,
+        "pct": 3.26,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Renal Medicine",
+        "count": 6,
+        "pct": 2.17,
+        "tier": "Rare",
+        "tierColor": "#3b82f6"
+      },
+      {
+        "name": "Histopathology",
+        "count": 3,
+        "pct": 1.09,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Neurosurgery",
+        "count": 3,
+        "pct": 1.09,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Haematology",
+        "count": 3,
+        "pct": 1.09,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      },
+      {
+        "name": "Palliative Medicine",
+        "count": 3,
+        "pct": 1.09,
+        "tier": "Epic",
+        "tierColor": "#a855f7"
+      }
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "North": {
+    "rotations": 570,
+    "sites": 130,
+    "specialties": 43
+  },
+  "East": {
+    "rotations": 120,
+    "sites": 11,
+    "specialties": 33
+  },
+  "West": {
+    "rotations": 570,
+    "sites": 121,
+    "specialties": 41
+  },
+  "South and SE": {
+    "rotations": 276,
+    "sites": 11,
+    "specialties": 25
+  }
+}

@@ -1,0 +1,266 @@
+{
+  "North": {
+    "largest": [
+      {
+        "site": "Glasgow Royal Infirmary",
+        "specialty": "General (Internal) Medicine",
+        "placement": 1,
+        "count": 42
+      },
+      {
+        "site": "Glasgow Royal Infirmary",
+        "specialty": "General (Internal) Medicine",
+        "placement": 2,
+        "count": 42
+      },
+      {
+        "site": "Glasgow Royal Infirmary",
+        "specialty": "General (Internal) Medicine",
+        "placement": 3,
+        "count": 42
+      },
+      {
+        "site": "Glasgow Royal Infirmary",
+        "specialty": "General Surgery",
+        "placement": 3,
+        "count": 31
+      },
+      {
+        "site": "Glasgow Royal Infirmary",
+        "specialty": "General Surgery",
+        "placement": 1,
+        "count": 31
+      }
+    ],
+    "smallest": [
+      {
+        "site": "Queen Elizabeth University Hospital",
+        "specialty": "Old Age Psychiatry",
+        "placement": 4,
+        "count": 1
+      },
+      {
+        "site": "Queen Elizabeth University Hospital",
+        "specialty": "Infectious Diseases",
+        "placement": 6,
+        "count": 1
+      },
+      {
+        "site": "Glasgow Royal Infirmary",
+        "specialty": "Acute Internal Medicine",
+        "placement": 2,
+        "count": 1
+      },
+      {
+        "site": "Glasgow Royal Infirmary",
+        "specialty": "Acute Internal Medicine",
+        "placement": 3,
+        "count": 1
+      },
+      {
+        "site": "Glasgow Royal Infirmary",
+        "specialty": "Acute Internal Medicine",
+        "placement": 1,
+        "count": 1
+      }
+    ]
+  },
+  "East": {
+    "largest": [
+      {
+        "site": "Ninewells Hospital",
+        "specialty": "General Surgery",
+        "placement": 2,
+        "count": 21
+      },
+      {
+        "site": "Ninewells Hospital",
+        "specialty": "General Surgery",
+        "placement": 3,
+        "count": 21
+      },
+      {
+        "site": "Ninewells Hospital",
+        "specialty": "General Surgery",
+        "placement": 1,
+        "count": 21
+      },
+      {
+        "site": "Ninewells Hospital",
+        "specialty": "Trauma and Orthopaedic Surgery",
+        "placement": 1,
+        "count": 17
+      },
+      {
+        "site": "Ninewells Hospital",
+        "specialty": "Trauma and Orthopaedic Surgery",
+        "placement": 2,
+        "count": 17
+      }
+    ],
+    "smallest": [
+      {
+        "site": "Ninewells Hospital",
+        "specialty": "Acute Internal Medicine",
+        "placement": 6,
+        "count": 1
+      },
+      {
+        "site": "Ninewells Hospital",
+        "specialty": "Paediatrics",
+        "placement": 3,
+        "count": 1
+      },
+      {
+        "site": "Ninewells Hospital",
+        "specialty": "Acute Internal Medicine",
+        "placement": 4,
+        "count": 1
+      },
+      {
+        "site": "Ninewells Hospital",
+        "specialty": "Paediatrics",
+        "placement": 1,
+        "count": 1
+      },
+      {
+        "site": "Ninewells Hospital",
+        "specialty": "Acute Internal Medicine",
+        "placement": 2,
+        "count": 1
+      }
+    ]
+  },
+  "West": {
+    "largest": [
+      {
+        "site": "Queen Elizabeth University Hospital",
+        "specialty": "General (Internal) Medicine",
+        "placement": 1,
+        "count": 54
+      },
+      {
+        "site": "Queen Elizabeth University Hospital",
+        "specialty": "General (Internal) Medicine",
+        "placement": 2,
+        "count": 54
+      },
+      {
+        "site": "Queen Elizabeth University Hospital",
+        "specialty": "General (Internal) Medicine",
+        "placement": 3,
+        "count": 54
+      },
+      {
+        "site": "Queen Elizabeth University Hospital",
+        "specialty": "General Surgery",
+        "placement": 1,
+        "count": 46
+      },
+      {
+        "site": "Queen Elizabeth University Hospital",
+        "specialty": "General Surgery",
+        "placement": 2,
+        "count": 46
+      }
+    ],
+    "smallest": [
+      {
+        "site": "Royal Hospital for Children Glasgow",
+        "specialty": "Paediatric Intensive Care Medicine",
+        "placement": 2,
+        "count": 1
+      },
+      {
+        "site": "Queen Elizabeth University Hospital",
+        "specialty": "Old Age Psychiatry",
+        "placement": 4,
+        "count": 1
+      },
+      {
+        "site": "Glasgow Royal Infirmary",
+        "specialty": "Acute Internal Medicine",
+        "placement": 2,
+        "count": 1
+      },
+      {
+        "site": "Glasgow Royal Infirmary",
+        "specialty": "Acute Internal Medicine",
+        "placement": 3,
+        "count": 1
+      },
+      {
+        "site": "Glasgow Royal Infirmary",
+        "specialty": "Acute Internal Medicine",
+        "placement": 1,
+        "count": 1
+      }
+    ]
+  },
+  "South and SE": {
+    "largest": [
+      {
+        "site": "Victoria Hospital",
+        "specialty": "General (Internal) Medicine",
+        "placement": 2,
+        "count": 32
+      },
+      {
+        "site": "Victoria Hospital",
+        "specialty": "General (Internal) Medicine",
+        "placement": 3,
+        "count": 32
+      },
+      {
+        "site": "Victoria Hospital",
+        "specialty": "General (Internal) Medicine",
+        "placement": 1,
+        "count": 32
+      },
+      {
+        "site": "St John's Hospital",
+        "specialty": "General (Internal) Medicine",
+        "placement": 1,
+        "count": 26
+      },
+      {
+        "site": "St John's Hospital",
+        "specialty": "General (Internal) Medicine",
+        "placement": 2,
+        "count": 26
+      }
+    ],
+    "smallest": [
+      {
+        "site": "Royal Infirmary of Edinburgh at Little France",
+        "specialty": "Cardiology",
+        "placement": 5,
+        "count": 1
+      },
+      {
+        "site": "Newland Medical Practice",
+        "specialty": "General Practice",
+        "placement": 5,
+        "count": 1
+      },
+      {
+        "site": "Royal Infirmary of Edinburgh at Little France",
+        "specialty": "Cardiology",
+        "placement": 6,
+        "count": 1
+      },
+      {
+        "site": "Royal Infirmary of Edinburgh at Little France",
+        "specialty": "Cardiology",
+        "placement": 4,
+        "count": 1
+      },
+      {
+        "site": "Newland Medical Practice",
+        "specialty": "General Practice",
+        "placement": 6,
+        "count": 1
+      }
+    ]
+  }
+}
