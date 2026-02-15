@@ -4,34 +4,39 @@ import type { Job } from "@/lib/parse-xlsx";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const REGION_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+const REGION_COLORS: Record<string, { bg: string; border: string; text: string; color: string }> = {
   West: {
-    bg: "bg-sky-100 dark:bg-sky-800/50",
-    border: "border-sky-300 dark:border-sky-500",
-    text: "text-sky-900 dark:text-sky-100",
+    bg: "bg-region-west-bg",
+    border: "border-region-west-border",
+    text: "text-region-west-fg",
+    color: "var(--region-west)",
   },
   East: {
-    bg: "bg-amber-100 dark:bg-amber-800/50",
-    border: "border-amber-300 dark:border-amber-500",
-    text: "text-amber-900 dark:text-amber-100",
+    bg: "bg-region-east-bg",
+    border: "border-region-east-border",
+    text: "text-region-east-fg",
+    color: "var(--region-east)",
   },
   North: {
-    bg: "bg-emerald-100 dark:bg-emerald-800/50",
-    border: "border-emerald-300 dark:border-emerald-500",
-    text: "text-emerald-900 dark:text-emerald-100",
+    bg: "bg-region-north-bg",
+    border: "border-region-north-border",
+    text: "text-region-north-fg",
+    color: "var(--region-north)",
   },
   "South and SE": {
-    bg: "bg-violet-100 dark:bg-violet-800/50",
-    border: "border-violet-300 dark:border-violet-500",
-    text: "text-violet-900 dark:text-violet-100",
+    bg: "bg-region-south-bg",
+    border: "border-region-south-border",
+    text: "text-region-south-fg",
+    color: "var(--region-south)",
   },
 };
 
 function getRegionStyle(region: string) {
   return REGION_COLORS[region] ?? {
-    bg: "bg-slate-50 dark:bg-slate-950/40",
-    border: "border-slate-200 dark:border-slate-800",
-    text: "text-slate-700 dark:text-slate-300",
+    bg: "bg-muted",
+    border: "border-border",
+    text: "text-muted-foreground",
+    color: "var(--border)",
   };
 }
 

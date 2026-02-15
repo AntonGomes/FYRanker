@@ -26,6 +26,7 @@ import {
   sortableKeyboardCoordinates,
   useSortable,
   rectSortingStrategy,
+  verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -45,6 +46,8 @@ import {
   ArrowUpDown,
   Pin,
   HelpCircle,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { WelcomeModal } from "@/components/welcome-modal";
@@ -176,18 +179,20 @@ function AnimatedScore({
   );
 }
 
-/* ── Triangle icons for boost/bury ── */
-function TriangleUp() {
+/* ── Arrow icons for boost/bury ── */
+function ArrowUp() {
   return (
-    <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor">
-      <path d="M9 0L17.5 12H0.5L9 0Z" />
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 19V5" />
+      <path d="M5 12L12 5L19 12" />
     </svg>
   );
 }
-function TriangleDown() {
+function ArrowDown() {
   return (
-    <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor">
-      <path d="M9 12L0.5 0H17.5L9 12Z" />
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 5V19" />
+      <path d="M19 12L12 19L5 12" />
     </svg>
   );
 }
@@ -339,13 +344,18 @@ const JobCard = memo(function JobCard({
       <div
         key={glowKey}
         ref={setNodeRef}
-        style={style}
+        style={{
+          ...style,
+          boxShadow: isSelected
+            ? `0 1px 3px ${regionStyle.color}15`
+            : `0 2px 8px ${regionStyle.color}20, 0 1px 3px rgba(0,0,0,0.06)`,
+        }}
         {...attributes}
         {...listeners}
         className={cn(
-          "group rounded-lg border hover:shadow-md cursor-grab touch-none flex flex-col bg-card",
-          isSelected && "ring-2 ring-primary/50 bg-primary/5",
-          isDragging && "opacity-40 shadow-lg z-50",
+          "group rounded-lg border-0 hover:bg-card-hover hover:-translate-y-0.5 transition-all duration-150 cursor-grab touch-none flex flex-col bg-card",
+          isSelected && "ring-2 ring-primary/60 bg-card-selected",
+          isDragging && "opacity-40 z-50",
           glowClass
         )}
         onClick={() => onSelectDetail(scored.job)}
@@ -419,25 +429,25 @@ const JobCard = memo(function JobCard({
 
         {/* ── Footer: Score box + Boost/Bury triangles ── */}
         <div className="px-2 pb-1.5 pt-1 border-t border-border flex items-center justify-end gap-1.5">
-          <div className="rounded-md bg-secondary/40 px-2 py-0.5 flex items-center gap-1.5">
+          <div className="rounded-md bg-secondary/50 px-2 py-0.5 flex items-center gap-1.5">
             <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
               Score
             </span>
             <AnimatedScore value={score} flashDirection={flashDirection} />
           </div>
 
-          {/* Boost / Bury triangles */}
-          <div className="flex flex-col shrink-0 gap-0.5">
+          {/* Boost / Bury arrows */}
+          <div className="flex shrink-0 gap-0.5">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onBoost(scored.job.id);
               }}
               onPointerDown={(e) => e.stopPropagation()}
-              className="px-1 py-0.5 text-emerald-500 hover:text-emerald-400 active:scale-90 transition-all"
+              className="p-1 rounded text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 active:scale-90 transition-all"
               title="Boost"
             >
-              <TriangleUp />
+              <ArrowUp />
             </button>
             <button
               onClick={(e) => {
@@ -445,10 +455,10 @@ const JobCard = memo(function JobCard({
                 onBury(scored.job.id);
               }}
               onPointerDown={(e) => e.stopPropagation()}
-              className="px-1 py-0.5 text-red-500 hover:text-red-400 active:scale-90 transition-all"
+              className="p-1 rounded text-red-500 hover:text-red-400 hover:bg-red-500/10 active:scale-90 transition-all"
               title="Bury"
             >
-              <TriangleDown />
+              <ArrowDown />
             </button>
           </div>
         </div>
@@ -472,8 +482,11 @@ const DragOverlayCard = memo(function DragOverlayCard({
 
   return (
     <div
-      className="rounded-lg border shadow-xl ring-2 ring-primary/20 bg-card"
-      style={width ? { width } : undefined}
+      className="rounded-lg border-0 bg-card-drag ring-2 ring-primary/30 scale-[1.02]"
+      style={{
+        ...(width ? { width } : {}),
+        boxShadow: `0 8px 24px ${regionStyle.color}30, 0 4px 12px rgba(0,0,0,0.1)`,
+      }}
     >
       <div className="flex items-center gap-1.5 px-2.5 pt-2 pb-1.5 border-b border-border">
         <span className="text-sm font-bold font-mono text-foreground shrink-0">
@@ -496,6 +509,256 @@ const DragOverlayCard = memo(function DragOverlayCard({
       <div className="px-2.5 py-1.5">
         <PlacementList fy1={fy1} fy2={fy2} />
       </div>
+    </div>
+  );
+});
+
+/* ── Sortable list row ── */
+const ListRow = memo(function ListRow({
+  scored,
+  rank,
+  isSelected,
+  onSelectDetail,
+  onToggleSelect,
+  onBoost,
+  onBury,
+  onMoveToOpen,
+  flashDirection,
+  glowKey,
+}: {
+  scored: ScoredJob;
+  rank: number;
+  isSelected: boolean;
+  onSelectDetail: (job: Job) => void;
+  onToggleSelect: (jobId: string) => void;
+  onBoost: (jobId: string) => void;
+  onBury: (jobId: string) => void;
+  onMoveToOpen: (jobId: string, rank: number) => void;
+  flashDirection: "up" | "down" | null;
+  glowKey: number;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: scored.job.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const regionStyle = getRegionStyle(scored.job.region);
+  const { fy1, fy2 } = getJobPlacements(scored.job);
+  const score = effectiveScore(scored);
+
+  const glowClass =
+    flashDirection === "up"
+      ? "animate-card-glow-up"
+      : flashDirection === "down"
+        ? "animate-card-glow-down"
+        : "";
+
+  const fy1Text = fy1
+    .map((e) => `${e.site} · ${e.spec}`)
+    .join(", ");
+  const fy2Text = fy2
+    .map((e) => `${e.site} · ${e.spec}`)
+    .join(", ");
+
+  return (
+    <div
+      key={glowKey}
+      ref={setNodeRef}
+      style={{
+        ...style,
+        gridTemplateColumns: "40px 70px minmax(120px,1.5fr) 1fr 1fr 90px 110px",
+        boxShadow: isSelected
+          ? undefined
+          : `inset 3px 0 0 ${regionStyle.color}40`,
+      }}
+      {...attributes}
+      {...listeners}
+      className={cn(
+        "grid items-center h-[44px] border-b border-border cursor-grab touch-none transition-colors duration-100",
+        isSelected
+          ? "bg-card-selected ring-1 ring-primary/60"
+          : "hover:bg-card-hover",
+        isDragging && "opacity-40 z-50",
+        glowClass
+      )}
+      onClick={() => onSelectDetail(scored.job)}
+      role="row"
+    >
+      {/* Rank */}
+      <span className="text-sm font-bold font-mono text-foreground text-right pr-2">
+        {rank}
+      </span>
+
+      {/* Region */}
+      <span
+        className={cn(
+          "rounded-full px-1.5 py-0.5 text-[10px] font-semibold border truncate text-center",
+          regionStyle.bg,
+          regionStyle.text,
+          regionStyle.border
+        )}
+      >
+        {scored.job.region}
+      </span>
+
+      {/* Programme title */}
+      <span className="text-xs font-mono font-semibold text-foreground truncate pr-2">
+        {scored.job.programme_title}
+      </span>
+
+      {/* FY1 Placements */}
+      <span className="text-xs text-foreground truncate pr-2" title={fy1Text}>
+        {fy1.map((e, i) => (
+          <span key={e.num}>
+            {i > 0 && <span className="text-muted-foreground">, </span>}
+            <span className="font-semibold">{e.site}</span>
+            <span className="text-muted-foreground"> · {e.spec}</span>
+          </span>
+        ))}
+        {fy1.length === 0 && <span className="text-muted-foreground">—</span>}
+      </span>
+
+      {/* FY2 Placements */}
+      <span className="text-xs text-foreground truncate pr-2" title={fy2Text}>
+        {fy2.map((e, i) => (
+          <span key={e.num}>
+            {i > 0 && <span className="text-muted-foreground">, </span>}
+            <span className="font-semibold">{e.site}</span>
+            <span className="text-muted-foreground"> · {e.spec}</span>
+          </span>
+        ))}
+        {fy2.length === 0 && <span className="text-muted-foreground">—</span>}
+      </span>
+
+      {/* Score */}
+      <div className="flex justify-center">
+        <div className="rounded-md bg-secondary/50 px-2 py-0.5 flex items-center gap-1">
+          <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Score
+          </span>
+          <AnimatedScore value={score} flashDirection={flashDirection} />
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center justify-center gap-0.5">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onBoost(scored.job.id);
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="p-0.5 rounded text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 active:scale-90 transition-all"
+          title="Boost"
+        >
+          <ArrowUp />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onBury(scored.job.id);
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="p-0.5 rounded text-red-500 hover:text-red-400 hover:bg-red-500/10 active:scale-90 transition-all"
+          title="Bury"
+        >
+          <ArrowDown />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onMoveToOpen(scored.job.id, rank);
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          title="Move to..."
+        >
+          <ArrowUpDown className="h-4 w-4" />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelect(scored.job.id);
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="p-0.5 flex items-center justify-center"
+          title={isSelected ? "Deselect" : "Select"}
+        >
+          <div
+            className={cn(
+              "h-4 w-4 rounded-full border-2 flex items-center justify-center transition-colors",
+              isSelected
+                ? "bg-primary border-primary"
+                : "border-muted-foreground hover:border-primary"
+            )}
+          >
+            {isSelected && (
+              <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />
+            )}
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+});
+
+/* ── List drag overlay row ── */
+const ListDragOverlayRow = memo(function ListDragOverlayRow({
+  scored,
+  rank,
+}: {
+  scored: ScoredJob;
+  rank: number;
+}) {
+  const regionStyle = getRegionStyle(scored.job.region);
+  const score = effectiveScore(scored);
+
+  return (
+    <div
+      className="grid items-center h-[44px] bg-card-drag ring-2 ring-primary/30 rounded-md"
+      style={{
+        gridTemplateColumns: "40px 70px minmax(120px,1.5fr) 1fr 1fr 90px 110px",
+        boxShadow: `0 8px 24px ${regionStyle.color}30, 0 4px 12px rgba(0,0,0,0.1)`,
+      }}
+    >
+      <span className="text-sm font-bold font-mono text-foreground text-right pr-2">
+        {rank}
+      </span>
+      <span
+        className={cn(
+          "rounded-full px-1.5 py-0.5 text-[10px] font-semibold border truncate text-center",
+          regionStyle.bg,
+          regionStyle.text,
+          regionStyle.border
+        )}
+      >
+        {scored.job.region}
+      </span>
+      <span className="text-xs font-mono font-semibold text-foreground truncate pr-2">
+        {scored.job.programme_title}
+      </span>
+      <span />
+      <span />
+      <div className="flex justify-center">
+        <div className="rounded-md bg-secondary/50 px-2 py-0.5 flex items-center gap-1">
+          <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Score
+          </span>
+          <span className="font-mono tabular-nums text-xs font-semibold text-foreground">
+            {score.toFixed(3)}
+          </span>
+        </div>
+      </div>
+      <span />
     </div>
   );
 });
@@ -540,6 +803,9 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
   // Help modal
   const [showHelp, setShowHelp] = useState(false);
+
+  // View mode
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -674,18 +940,21 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   );
 
   // Row-based virtualization
-  const rowCount = Math.ceil(filteredJobs.length / cardsPerRow);
+  const rowCount = viewMode === "list"
+    ? filteredJobs.length
+    : Math.ceil(filteredJobs.length / cardsPerRow);
   const virtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 340,
-    overscan: 2,
+    estimateSize: () => viewMode === "list" ? 44 : 340,
+    overscan: viewMode === "list" ? 5 : 2,
   });
 
-  // Reset scroll on filter change
+  // Reset scroll on filter change or view mode switch
   useEffect(() => {
     scrollRef.current?.scrollTo(0, 0);
-  }, [searchQuery, regionFilter, hospitalFilter, specialtyFilter]);
+    virtualizer.measure();
+  }, [searchQuery, regionFilter, hospitalFilter, specialtyFilter, viewMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Scroll to card after boost/bury/move
   useEffect(() => {
@@ -695,7 +964,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
     const idx = filteredJobs.findIndex((sj) => sj.job.id === targetId);
     if (idx === -1) return;
-    const rowIdx = Math.floor(idx / cardsPerRow);
+    const rowIdx = viewMode === "list" ? idx : Math.floor(idx / cardsPerRow);
 
     // Small delay to let framer-motion layout animation start
     requestAnimationFrame(() => {
@@ -706,18 +975,24 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   /* ── Pinned rows ── */
   const pinnedRowIndices = useMemo(() => {
     const rows: number[] = [];
-    for (let rowIdx = 0; rowIdx < rowCount; rowIdx++) {
-      const start = rowIdx * cardsPerRow;
-      const end = Math.min(start + cardsPerRow, filteredJobs.length);
-      for (let i = start; i < end; i++) {
-        if (pinnedJobIds.has(filteredJobs[i].job.id)) {
-          rows.push(rowIdx);
-          break;
+    if (viewMode === "list") {
+      filteredJobs.forEach((sj, i) => {
+        if (pinnedJobIds.has(sj.job.id)) rows.push(i);
+      });
+    } else {
+      for (let rowIdx = 0; rowIdx < rowCount; rowIdx++) {
+        const start = rowIdx * cardsPerRow;
+        const end = Math.min(start + cardsPerRow, filteredJobs.length);
+        for (let i = start; i < end; i++) {
+          if (pinnedJobIds.has(filteredJobs[i].job.id)) {
+            rows.push(rowIdx);
+            break;
+          }
         }
       }
     }
     return rows;
-  }, [filteredJobs, pinnedJobIds, cardsPerRow, rowCount]);
+  }, [filteredJobs, pinnedJobIds, cardsPerRow, rowCount, viewMode]);
 
   /* ── Custom collision detection ──
      Filter to only rendered (virtualized) items for performance. */
@@ -726,10 +1001,14 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       const virtualItems = virtualizer.getVirtualItems();
       const visibleIds = new Set<string>();
       virtualItems.forEach((vRow) => {
-        const start = vRow.index * cardsPerRow;
-        const end = Math.min(start + cardsPerRow, filteredJobs.length);
-        for (let i = start; i < end; i++) {
-          visibleIds.add(filteredJobs[i].job.id);
+        if (viewMode === "list") {
+          visibleIds.add(filteredJobs[vRow.index]?.job.id);
+        } else {
+          const start = vRow.index * cardsPerRow;
+          const end = Math.min(start + cardsPerRow, filteredJobs.length);
+          for (let i = start; i < end; i++) {
+            visibleIds.add(filteredJobs[i].job.id);
+          }
         }
       });
 
@@ -743,7 +1022,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
       return closestCenter({ ...args, droppableContainers: filtered });
     },
-    [virtualizer, filteredJobs, cardsPerRow]
+    [virtualizer, filteredJobs, cardsPerRow, viewMode]
   );
 
   /* ── Actions ── */
@@ -967,7 +1246,22 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       const newIndex = prev.findIndex((s) => s.job.id === overIdStr);
       if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex)
         return prev;
-      return arrayMove(prev, oldIndex, newIndex);
+      const reordered = arrayMove(prev, oldIndex, newIndex);
+
+      // Match the moved card's score to its neighbor
+      const moved = reordered[newIndex];
+      let targetScore: number;
+      if (newIndex === 0) {
+        // First position: match the card below
+        targetScore = effectiveScore(reordered[1]);
+      } else {
+        // Otherwise: match the card above
+        targetScore = effectiveScore(reordered[newIndex - 1]);
+      }
+      const newAdj = targetScore - moved.score;
+      reordered[newIndex] = { ...moved, scoreAdjustment: newAdj };
+
+      return reordered;
     });
   }
 
@@ -1030,6 +1324,28 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     );
   }
 
+  /* ── Helper: render a single list row ── */
+  function renderListRow(jobIndex: number) {
+    const s = filteredJobs[jobIndex];
+    if (!s) return null;
+    const globalIdx = indexById.get(s.job.id) ?? 0;
+    return (
+      <ListRow
+        key={s.job.id}
+        scored={s}
+        rank={globalIdx + 1}
+        isSelected={selectedIds.has(s.job.id)}
+        onSelectDetail={setSelectedDetail}
+        onToggleSelect={toggleSelect}
+        onBoost={handleBoost}
+        onBury={handleBury}
+        onMoveToOpen={openMoveTo}
+        flashDirection={flashMap.get(s.job.id) ?? null}
+        glowKey={glowKeyRef.current.get(s.job.id) ?? 0}
+      />
+    );
+  }
+
   /* ══════════════════════════════════════════
      Render
      ══════════════════════════════════════════ */
@@ -1040,7 +1356,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       <SiteHeader />
 
       {/* Filter bar */}
-      <div className="shrink-0 border-b bg-gradient-to-r from-card via-secondary/10 to-card px-4 py-3">
+      <div className="shrink-0 border-b bg-gradient-to-r from-secondary/20 via-accent/10 to-secondary/20 px-4 py-3">
         <div className="max-w-[1800px] mx-auto flex items-center gap-3 flex-wrap">
           <p className="text-sm text-muted-foreground shrink-0">
             {filteredJobs.length === rankedJobs.length
@@ -1123,6 +1439,34 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
               Compare ({compareJobs.length})
             </Button>
           )}
+
+          {/* View mode toggle */}
+          <div className="flex items-center rounded-md border bg-background p-0.5 shrink-0">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={cn(
+                "p-1.5 rounded transition-colors",
+                viewMode === "grid"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="Grid view"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "p-1.5 rounded transition-colors",
+                viewMode === "list"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="List view"
+            >
+              <List className="h-4 w-4" />
+            </button>
+          </div>
 
           <button
             onClick={() => setShowHelp(true)}
@@ -1307,49 +1651,56 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         <div className="flex-1 flex overflow-hidden">
           <SortableContext
             items={filteredIds}
-            strategy={rectSortingStrategy}
+            strategy={viewMode === "list" ? verticalListSortingStrategy : rectSortingStrategy}
           >
             <div className="flex-1 flex flex-col overflow-hidden relative">
               {/* Pinned rows at top */}
               {pinnedRowIndices.length > 0 &&
                 scrollDir === "down" && (
                   <div className="shrink-0 z-10 shadow-md border-b">
-                    {pinnedRowIndices.map((rowIdx) => {
-                      const startIdx = rowIdx * cardsPerRow;
-                      const isEvenRow = rowIdx % 2 === 0;
-                      return (
-                        <div
-                          key={`pin-${rowIdx}`}
-                          className={cn(
-                            "flex border-b border-sheet-border",
-                            isEvenRow ? "bg-row-even" : "bg-row-odd"
-                          )}
-                        >
-                          <div className="w-5 shrink-0 relative border-r border-sheet-border bg-sheet-border/20">
-                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
-                              <span
-                                className="text-[9px] font-mono text-muted-foreground select-none whitespace-nowrap"
-                                style={{
-                                  transform: "rotate(-90deg)",
-                                }}
-                              >
-                                {startIdx + 1}–
-                                {Math.min(
-                                  startIdx + cardsPerRow,
-                                  filteredJobs.length
-                                )}
-                              </span>
-                              <Pin className="h-2.5 w-2.5 text-primary fill-primary" />
+                    {viewMode === "list"
+                      ? pinnedRowIndices.map((jobIdx) => (
+                          <div key={`pin-${jobIdx}`} className={cn(jobIdx % 2 === 0 ? "bg-row-even" : "bg-row-odd")}>
+                            {renderListRow(jobIdx)}
+                          </div>
+                        ))
+                      : pinnedRowIndices.map((rowIdx) => {
+                          const startIdx = rowIdx * cardsPerRow;
+                          const isEvenRow = rowIdx % 2 === 0;
+                          return (
+                            <div
+                              key={`pin-${rowIdx}`}
+                              className={cn(
+                                "flex border-b border-sheet-border",
+                                isEvenRow ? "bg-row-even" : "bg-row-odd"
+                              )}
+                            >
+                              <div className="w-5 shrink-0 relative border-r border-sheet-border bg-sheet-border/20">
+                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+                                  <span
+                                    className="text-[9px] font-mono text-muted-foreground select-none whitespace-nowrap"
+                                    style={{
+                                      transform: "rotate(-90deg)",
+                                    }}
+                                  >
+                                    {startIdx + 1}–
+                                    {Math.min(
+                                      startIdx + cardsPerRow,
+                                      filteredJobs.length
+                                    )}
+                                  </span>
+                                  <Pin className="h-2.5 w-2.5 text-primary fill-primary" />
+                                </div>
+                              </div>
+                              <div className="flex-1 px-3 py-3 flex items-center">
+                                <LayoutGroup>
+                                  {renderRowCards(rowIdx)}
+                                </LayoutGroup>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex-1 px-3 py-3 flex items-center">
-                            <LayoutGroup>
-                              {renderRowCards(rowIdx)}
-                            </LayoutGroup>
-                          </div>
-                        </div>
-                      );
-                    })}
+                          );
+                        })
+                    }
                   </div>
                 )}
 
@@ -1359,32 +1710,19 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                 className="flex-1 overflow-y-auto"
                 onScroll={handleScroll}
               >
-                <LayoutGroup>
+                {viewMode === "list" ? (
+                  /* ── List mode ── */
                   <div
                     className="relative"
                     style={{ height: `${virtualizer.getTotalSize()}px` }}
                   >
                     {virtualizer.getVirtualItems().map((virtualRow) => {
-                      const startIdx = virtualRow.index * cardsPerRow;
                       const isEvenRow = virtualRow.index % 2 === 0;
-                      const rowIsPinned = pinnedRowIndices.includes(
-                        virtualRow.index
-                      );
-
-                      // Check if all cards in this row are selected
-                      const rowCards = filteredJobs.slice(
-                        startIdx,
-                        startIdx + cardsPerRow
-                      );
-                      const allRowSelected =
-                        rowCards.length > 0 &&
-                        rowCards.every((s) => selectedIds.has(s.job.id));
-
                       return (
                         <div
                           key={virtualRow.index}
                           className={cn(
-                            "absolute left-0 right-0 flex border-b border-sheet-border",
+                            "absolute left-0 right-0",
                             isEvenRow ? "bg-row-even" : "bg-row-odd"
                           )}
                           style={{
@@ -1392,65 +1730,105 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                             transform: `translateY(${virtualRow.start}px)`,
                           }}
                         >
-                          {/* Row gutter: row number + pin + row select */}
-                          <div
-                            className="w-5 shrink-0 relative border-r border-sheet-border bg-sheet-border/20 cursor-pointer hover:bg-sheet-border/20 transition-colors group/gutter"
-                            onClick={() => selectRow(virtualRow.index)}
-                          >
-                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
-                              <span
-                                className="text-[9px] font-mono text-muted-foreground select-none whitespace-nowrap"
-                                style={{
-                                  transform: "rotate(-90deg)",
-                                }}
-                              >
-                                {startIdx + 1}–
-                                {Math.min(
-                                  startIdx + cardsPerRow,
-                                  filteredJobs.length
-                                )}
-                              </span>
-                            </div>
-
-                            {/* Row select indicator */}
-                            {allRowSelected && (
-                              <div className="absolute top-1 left-1/2 -translate-x-1/2 h-2 w-2 rounded-full bg-primary" />
-                            )}
-
-                            {/* Pin button */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Pin the first job in this row
-                                const firstJob = filteredJobs[startIdx];
-                                if (firstJob) togglePin(firstJob.job.id);
-                              }}
-                              className={cn(
-                                "absolute bottom-1 left-1/2 -translate-x-1/2 transition-opacity",
-                                rowIsPinned
-                                  ? "opacity-100 text-primary"
-                                  : "opacity-0 group-hover/gutter:opacity-60 text-muted-foreground hover:text-foreground"
-                              )}
-                              title={rowIsPinned ? "Unpin row" : "Pin row"}
-                            >
-                              <Pin
-                                className={cn(
-                                  "h-2.5 w-2.5",
-                                  rowIsPinned && "fill-primary"
-                                )}
-                              />
-                            </button>
-                          </div>
-
-                          {/* Cards */}
-                          <div className="flex-1 px-3 py-3 flex items-center">
-                            {renderRowCards(virtualRow.index)}
-                          </div>
+                          {renderListRow(virtualRow.index)}
                         </div>
                       );
                     })}
                   </div>
-                </LayoutGroup>
+                ) : (
+                  /* ── Grid mode ── */
+                  <LayoutGroup>
+                    <div
+                      className="relative"
+                      style={{ height: `${virtualizer.getTotalSize()}px` }}
+                    >
+                      {virtualizer.getVirtualItems().map((virtualRow) => {
+                        const startIdx = virtualRow.index * cardsPerRow;
+                        const isEvenRow = virtualRow.index % 2 === 0;
+                        const rowIsPinned = pinnedRowIndices.includes(
+                          virtualRow.index
+                        );
+
+                        // Check if all cards in this row are selected
+                        const rowCards = filteredJobs.slice(
+                          startIdx,
+                          startIdx + cardsPerRow
+                        );
+                        const allRowSelected =
+                          rowCards.length > 0 &&
+                          rowCards.every((s) => selectedIds.has(s.job.id));
+
+                        return (
+                          <div
+                            key={virtualRow.index}
+                            className={cn(
+                              "absolute left-0 right-0 flex border-b border-sheet-border",
+                              isEvenRow ? "bg-row-even" : "bg-row-odd"
+                            )}
+                            style={{
+                              height: `${virtualRow.size}px`,
+                              transform: `translateY(${virtualRow.start}px)`,
+                            }}
+                          >
+                            {/* Row gutter: row number + pin + row select */}
+                            <div
+                              className="w-5 shrink-0 relative border-r border-sheet-border bg-sheet-border/20 cursor-pointer hover:bg-sheet-border/20 transition-colors group/gutter"
+                              onClick={() => selectRow(virtualRow.index)}
+                            >
+                              <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+                                <span
+                                  className="text-[9px] font-mono text-muted-foreground select-none whitespace-nowrap"
+                                  style={{
+                                    transform: "rotate(-90deg)",
+                                  }}
+                                >
+                                  {startIdx + 1}–
+                                  {Math.min(
+                                    startIdx + cardsPerRow,
+                                    filteredJobs.length
+                                  )}
+                                </span>
+                              </div>
+
+                              {/* Row select indicator */}
+                              {allRowSelected && (
+                                <div className="absolute top-1 left-1/2 -translate-x-1/2 h-2 w-2 rounded-full bg-primary" />
+                              )}
+
+                              {/* Pin button */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const firstJob = filteredJobs[startIdx];
+                                  if (firstJob) togglePin(firstJob.job.id);
+                                }}
+                                className={cn(
+                                  "absolute bottom-1 left-1/2 -translate-x-1/2 transition-opacity",
+                                  rowIsPinned
+                                    ? "opacity-100 text-primary"
+                                    : "opacity-0 group-hover/gutter:opacity-60 text-muted-foreground hover:text-foreground"
+                                )}
+                                title={rowIsPinned ? "Unpin row" : "Pin row"}
+                              >
+                                <Pin
+                                  className={cn(
+                                    "h-2.5 w-2.5",
+                                    rowIsPinned && "fill-primary"
+                                  )}
+                                />
+                              </button>
+                            </div>
+
+                            {/* Cards */}
+                            <div className="flex-1 px-3 py-3 flex items-center">
+                              {renderRowCards(virtualRow.index)}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </LayoutGroup>
+                )}
 
                 {filteredJobs.length === 0 && rankedJobs.length > 0 && (
                   <div className="text-center py-12 text-muted-foreground">
@@ -1476,42 +1854,49 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
               {pinnedRowIndices.length > 0 &&
                 scrollDir === "up" && (
                   <div className="shrink-0 z-10 shadow-[0_-4px_6px_-1px_rgb(0_0_0/0.1)] border-t">
-                    {pinnedRowIndices.map((rowIdx) => {
-                      const startIdx = rowIdx * cardsPerRow;
-                      const isEvenRow = rowIdx % 2 === 0;
-                      return (
-                        <div
-                          key={`pin-${rowIdx}`}
-                          className={cn(
-                            "flex border-b border-sheet-border",
-                            isEvenRow ? "bg-row-even" : "bg-row-odd"
-                          )}
-                        >
-                          <div className="w-5 shrink-0 relative border-r border-sheet-border bg-sheet-border/20">
-                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
-                              <span
-                                className="text-[9px] font-mono text-muted-foreground select-none whitespace-nowrap"
-                                style={{
-                                  transform: "rotate(-90deg)",
-                                }}
-                              >
-                                {startIdx + 1}–
-                                {Math.min(
-                                  startIdx + cardsPerRow,
-                                  filteredJobs.length
-                                )}
-                              </span>
-                              <Pin className="h-2.5 w-2.5 text-primary fill-primary" />
+                    {viewMode === "list"
+                      ? pinnedRowIndices.map((jobIdx) => (
+                          <div key={`pin-${jobIdx}`} className={cn(jobIdx % 2 === 0 ? "bg-row-even" : "bg-row-odd")}>
+                            {renderListRow(jobIdx)}
+                          </div>
+                        ))
+                      : pinnedRowIndices.map((rowIdx) => {
+                          const startIdx = rowIdx * cardsPerRow;
+                          const isEvenRow = rowIdx % 2 === 0;
+                          return (
+                            <div
+                              key={`pin-${rowIdx}`}
+                              className={cn(
+                                "flex border-b border-sheet-border",
+                                isEvenRow ? "bg-row-even" : "bg-row-odd"
+                              )}
+                            >
+                              <div className="w-5 shrink-0 relative border-r border-sheet-border bg-sheet-border/20">
+                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+                                  <span
+                                    className="text-[9px] font-mono text-muted-foreground select-none whitespace-nowrap"
+                                    style={{
+                                      transform: "rotate(-90deg)",
+                                    }}
+                                  >
+                                    {startIdx + 1}–
+                                    {Math.min(
+                                      startIdx + cardsPerRow,
+                                      filteredJobs.length
+                                    )}
+                                  </span>
+                                  <Pin className="h-2.5 w-2.5 text-primary fill-primary" />
+                                </div>
+                              </div>
+                              <div className="flex-1 px-3 py-3 flex items-center">
+                                <LayoutGroup>
+                                  {renderRowCards(rowIdx)}
+                                </LayoutGroup>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex-1 px-3 py-3 flex items-center">
-                            <LayoutGroup>
-                              {renderRowCards(rowIdx)}
-                            </LayoutGroup>
-                          </div>
-                        </div>
-                      );
-                    })}
+                          );
+                        })
+                    }
                   </div>
                 )}
             </div>
@@ -1545,11 +1930,18 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
         <DragOverlay>
           {activeScored ? (
-            <DragOverlayCard
-              scored={activeScored}
-              rank={activeScoredRank}
-              width={dragWidth}
-            />
+            viewMode === "list" ? (
+              <ListDragOverlayRow
+                scored={activeScored}
+                rank={activeScoredRank}
+              />
+            ) : (
+              <DragOverlayCard
+                scored={activeScored}
+                rank={activeScoredRank}
+                width={dragWidth}
+              />
+            )
           ) : null}
         </DragOverlay>
       </DndContext>
