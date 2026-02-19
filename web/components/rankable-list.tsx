@@ -24,7 +24,6 @@ import { CSS } from "@dnd-kit/utilities";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { cn } from "@/lib/utils";
 import {
-  Search,
   Lock,
   Unlock,
 } from "lucide-react";
@@ -42,6 +41,7 @@ interface RankableListProps {
   title?: string;
   description?: string;
   onItemMoved?: (id: string) => void;
+  searchFilter?: string;
 }
 
 /* ── Individual draggable row ── */
@@ -80,12 +80,10 @@ const DraggableRow = memo(function DraggableRow({
       {...attributes}
       {...listeners}
       className={cn(
-        "group flex items-center gap-1.5 rounded-lg border px-2 py-2.5 transition-colors touch-none cursor-grab",
-        regionStyle
-          ? `${regionStyle.bg} ${regionStyle.border}`
-          : isPinned
-            ? "bg-primary/5 border-primary/20"
-            : "bg-card hover:bg-accent/50",
+        "group flex items-center gap-1.5 rounded-lg border px-2 py-2.5 transition-colors touch-manipulation cursor-grab",
+        isPinned
+          ? "bg-primary/5 border-primary/20"
+          : "bg-card hover:bg-accent/50",
         isDragging && "opacity-40 shadow-lg z-50"
       )}
     >
@@ -154,8 +152,8 @@ export function RankableList({
   title,
   description,
   onItemMoved,
+  searchFilter = "",
 }: RankableListProps) {
-  const [search, setSearch] = useState("");
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
   const [activeId, setActiveId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -178,12 +176,12 @@ export function RankableList({
   }, [items]);
 
   // When searching, show filtered results but maintain original indices
-  const isSearching = search.length > 0;
+  const isSearching = searchFilter.length > 0;
   const filteredItems = isSearching
     ? items.filter(
         (item) =>
-          item.label.toLowerCase().includes(search.toLowerCase()) ||
-          (item.badge && item.badge.toLowerCase().includes(search.toLowerCase()))
+          item.label.toLowerCase().includes(searchFilter.toLowerCase()) ||
+          (item.badge && item.badge.toLowerCase().includes(searchFilter.toLowerCase()))
       )
     : items;
 
@@ -227,38 +225,16 @@ export function RankableList({
   });
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col flex-1 min-h-0">
       {/* Header */}
       {(title || description) && (
-        <div className="mb-3">
+        <div className="mb-3 shrink-0">
           {title && <h3 className="text-sm font-semibold text-foreground">{title}</h3>}
           {description && (
             <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
           )}
         </div>
       )}
-
-      {/* Search */}
-      <div className="flex gap-2 mb-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-md border bg-background px-8 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring/50 placeholder:text-muted-foreground"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-      </div>
 
       {/* DnD context wraps both sticky and scrollable */}
       <DndContext
@@ -273,7 +249,7 @@ export function RankableList({
           strategy={verticalListSortingStrategy}
         >
           {/* Virtualized list */}
-          <div ref={scrollRef} className="flex-1 overflow-y-auto pr-1">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 pr-1">
             <div style={{ height: `${virtualizer.getTotalSize()}px`, position: "relative" }}>
               {virtualizer.getVirtualItems().map((virtualRow) => {
                 const item = scrollableItems[virtualRow.index];
@@ -311,7 +287,7 @@ export function RankableList({
       </DndContext>
 
       {/* Footer info */}
-      <div className="mt-2 flex items-center text-xs text-muted-foreground border-t pt-2">
+      <div className="mt-2 flex items-center text-xs text-muted-foreground border-t pt-2 shrink-0">
         <span>
           {items.length} items
           {isSearching && ` · ${filteredItems.length} shown`}

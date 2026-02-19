@@ -57,7 +57,7 @@ function SortableRow({ item }: { item: SortableItem }) {
       {...attributes}
       {...listeners}
       className={cn(
-        "flex items-center gap-3 rounded-lg border px-4 py-3 touch-none cursor-grab",
+        "flex items-center gap-3 rounded-lg border px-4 py-3 touch-manipulation cursor-grab",
         item.regionStyle
           ? `${item.regionStyle.bg} ${item.regionStyle.border}`
           : "bg-card",

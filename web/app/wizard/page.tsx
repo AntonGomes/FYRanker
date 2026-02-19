@@ -23,7 +23,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ProximitySorter } from "@/components/proximity-sorter";
+import { HospitalSortDropdown, type SortMode } from "@/components/hospital-sort-dropdown";
 import type { Hospital, UserLocation } from "@/lib/proximity";
 import { SpecialtyDuel } from "@/components/specialty-duel";
 import { type EloState, initEloFromRanking } from "@/lib/elo";
@@ -34,6 +34,8 @@ import {
   Stethoscope,
   SlidersHorizontal,
   Sparkles,
+  Search,
+  X,
 } from "lucide-react";
 
 const STEPS = [
@@ -101,6 +103,9 @@ export default function WizardPage() {
   // Proximity sorting
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [sortMode, setSortMode] = useState<SortMode>("default");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   // Step 5: Set Weights
   const [weights, setWeights] = useState({
     region: 0.33,
@@ -147,11 +152,16 @@ export default function WizardPage() {
 
   // Navigation
   function handleNext() {
+    setSearchOpen(false);
+    setSearchQuery("");
     if (step === 1) {
       setRegionSubStep(0);
       setStep(2);
     } else if (step === 2) {
       if (regionSubStep < rankedRegions.length - 1) {
+        setSortMode("default");
+        setSearchOpen(false);
+        setSearchQuery("");
         setRegionSubStep((s) => s + 1);
       } else {
         setGlobalHospitals(deriveGlobalHospitals());
@@ -195,6 +205,9 @@ export default function WizardPage() {
       // Dismiss refine prompt
       setShowRefinePrompt(false);
     } else if (step === 2 && regionSubStep > 0) {
+      setSortMode("default");
+      setSearchOpen(false);
+      setSearchQuery("");
       setRegionSubStep((s) => s - 1);
     } else if (step === 2) {
       setStep(1);
@@ -256,18 +269,18 @@ export default function WizardPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex h-dvh flex-col bg-background overflow-hidden">
       <SiteHeader />
 
-      <main className="flex-1 flex items-center justify-center px-2 py-3 sm:px-4 sm:py-4">
-        <div className="w-full max-w-2xl space-y-3">
+      <main className="flex-1 flex flex-col items-center min-h-0 px-2 py-2 sm:px-4 sm:py-3">
+        <div className="w-full max-w-2xl flex flex-col min-h-0 flex-1 gap-2">
           {/* Progress indicator — full width */}
-          <div className="px-1">
+          <div className="px-1 shrink-0">
             <StepIndicator currentStep={step} totalSteps={TOTAL_STEPS} />
           </div>
 
-        <Card className="shadow-lg">
-          <CardHeader>
+        <Card className="shadow-lg min-h-0 flex-1 gap-0 py-0">
+          <CardHeader className="shrink-0 py-4 sm:py-5">
             <div className="flex items-center gap-3">
               {(() => {
                 const StepIcon = STEPS[step - 1]?.icon;
@@ -298,58 +311,100 @@ export default function WizardPage() {
                 );
               })()}
             </div>
-            <CardDescription className="mt-2">
-              {getDescription()}
-            </CardDescription>
+            {/* Description + inline toolbar */}
+            <div className="mt-2 space-y-2">
+              <div className="flex items-center gap-2">
+                <CardDescription className="flex-1">
+                  {getDescription()}
+                </CardDescription>
+                {/* Search + sort controls for list steps */}
+                {(step === 2 || step === 3 || (step === 4 && !isRefining)) && (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {searchOpen ? (
+                      <div className="relative">
+                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                        <input
+                          type="text"
+                          placeholder="Search..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          autoFocus
+                          className="w-36 rounded-md border bg-background pl-7 pr-6 py-1 text-xs outline-none focus:ring-1 focus:ring-ring/50 placeholder:text-muted-foreground"
+                        />
+                        <button
+                          onClick={() => { setSearchQuery(""); setSearchOpen(false); }}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setSearchOpen(true)}
+                        className="flex items-center justify-center h-7 w-7 rounded-md border bg-background text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+                        title="Search"
+                      >
+                        <Search className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    {step === 2 && (
+                      <HospitalSortDropdown
+                        items={currentHospitals}
+                        onSort={(sortedItems) => {
+                          setHospitalsByRegion((prev) => ({
+                            ...prev,
+                            [currentRegion!.id]: sortedItems,
+                          }));
+                        }}
+                        userLocation={userLocation}
+                        onLocationChange={setUserLocation}
+                        hospitals={hospitals}
+                        sortMode={sortMode}
+                        onSortModeChange={setSortMode}
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </CardHeader>
 
-          <CardContent>
+          <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden pb-0">
             {/* Step 1: Rank Regions with region colors */}
             {step === 1 && (
-              <SortableList
-                items={rankedRegions.map((r) => {
-                  const style = getRegionStyle(r.id);
-                  return { ...r, regionStyle: style };
-                })}
-                onReorder={(items) =>
-                  setRankedRegions(items.map(({ id, label }) => ({ id, label })))
-                }
-              />
+              <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
+                <SortableList
+                  items={rankedRegions.map((r) => {
+                    const style = getRegionStyle(r.id);
+                    return { ...r, regionStyle: style };
+                  })}
+                  onReorder={(items) =>
+                    setRankedRegions(items.map(({ id, label }) => ({ id, label })))
+                  }
+                />
+              </div>
             )}
 
             {/* Step 2: Rank Hospitals per Region (can be large — use RankableList) */}
             {step === 2 && currentRegion && (
-              <div className="space-y-3">
-                <ProximitySorter
+              <div className="flex flex-col flex-1 min-h-0">
+                <RankableList
                   items={currentHospitals}
-                  onSort={(sortedItems) => {
+                  onReorder={(newItems) => {
                     setHospitalsByRegion((prev) => ({
                       ...prev,
-                      [currentRegion.id]: sortedItems,
+                      [currentRegion.id]: newItems,
                     }));
                   }}
-                  userLocation={userLocation}
-                  onLocationChange={setUserLocation}
-                  hospitals={hospitals}
+                  searchFilter={searchQuery}
                 />
-                <div className="h-[50vh]">
-                  <RankableList
-                    items={currentHospitals}
-                    onReorder={(newItems) => {
-                      setHospitalsByRegion((prev) => ({
-                        ...prev,
-                        [currentRegion.id]: newItems,
-                      }));
-                    }}
-                  />
-                </div>
               </div>
             )}
 
             {/* Step 3: Global Hospital Ranking (large — use RankableList) */}
             {step === 3 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 rounded-lg border px-4 py-3">
+              <div className="flex flex-col flex-1 min-h-0 gap-3">
+                <div className="flex items-center gap-3 rounded-lg border px-4 py-3 shrink-0">
                   <Switch
                     id="lock-regions"
                     checked={lockRegions}
@@ -363,10 +418,11 @@ export default function WizardPage() {
                   </Label>
                 </div>
                 {!lockRegions && (
-                  <div className="h-[48vh]">
+                  <div className="flex flex-col flex-1 min-h-0">
                     <RankableList
                       items={globalHospitals}
                       onReorder={setGlobalHospitals}
+                      searchFilter={searchQuery}
                     />
                   </div>
                 )}
@@ -375,14 +431,15 @@ export default function WizardPage() {
 
             {/* Step 4: Rank Specialties — DnD or ELO refinement */}
             {step === 4 && !isRefining && (
-              <div className="space-y-3">
-                <div className="h-[50vh]">
+              <div className="flex flex-col flex-1 min-h-0 gap-3">
+                <div className="flex flex-col flex-1 min-h-0">
                   <RankableList
                     items={rankedSpecialties}
                     onReorder={setRankedSpecialties}
                     onItemMoved={(id) =>
                       setMovedSpecialtyIds((prev) => new Set(prev).add(id))
                     }
+                    searchFilter={searchQuery}
                   />
                 </div>
 
@@ -568,10 +625,8 @@ export default function WizardPage() {
             )}
           </CardContent>
 
-        </Card>
-
-          {/* Sticky bottom nav bar */}
-          <div className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t px-2 py-3 sm:px-4 flex justify-between">
+          {/* Nav buttons inside card */}
+          <div className="shrink-0 border-t px-4 py-2 sm:px-6 sm:py-3 flex justify-between">
             {step > 1 ? (
               <Button variant="outline" onClick={handleBack}>
                 Back
@@ -586,6 +641,8 @@ export default function WizardPage() {
               {step === TOTAL_STEPS ? "Calculate & View Results" : "Continue"}
             </Button>
           </div>
+
+        </Card>
         </div>
       </main>
 
