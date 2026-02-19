@@ -11,6 +11,8 @@ Next.js + TypeScript + shadcn/ui app. Source lives in `web/`.
 ## Development Workflow
 
 - **Always use Playwright** when working on frontend UI development — take screenshots to verify changes visually before considering them done.
+- **Commit and push regularly** — don't let work pile up. Commit after each meaningful change and push to remote frequently.
+- **Fetch and pull regularly** when working in a git worktree — stay in sync with the main repo to avoid drift and merge conflicts.
 
 ## shadcn CLI
 
