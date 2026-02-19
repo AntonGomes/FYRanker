@@ -1,13 +1,17 @@
 "use client";
 
+import { useState, memo } from "react";
 import {
   DndContext,
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
+  DragOverlay,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -81,15 +85,47 @@ function SortableRow({ item }: { item: SortableItem }) {
   );
 }
 
+/* ── Overlay shown while dragging ── */
+const DragOverlayRow = memo(function DragOverlayRow({ item }: { item: SortableItem }) {
+  return (
+    <div className={cn(
+      "flex items-center gap-3 rounded-lg border px-4 py-3 shadow-xl ring-2 ring-primary/20 scale-[1.03]",
+      item.regionStyle
+        ? `${item.regionStyle.bg} ${item.regionStyle.border}`
+        : "bg-card border-primary/40",
+    )}>
+      <GripVertical className="h-4 w-4 text-muted-foreground" />
+      <span className={cn("flex-1 text-sm font-medium", item.regionStyle?.text)}>
+        {item.label}
+      </span>
+      {item.badge && (
+        <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+          {item.badge}
+        </span>
+      )}
+    </div>
+  );
+});
+
 export function SortableList({ items, onReorder }: SortableListProps) {
+  const [activeId, setActiveId] = useState<string | null>(null);
+
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 8 },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(event.active.id as string);
+  }
+
   function handleDragEnd(event: DragEndEvent) {
+    setActiveId(null);
     const { active, over } = event;
     if (over && active.id !== over.id) {
       const oldIndex = items.findIndex((i) => i.id === active.id);
@@ -98,10 +134,13 @@ export function SortableList({ items, onReorder }: SortableListProps) {
     }
   }
 
+  const activeItem = activeId ? items.find((i) => i.id === activeId) : null;
+
   return (
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
       <SortableContext
@@ -114,6 +153,10 @@ export function SortableList({ items, onReorder }: SortableListProps) {
           ))}
         </div>
       </SortableContext>
+
+      <DragOverlay>
+        {activeItem ? <DragOverlayRow item={activeItem} /> : null}
+      </DragOverlay>
     </DndContext>
   );
 }

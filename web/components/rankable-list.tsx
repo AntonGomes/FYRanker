@@ -5,7 +5,7 @@ import {
   DndContext,
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   useSensor,
   useSensors,
@@ -42,7 +42,6 @@ interface RankableListProps {
   onReorder: (items: RankableItem[]) => void;
   title?: string;
   description?: string;
-  stickyCount?: number;
   onItemMoved?: (id: string) => void;
 }
 
@@ -51,25 +50,11 @@ const DraggableRow = memo(function DraggableRow({
   item,
   index,
   isPinned,
-  isSticky,
-  editingIndex,
-  editValue,
-  onEditStart,
-  onEditChange,
-  onEditKeyDown,
-  onEditBlur,
   onTogglePin,
 }: {
   item: RankableItem;
   index: number;
   isPinned: boolean;
-  isSticky: boolean;
-  editingIndex: number | null;
-  editValue: string;
-  onEditStart: (index: number) => void;
-  onEditChange: (value: string) => void;
-  onEditKeyDown: (e: React.KeyboardEvent<HTMLInputElement>, index: number) => void;
-  onEditBlur: () => void;
   onTogglePin: (id: string) => void;
 }) {
   const {
@@ -100,8 +85,7 @@ const DraggableRow = memo(function DraggableRow({
           : isPinned
             ? "bg-primary/5 border-primary/20"
             : "bg-card hover:bg-accent/50",
-        isDragging && "opacity-40 shadow-lg z-50",
-        isSticky && "bg-card/95 backdrop-blur-sm"
+        isDragging && "opacity-40 shadow-lg z-50"
       )}
     >
       {/* Drag handle */}
@@ -113,26 +97,10 @@ const DraggableRow = memo(function DraggableRow({
         <GripVertical className="h-4 w-4" />
       </button>
 
-      {/* Rank number (click to edit) */}
-      {editingIndex === index ? (
-        <input
-          type="text"
-          value={editValue}
-          onChange={(e) => onEditChange(e.target.value)}
-          onKeyDown={(e) => onEditKeyDown(e, index)}
-          onBlur={onEditBlur}
-          autoFocus
-          className="w-9 rounded border bg-background px-1 py-0.5 text-center text-xs font-mono outline-none focus:ring-1 focus:ring-ring"
-        />
-      ) : (
-        <button
-          onClick={() => onEditStart(index)}
-          className="w-9 shrink-0 text-center text-xs font-mono text-muted-foreground hover:text-foreground hover:bg-muted rounded py-0.5 transition-colors"
-          title="Click to type a new position"
-        >
-          {index + 1}
-        </button>
-      )}
+      {/* Rank number */}
+      <span className="w-9 shrink-0 text-center text-xs font-mono text-muted-foreground">
+        {index + 1}
+      </span>
 
       {/* Label */}
       <span className="flex-1 text-sm truncate min-w-0">{item.label}</span>
@@ -194,20 +162,17 @@ export function RankableList({
   onReorder,
   title,
   description,
-  stickyCount = 5,
   onItemMoved,
 }: RankableListProps) {
   const [search, setSearch] = useState("");
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editValue, setEditValue] = useState("");
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
   const [activeId, setActiveId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, {
-      activationConstraint: { delay: 200, tolerance: 5 },
+      activationConstraint: { delay: 250, tolerance: 8 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
@@ -231,17 +196,7 @@ export function RankableList({
       )
     : items;
 
-  // For display: sticky top N items + rest
-  const stickyItems = isSearching ? [] : items.slice(0, Math.min(stickyCount, items.length));
-  const scrollableItems = isSearching ? filteredItems : items.slice(stickyCount);
-
-  // Stabilized callbacks
-  const handleEditStart = useCallback((idx: number) => {
-    setEditingIndex(idx);
-    setEditValue(String(idx + 1));
-  }, []);
-
-  const handleEditBlur = useCallback(() => setEditingIndex(null), []);
+  const scrollableItems = isSearching ? filteredItems : items;
 
   const togglePin = useCallback((id: string) => {
     setPinnedIds((prev) => {
@@ -251,35 +206,6 @@ export function RankableList({
       return next;
     });
   }, []);
-
-  const moveToPosition = useCallback(
-    (fromIndex: number, toPosition: number) => {
-      if (toPosition < 1 || toPosition > items.length) return;
-      if (pinnedIds.has(items[fromIndex].id)) return;
-
-      const movedItem = items[fromIndex];
-      const newItems = [...items];
-      const [item] = newItems.splice(fromIndex, 1);
-      newItems.splice(toPosition - 1, 0, item);
-      onReorder(newItems);
-      onItemMoved?.(movedItem.id);
-      setEditingIndex(null);
-    },
-    [items, onReorder, pinnedIds, onItemMoved]
-  );
-
-  const handleRankKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>, originalIndex: number) => {
-      if (e.key === "Enter") {
-        const pos = parseInt(editValue, 10);
-        if (!isNaN(pos)) moveToPosition(originalIndex, pos);
-        setEditingIndex(null);
-      } else if (e.key === "Escape") {
-        setEditingIndex(null);
-      }
-    },
-    [editValue, moveToPosition]
-  );
 
   function handleDragStart(event: DragStartEvent) {
     setActiveId(event.active.id as string);
@@ -355,32 +281,7 @@ export function RankableList({
           items={items.map((i) => i.id)}
           strategy={verticalListSortingStrategy}
         >
-          {/* Sticky top N */}
-          {!isSearching && stickyItems.length > 0 && (
-            <div className="shrink-0 space-y-1 pb-1 mb-1 border-b border-dashed border-muted-foreground/20">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-1 mb-1">
-                Top {stickyCount}
-              </p>
-              {stickyItems.map((item, i) => (
-                <DraggableRow
-                  key={item.id}
-                  item={item}
-                  index={i}
-                  isPinned={pinnedIds.has(item.id)}
-                  isSticky={true}
-                  editingIndex={editingIndex}
-                  editValue={editValue}
-                  onEditStart={handleEditStart}
-                  onEditChange={setEditValue}
-                  onEditKeyDown={handleRankKeyDown}
-                  onEditBlur={handleEditBlur}
-                  onTogglePin={togglePin}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Scrollable rest — virtualized */}
+          {/* Virtualized list */}
           <div ref={scrollRef} className="flex-1 overflow-y-auto pr-1">
             <div style={{ height: `${virtualizer.getTotalSize()}px`, position: "relative" }}>
               {virtualizer.getVirtualItems().map((virtualRow) => {
@@ -402,13 +303,6 @@ export function RankableList({
                       item={item}
                       index={realIndex}
                       isPinned={pinnedIds.has(item.id)}
-                      isSticky={false}
-                      editingIndex={editingIndex}
-                      editValue={editValue}
-                      onEditStart={handleEditStart}
-                      onEditChange={setEditValue}
-                      onEditKeyDown={handleRankKeyDown}
-                      onEditBlur={handleEditBlur}
                       onTogglePin={togglePin}
                     />
                   </div>
@@ -426,13 +320,12 @@ export function RankableList({
       </DndContext>
 
       {/* Footer info */}
-      <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground border-t pt-2">
+      <div className="mt-2 flex items-center text-xs text-muted-foreground border-t pt-2">
         <span>
           {items.length} items
           {isSearching && ` · ${filteredItems.length} shown`}
           {pinnedIds.size > 0 && ` · ${pinnedIds.size} locked`}
         </span>
-        <span className="text-[10px]">Drag to reorder · click rank # to jump</span>
       </div>
     </div>
   );

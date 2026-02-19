@@ -213,21 +213,21 @@ export default function WizardPage() {
   function getDescription(): string {
     switch (step) {
       case 1:
-        return "Drag to rank the regions from most to least preferred. You can always come back and adjust.";
+        return "Drag to reorder by preference.";
       case 2:
-        return `Rank hospitals in ${currentRegion?.label ?? "region"} (${regionSubStep + 1} of ${rankedRegions.length}) · ${currentHospitals.length} hospital${currentHospitals.length !== 1 ? "s" : ""}`;
+        return `${regionSubStep + 1}/${rankedRegions.length} · ${currentHospitals.length} hospital${currentHospitals.length !== 1 ? "s" : ""}`;
       case 3:
         return lockRegions
-          ? "Regions are kept separate — hospitals follow your region and per-region rankings with no cross-region mixing."
-          : `Fine-tune the overall hospital order across all regions. ${globalHospitals.length} hospitals total — use search and keyboard repositioning for speed.`;
+          ? "Regions locked — hospitals stay within their region."
+          : `${globalHospitals.length} hospitals across all regions.`;
       case 4:
         return isRefining
           ? "Compare specialties head-to-head to refine your ranking. More comparisons = more accurate results."
-          : "Drag to rank specialties from most to least preferred. You can refine with quick comparisons after.";
+          : "Drag to reorder by preference.";
       case 5:
         return lockRegions
-          ? "Region order is fixed. Adjust how much hospital and specialty preferences influence your score within each region."
-          : "How much should each factor influence your score? Adjust the sliders — the scores will be computed when you continue.";
+          ? "Region order fixed. Adjust hospital and specialty weight."
+          : "Adjust how much each factor matters.";
       default:
         return "";
     }
@@ -260,9 +260,8 @@ export default function WizardPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
 
-      <main className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-2xl space-y-4">
-        <h1 className="mx-auto w-full text-center text-2xl font-bold">Let the wizard guide you 🧙</h1>
+      <main className="flex-1 flex items-center justify-center px-2 py-3 sm:px-4 sm:py-4">
+        <div className="w-full max-w-2xl space-y-3">
           {/* Progress indicator — full width */}
           <div className="px-1">
             <StepIndicator currentStep={step} totalSteps={TOTAL_STEPS} />
@@ -322,6 +321,19 @@ export default function WizardPage() {
                   onLocationChange={setUserLocation}
                   hospitals={hospitals}
                 />
+                {/* Region pill */}
+                {(() => {
+                  const style = getRegionStyle(currentRegion.id);
+                  return (
+                    <div className={cn(
+                      "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium border",
+                      style.bg, style.border, style.text
+                    )}>
+                      <MapPin className="h-3 w-3" />
+                      {currentRegion.label} · {currentHospitals.length} hospital{currentHospitals.length !== 1 ? "s" : ""}
+                    </div>
+                  );
+                })()}
                 <div className="h-[50vh]">
                   <RankableList
                     items={currentHospitals}
@@ -433,12 +445,6 @@ export default function WizardPage() {
             {/* Step 5: Set Weights */}
             {step === 5 && (
               <div className="space-y-6">
-                <p className="text-xs text-muted-foreground">
-                  These weights control how much each factor contributes to
-                  your final score. They don&apos;t need to add up to 1 — we normalise
-                  them for you.
-                </p>
-
                 <div className="space-y-5">
                   {/* Region weight — hidden when regions are locked */}
                   {!lockRegions && (
