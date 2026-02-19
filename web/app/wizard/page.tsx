@@ -6,7 +6,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -286,6 +285,18 @@ export default function WizardPage() {
                   {STEPS[step - 1]?.title}
                 </CardTitle>
               </div>
+              {step === 2 && currentRegion && (() => {
+                const style = getRegionStyle(currentRegion.id);
+                return (
+                  <div className={cn(
+                    "ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium border",
+                    style.bg, style.border, style.text
+                  )}>
+                    <MapPin className="h-3 w-3" />
+                    {currentRegion.label}
+                  </div>
+                );
+              })()}
             </div>
             <CardDescription className="mt-2">
               {getDescription()}
@@ -321,19 +332,6 @@ export default function WizardPage() {
                   onLocationChange={setUserLocation}
                   hospitals={hospitals}
                 />
-                {/* Region pill */}
-                {(() => {
-                  const style = getRegionStyle(currentRegion.id);
-                  return (
-                    <div className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium border",
-                      style.bg, style.border, style.text
-                    )}>
-                      <MapPin className="h-3 w-3" />
-                      {currentRegion.label} · {currentHospitals.length} hospital{currentHospitals.length !== 1 ? "s" : ""}
-                    </div>
-                  );
-                })()}
                 <div className="h-[50vh]">
                   <RankableList
                     items={currentHospitals}
@@ -570,7 +568,10 @@ export default function WizardPage() {
             )}
           </CardContent>
 
-          <CardFooter className="justify-between">
+        </Card>
+
+          {/* Sticky bottom nav bar */}
+          <div className="sticky bottom-0 z-10 bg-background/80 backdrop-blur-sm border-t px-2 py-3 sm:px-4 flex justify-between">
             {step > 1 ? (
               <Button variant="outline" onClick={handleBack}>
                 Back
@@ -584,12 +585,11 @@ export default function WizardPage() {
             >
               {step === TOTAL_STEPS ? "Calculate & View Results" : "Continue"}
             </Button>
-          </CardFooter>
-        </Card>
+          </div>
         </div>
       </main>
 
-      <SiteFooter />
+      <SiteFooter className="hidden sm:block" />
     </div>
   );
 }

@@ -27,7 +27,6 @@ import {
   Search,
   Lock,
   Unlock,
-  GripVertical,
 } from "lucide-react";
 import { REGION_COLORS } from "@/components/job-detail-panel";
 
@@ -78,8 +77,10 @@ const DraggableRow = memo(function DraggableRow({
     <div
       ref={setNodeRef}
       style={style}
+      {...attributes}
+      {...listeners}
       className={cn(
-        "group flex items-center gap-1.5 rounded-lg border px-2 py-2.5 transition-colors",
+        "group flex items-center gap-1.5 rounded-lg border px-2 py-2.5 transition-colors touch-none cursor-grab",
         regionStyle
           ? `${regionStyle.bg} ${regionStyle.border}`
           : isPinned
@@ -88,15 +89,6 @@ const DraggableRow = memo(function DraggableRow({
         isDragging && "opacity-40 shadow-lg z-50"
       )}
     >
-      {/* Drag handle */}
-      <button
-        {...attributes}
-        {...listeners}
-        className="cursor-grab touch-none text-muted-foreground hover:text-foreground shrink-0 p-1"
-      >
-        <GripVertical className="h-4 w-4" />
-      </button>
-
       {/* Rank number */}
       <span className="w-9 shrink-0 text-center text-xs font-mono text-muted-foreground">
         {index + 1}
@@ -142,7 +134,6 @@ const DraggableRow = memo(function DraggableRow({
 const DragOverlayRow = memo(function DragOverlayRow({ item, index }: { item: RankableItem; index: number }) {
   return (
     <div className="flex items-center gap-1.5 rounded-lg border border-primary/40 bg-card px-2 py-2.5 shadow-xl ring-2 ring-primary/20 scale-[1.03]">
-      <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
       <span className="w-9 shrink-0 text-center text-xs font-mono text-muted-foreground">
         {index + 1}
       </span>

@@ -21,7 +21,6 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface SortableItem {
@@ -55,21 +54,16 @@ function SortableRow({ item }: { item: SortableItem }) {
     <div
       ref={setNodeRef}
       style={style}
+      {...attributes}
+      {...listeners}
       className={cn(
-        "flex items-center gap-3 rounded-lg border px-4 py-3",
+        "flex items-center gap-3 rounded-lg border px-4 py-3 touch-none cursor-grab",
         item.regionStyle
           ? `${item.regionStyle.bg} ${item.regionStyle.border}`
           : "bg-card",
         isDragging && "opacity-50 shadow-lg"
       )}
     >
-      <button
-        {...attributes}
-        {...listeners}
-        className="cursor-grab touch-none text-muted-foreground hover:text-foreground"
-      >
-        <GripVertical className="h-4 w-4" />
-      </button>
       <span className={cn(
         "flex-1 text-sm font-medium",
         item.regionStyle?.text
@@ -94,7 +88,6 @@ const DragOverlayRow = memo(function DragOverlayRow({ item }: { item: SortableIt
         ? `${item.regionStyle.bg} ${item.regionStyle.border}`
         : "bg-card border-primary/40",
     )}>
-      <GripVertical className="h-4 w-4 text-muted-foreground" />
       <span className={cn("flex-1 text-sm font-medium", item.regionStyle?.text)}>
         {item.label}
       </span>
