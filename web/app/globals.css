@@ -250,6 +250,16 @@
   outline-style: solid;
   outline-offset: 3px;
 }
+.animate-card-glow-up-fast {
+  animation: card-glow-up 2s linear forwards;
+  outline-style: solid;
+  outline-offset: 2px;
+}
+.animate-card-glow-down-fast {
+  animation: card-glow-down 2s linear forwards;
+  outline-style: solid;
+  outline-offset: 2px;
+}
 
 @layer base {
   * {

@@ -45,12 +45,17 @@ import {
   X,
   ArrowUpDown,
   Pin,
+  Lock,
   HelpCircle,
   LayoutGrid,
   List,
+  Download,
+  Upload,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { WelcomeModal } from "@/components/welcome-modal";
+import { exportRankingsToXlsx } from "@/lib/export-xlsx";
+import { importRankingsFromXlsx, ImportError } from "@/lib/import-xlsx";
 
 /* ── Types ── */
 
@@ -67,14 +72,12 @@ function isValidPlacement(p: Placement) {
 function getPlacementSummary(job: Job) {
   const sites: string[] = [];
   const specs = new Set<string>();
-  for (let i = 1; i <= 6; i++) {
-    const key = `placement_${i}` as `placement_${1 | 2 | 3 | 4 | 5 | 6}`;
-    const p = job[key];
+  for (const p of job.placements) {
     if (isValidPlacement(p)) {
       if (!sites.includes(p.site)) sites.push(p.site);
     }
-    if (p.speciality && p.speciality !== "None" && p.speciality.trim() !== "")
-      specs.add(p.speciality);
+    if (p.specialty && p.specialty !== "None" && p.specialty.trim() !== "")
+      specs.add(p.specialty);
   }
   return { sites, specs: Array.from(specs) };
 }
@@ -87,12 +90,11 @@ function getJobPlacements(job: Job): {
 } {
   const fy1: PlacementEntry[] = [];
   const fy2: PlacementEntry[] = [];
-  for (let i = 1; i <= 6; i++) {
-    const key = `placement_${i}` as `placement_${1 | 2 | 3 | 4 | 5 | 6}`;
-    const p = job[key];
+  for (let i = 0; i < job.placements.length; i++) {
+    const p = job.placements[i];
     if (isValidPlacement(p)) {
-      const entry = { site: p.site, spec: p.speciality, num: i };
-      if (i <= 3) fy1.push(entry);
+      const entry = { site: p.site, spec: p.specialty, num: i + 1 };
+      if (i < 3) fy1.push(entry);
       else fy2.push(entry);
     }
   }
@@ -316,7 +318,7 @@ const JobCard = memo(function JobCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: scored.job.id });
+  } = useSortable({ id: scored.job.programmeTitle });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -337,7 +339,7 @@ const JobCard = memo(function JobCard({
 
   return (
     <motion.div
-      layoutId={scored.job.id}
+      layoutId={scored.job.programmeTitle}
       layout="position"
       transition={{ type: "spring", stiffness: 500, damping: 35, mass: 0.8 }}
     >
@@ -381,14 +383,14 @@ const JobCard = memo(function JobCard({
 
           {/* Programme title */}
           <span className="flex-1 text-xs font-mono font-medium text-foreground truncate min-w-0 ml-0.5">
-            {scored.job.programme_title}
+            {scored.job.programmeTitle}
           </span>
 
           {/* Move to button */}
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onMoveToOpen(scored.job.id, rank);
+              onMoveToOpen(scored.job.programmeTitle, rank);
             }}
             onPointerDown={(e) => e.stopPropagation()}
             className="p-1.5 -m-1 rounded-md transition-colors shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -401,7 +403,7 @@ const JobCard = memo(function JobCard({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onToggleSelect(scored.job.id);
+              onToggleSelect(scored.job.programmeTitle);
             }}
             onPointerDown={(e) => e.stopPropagation()}
             className="p-1.5 -m-1 shrink-0 flex items-center justify-center"
@@ -441,7 +443,7 @@ const JobCard = memo(function JobCard({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onBoost(scored.job.id);
+                onBoost(scored.job.programmeTitle);
               }}
               onPointerDown={(e) => e.stopPropagation()}
               className="p-1 rounded text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 active:scale-90 transition-all"
@@ -452,7 +454,7 @@ const JobCard = memo(function JobCard({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onBury(scored.job.id);
+                onBury(scored.job.programmeTitle);
               }}
               onPointerDown={(e) => e.stopPropagation()}
               className="p-1 rounded text-red-500 hover:text-red-400 hover:bg-red-500/10 active:scale-90 transition-all"
@@ -503,7 +505,7 @@ const DragOverlayCard = memo(function DragOverlayCard({
           {scored.job.region}
         </span>
         <span className="flex-1 text-xs font-mono font-medium text-foreground truncate min-w-0">
-          {scored.job.programme_title}
+          {scored.job.programmeTitle}
         </span>
       </div>
       <div className="px-2.5 py-1.5">
@@ -518,8 +520,13 @@ const ListRow = memo(function ListRow({
   scored,
   rank,
   isSelected,
+  isPinned,
+  isLocked,
+  isMobile,
   onSelectDetail,
   onToggleSelect,
+  onTogglePin,
+  onToggleLock,
   onBoost,
   onBury,
   onMoveToOpen,
@@ -529,8 +536,13 @@ const ListRow = memo(function ListRow({
   scored: ScoredJob;
   rank: number;
   isSelected: boolean;
+  isPinned: boolean;
+  isLocked: boolean;
+  isMobile?: boolean;
   onSelectDetail: (job: Job) => void;
   onToggleSelect: (jobId: string) => void;
+  onTogglePin: (jobId: string) => void;
+  onToggleLock: (jobId: string) => void;
   onBoost: (jobId: string) => void;
   onBury: (jobId: string) => void;
   onMoveToOpen: (jobId: string, rank: number) => void;
@@ -544,7 +556,7 @@ const ListRow = memo(function ListRow({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: scored.job.id });
+  } = useSortable({ id: scored.job.programmeTitle, disabled: isLocked });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -562,12 +574,135 @@ const ListRow = memo(function ListRow({
         ? "animate-card-glow-down"
         : "";
 
-  const fy1Text = fy1
-    .map((e) => `${e.site} · ${e.spec}`)
-    .join(", ");
-  const fy2Text = fy2
-    .map((e) => `${e.site} · ${e.spec}`)
-    .join(", ");
+  // Build placement array for all 6 slots
+  const allPlacements: (PlacementEntry | null)[] = [];
+  for (let i = 0; i < 3; i++) allPlacements.push(fy1[i] ?? null);
+  for (let i = 0; i < 3; i++) allPlacements.push(fy2[i] ?? null);
+
+  // Build compact placement summary for mobile
+  const mobilePlacementSummary = useMemo(() => {
+    const entries = allPlacements.filter((e): e is PlacementEntry => e !== null);
+    return entries
+      .slice(0, 3)
+      .map((e) => `${e.site} · ${e.spec}`)
+      .join(" , ");
+  }, [allPlacements]);
+
+  if (isMobile) {
+    return (
+      <div
+        key={glowKey}
+        ref={setNodeRef}
+        style={{
+          ...style,
+          boxShadow: isSelected
+            ? undefined
+            : `inset 3px 0 0 ${regionStyle.color}40`,
+        }}
+        {...attributes}
+        {...listeners}
+        className={cn(
+          "flex flex-col py-2 px-2.5 border-b border-border transition-colors duration-100",
+          isLocked ? "cursor-default" : "cursor-grab touch-none",
+          isSelected
+            ? "bg-card-selected ring-1 ring-primary/60"
+            : "hover:bg-card-hover",
+          isDragging && "opacity-40 z-50",
+          isLocked && "bg-amber-50/40 dark:bg-amber-950/20",
+          glowClass
+        )}
+        onClick={() => onSelectDetail(scored.job)}
+        role="row"
+      >
+        {/* Line 1: rank + region + title */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm font-bold font-mono text-foreground shrink-0">
+            {rank}
+          </span>
+          <span
+            className={cn(
+              "rounded-full px-1.5 py-0.5 text-[10px] font-semibold border shrink-0",
+              regionStyle.bg,
+              regionStyle.text,
+              regionStyle.border
+            )}
+          >
+            {scored.job.region}
+          </span>
+          <span className="flex-1 text-xs font-mono font-semibold text-foreground truncate min-w-0">
+            {scored.job.programmeTitle}
+          </span>
+        </div>
+
+        {/* Line 2: compact placement summary */}
+        <p className="text-[11px] text-foreground truncate mt-0.5">
+          {mobilePlacementSummary || "No placements"}
+        </p>
+
+        {/* Line 3: score + actions */}
+        <div className="flex items-center mt-1">
+          <div className="rounded-md bg-secondary/50 px-2 py-0.5 flex items-center gap-1">
+            <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Score
+            </span>
+            <AnimatedScore value={score} flashDirection={flashDirection} />
+          </div>
+          <div className="ml-auto flex items-center gap-0.5">
+            <button
+              onClick={(e) => { e.stopPropagation(); onBoost(scored.job.programmeTitle); }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className={cn("p-0.5 rounded text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 active:scale-90 transition-all", isLocked && "pointer-events-none opacity-30")}
+              title="Boost"
+            >
+              <ArrowUp />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onBury(scored.job.programmeTitle); }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className={cn("p-0.5 rounded text-red-500 hover:text-red-400 hover:bg-red-500/10 active:scale-90 transition-all", isLocked && "pointer-events-none opacity-30")}
+              title="Bury"
+            >
+              <ArrowDown />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onMoveToOpen(scored.job.programmeTitle, rank); }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className={cn("p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors", isLocked && "pointer-events-none opacity-30")}
+              title="Move to..."
+            >
+              <ArrowUpDown className="h-4 w-4" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onTogglePin(scored.job.programmeTitle); }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className={cn("p-0.5 rounded transition-colors", isPinned ? "text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}
+              title={isPinned ? "Unpin" : "Pin"}
+            >
+              <Pin className={cn("h-3.5 w-3.5", isPinned && "fill-primary")} />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleLock(scored.job.programmeTitle); }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className={cn("p-0.5 rounded transition-colors", isLocked ? "text-amber-500" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}
+              title={isLocked ? "Unlock" : "Lock"}
+            >
+              <Lock className={cn("h-3.5 w-3.5", isLocked && "fill-amber-500/20")} />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleSelect(scored.job.programmeTitle); }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="p-0.5 flex items-center justify-center"
+              title={isSelected ? "Deselect" : "Select"}
+            >
+              <div className={cn("h-4 w-4 rounded-full border-2 flex items-center justify-center transition-colors", isSelected ? "bg-primary border-primary" : "border-muted-foreground hover:border-primary")}>
+                {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />}
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -575,7 +710,7 @@ const ListRow = memo(function ListRow({
       ref={setNodeRef}
       style={{
         ...style,
-        gridTemplateColumns: "40px 70px minmax(120px,1.5fr) 1fr 1fr 90px 110px",
+        gridTemplateColumns: "40px auto minmax(100px,auto) repeat(6, minmax(90px, 1fr)) 90px 140px",
         boxShadow: isSelected
           ? undefined
           : `inset 3px 0 0 ${regionStyle.color}40`,
@@ -583,11 +718,13 @@ const ListRow = memo(function ListRow({
       {...attributes}
       {...listeners}
       className={cn(
-        "grid items-center h-[44px] border-b border-border cursor-grab touch-none transition-colors duration-100",
+        "grid items-center gap-x-0.5 h-[56px] border-b border-border transition-colors duration-100",
+        isLocked ? "cursor-default" : "cursor-grab touch-none",
         isSelected
           ? "bg-card-selected ring-1 ring-primary/60"
           : "hover:bg-card-hover",
         isDragging && "opacity-40 z-50",
+        isLocked && "bg-amber-50/40 dark:bg-amber-950/20",
         glowClass
       )}
       onClick={() => onSelectDetail(scored.job)}
@@ -601,7 +738,7 @@ const ListRow = memo(function ListRow({
       {/* Region */}
       <span
         className={cn(
-          "rounded-full px-1.5 py-0.5 text-[10px] font-semibold border truncate text-center",
+          "rounded-full px-1.5 py-0.5 text-[10px] font-semibold border truncate text-center mr-1",
           regionStyle.bg,
           regionStyle.text,
           regionStyle.border
@@ -611,33 +748,27 @@ const ListRow = memo(function ListRow({
       </span>
 
       {/* Programme title */}
-      <span className="text-xs font-mono font-semibold text-foreground truncate pr-2">
-        {scored.job.programme_title}
+      <span className="text-xs font-mono font-semibold text-foreground truncate pr-16">
+        {scored.job.programmeTitle}
       </span>
 
-      {/* FY1 Placements */}
-      <span className="text-xs text-foreground truncate pr-2" title={fy1Text}>
-        {fy1.map((e, i) => (
-          <span key={e.num}>
-            {i > 0 && <span className="text-muted-foreground">, </span>}
-            <span className="font-semibold">{e.site}</span>
-            <span className="text-muted-foreground"> · {e.spec}</span>
-          </span>
-        ))}
-        {fy1.length === 0 && <span className="text-muted-foreground">—</span>}
-      </span>
-
-      {/* FY2 Placements */}
-      <span className="text-xs text-foreground truncate pr-2" title={fy2Text}>
-        {fy2.map((e, i) => (
-          <span key={e.num}>
-            {i > 0 && <span className="text-muted-foreground">, </span>}
-            <span className="font-semibold">{e.site}</span>
-            <span className="text-muted-foreground"> · {e.spec}</span>
-          </span>
-        ))}
-        {fy2.length === 0 && <span className="text-muted-foreground">—</span>}
-      </span>
+      {/* 6 individual placement columns */}
+      {allPlacements.map((entry, i) => (
+        <div key={i} className="min-w-0 pr-0.5">
+          {entry ? (
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold text-foreground leading-tight truncate">
+                {entry.site}
+              </p>
+              <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate">
+                {entry.spec}
+              </p>
+            </div>
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          )}
+        </div>
+      ))}
 
       {/* Score */}
       <div className="flex justify-center">
@@ -654,10 +785,13 @@ const ListRow = memo(function ListRow({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onBoost(scored.job.id);
+            onBoost(scored.job.programmeTitle);
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          className="p-0.5 rounded text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 active:scale-90 transition-all"
+          className={cn(
+            "p-0.5 rounded text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 active:scale-90 transition-all",
+            isLocked && "pointer-events-none opacity-30"
+          )}
           title="Boost"
         >
           <ArrowUp />
@@ -665,10 +799,13 @@ const ListRow = memo(function ListRow({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onBury(scored.job.id);
+            onBury(scored.job.programmeTitle);
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          className="p-0.5 rounded text-red-500 hover:text-red-400 hover:bg-red-500/10 active:scale-90 transition-all"
+          className={cn(
+            "p-0.5 rounded text-red-500 hover:text-red-400 hover:bg-red-500/10 active:scale-90 transition-all",
+            isLocked && "pointer-events-none opacity-30"
+          )}
           title="Bury"
         >
           <ArrowDown />
@@ -676,10 +813,13 @@ const ListRow = memo(function ListRow({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onMoveToOpen(scored.job.id, rank);
+            onMoveToOpen(scored.job.programmeTitle, rank);
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          className={cn(
+            "p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors",
+            isLocked && "pointer-events-none opacity-30"
+          )}
           title="Move to..."
         >
           <ArrowUpDown className="h-4 w-4" />
@@ -687,7 +827,39 @@ const ListRow = memo(function ListRow({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onToggleSelect(scored.job.id);
+            onTogglePin(scored.job.programmeTitle);
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className={cn(
+            "p-0.5 rounded transition-colors",
+            isPinned
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          )}
+          title={isPinned ? "Unpin" : "Pin"}
+        >
+          <Pin className={cn("h-3.5 w-3.5", isPinned && "fill-primary")} />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleLock(scored.job.programmeTitle);
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className={cn(
+            "p-0.5 rounded transition-colors",
+            isLocked
+              ? "text-amber-500"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          )}
+          title={isLocked ? "Unlock" : "Lock"}
+        >
+          <Lock className={cn("h-3.5 w-3.5", isLocked && "fill-amber-500/20")} />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelect(scored.job.programmeTitle);
           }}
           onPointerDown={(e) => e.stopPropagation()}
           className="p-0.5 flex items-center justify-center"
@@ -715,18 +887,57 @@ const ListRow = memo(function ListRow({
 const ListDragOverlayRow = memo(function ListDragOverlayRow({
   scored,
   rank,
+  isMobile,
 }: {
   scored: ScoredJob;
   rank: number;
+  isMobile?: boolean;
 }) {
   const regionStyle = getRegionStyle(scored.job.region);
+  const { fy1, fy2 } = getJobPlacements(scored.job);
   const score = effectiveScore(scored);
+
+  const allPlacements: (PlacementEntry | null)[] = [];
+  for (let i = 0; i < 3; i++) allPlacements.push(fy1[i] ?? null);
+  for (let i = 0; i < 3; i++) allPlacements.push(fy2[i] ?? null);
+
+  if (isMobile) {
+    const placementEntries = allPlacements.filter((e): e is PlacementEntry => e !== null);
+    const summary = placementEntries
+      .slice(0, 3)
+      .map((e) => `${e.site} · ${e.spec}`)
+      .join(" , ");
+
+    return (
+      <div
+        className="flex flex-col py-2 px-2.5 bg-card-drag ring-2 ring-primary/30 rounded-md"
+        style={{ boxShadow: `0 8px 24px ${regionStyle.color}30, 0 4px 12px rgba(0,0,0,0.1)` }}
+      >
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm font-bold font-mono text-foreground shrink-0">{rank}</span>
+          <span className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-semibold border shrink-0", regionStyle.bg, regionStyle.text, regionStyle.border)}>
+            {scored.job.region}
+          </span>
+          <span className="flex-1 text-xs font-mono font-semibold text-foreground truncate min-w-0">
+            {scored.job.programmeTitle}
+          </span>
+        </div>
+        <p className="text-[11px] text-foreground truncate mt-0.5">{summary || "No placements"}</p>
+        <div className="flex items-center mt-1">
+          <div className="rounded-md bg-secondary/50 px-2 py-0.5 flex items-center gap-1">
+            <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">Score</span>
+            <span className="font-mono tabular-nums text-xs font-semibold text-foreground">{score.toFixed(3)}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
-      className="grid items-center h-[44px] bg-card-drag ring-2 ring-primary/30 rounded-md"
+      className="grid items-center gap-x-0.5 h-[56px] bg-card-drag ring-2 ring-primary/30 rounded-md"
       style={{
-        gridTemplateColumns: "40px 70px minmax(120px,1.5fr) 1fr 1fr 90px 110px",
+        gridTemplateColumns: "40px auto minmax(100px,auto) repeat(6, minmax(90px, 1fr)) 90px 140px",
         boxShadow: `0 8px 24px ${regionStyle.color}30, 0 4px 12px rgba(0,0,0,0.1)`,
       }}
     >
@@ -743,11 +954,25 @@ const ListDragOverlayRow = memo(function ListDragOverlayRow({
       >
         {scored.job.region}
       </span>
-      <span className="text-xs font-mono font-semibold text-foreground truncate pr-2">
-        {scored.job.programme_title}
+      <span className="text-xs font-mono font-semibold text-foreground truncate pr-16">
+        {scored.job.programmeTitle}
       </span>
-      <span />
-      <span />
+      {allPlacements.map((entry, i) => (
+        <div key={i} className="min-w-0 pr-0.5">
+          {entry ? (
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold text-foreground leading-tight truncate">
+                {entry.site}
+              </p>
+              <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate">
+                {entry.spec}
+              </p>
+            </div>
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          )}
+        </div>
+      ))}
       <div className="flex justify-center">
         <div className="rounded-md bg-secondary/50 px-2 py-0.5 flex items-center gap-1">
           <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -801,11 +1026,17 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const [scrollDir, setScrollDir] = useState<"down" | "up">("down");
   const lastScrollTop = useRef(0);
 
+  // Lock
+  const [lockedJobIds, setLockedJobIds] = useState<Set<string>>(new Set());
+
   // Help modal
   const [showHelp, setShowHelp] = useState(false);
 
   // View mode
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  // Import
+  const importFileRef = useRef<HTMLInputElement>(null);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -824,6 +1055,12 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   rankedJobsRef.current = rankedJobs;
 
   const cardsPerRow = useCardsPerRow();
+  const isMobile = cardsPerRow === 1;
+
+  // Force list view on mobile
+  useEffect(() => {
+    if (isMobile) setViewMode("list");
+  }, [isMobile]);
 
   // Sensors
   const sensors = useSensors(
@@ -850,11 +1087,8 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const allHospitals = useMemo(() => {
     const set = new Set<string>();
     rankedJobs.forEach((s) => {
-      for (let i = 1; i <= 6; i++) {
-        const key =
-          `placement_${i}` as `placement_${1 | 2 | 3 | 4 | 5 | 6}`;
-        const site = s.job[key].site;
-        if (site && site !== "None" && site.trim() !== "") set.add(site);
+      for (const p of s.job.placements) {
+        if (p.site && p.site !== "None" && p.site.trim() !== "") set.add(p.site);
       }
     });
     return Array.from(set).sort();
@@ -863,11 +1097,8 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const allSpecialties = useMemo(() => {
     const set = new Set<string>();
     rankedJobs.forEach((s) => {
-      for (let i = 1; i <= 6; i++) {
-        const key =
-          `placement_${i}` as `placement_${1 | 2 | 3 | 4 | 5 | 6}`;
-        const spec = s.job[key].speciality;
-        if (spec && spec !== "None" && spec.trim() !== "") set.add(spec);
+      for (const p of s.job.placements) {
+        if (p.specialty && p.specialty !== "None" && p.specialty.trim() !== "") set.add(p.specialty);
       }
     });
     return Array.from(set).sort();
@@ -876,7 +1107,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   // O(1) lookup: id → global index in rankedJobs
   const indexById = useMemo(() => {
     const map = new Map<string, number>();
-    rankedJobs.forEach((s, i) => map.set(s.job.id, i));
+    rankedJobs.forEach((s, i) => map.set(s.job.programmeTitle, i));
     return map;
   }, [rankedJobs]);
 
@@ -885,41 +1116,21 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       if (regionFilter !== "all" && s.job.region !== regionFilter) return false;
 
       if (hospitalFilter !== "all") {
-        let found = false;
-        for (let i = 1; i <= 6; i++) {
-          const key =
-            `placement_${i}` as `placement_${1 | 2 | 3 | 4 | 5 | 6}`;
-          if (s.job[key].site === hospitalFilter) {
-            found = true;
-            break;
-          }
-        }
-        if (!found) return false;
+        if (!s.job.placements.some((p) => p.site === hospitalFilter)) return false;
       }
 
       if (specialtyFilter !== "all") {
-        let hasSpec = false;
-        for (let i = 1; i <= 6; i++) {
-          const key =
-            `placement_${i}` as `placement_${1 | 2 | 3 | 4 | 5 | 6}`;
-          if (s.job[key].speciality === specialtyFilter) {
-            hasSpec = true;
-            break;
-          }
-        }
-        if (!hasSpec) return false;
+        if (!s.job.placements.some((p) => p.specialty === specialtyFilter)) return false;
       }
 
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
-        const title = s.job.programme_title.toLowerCase();
+        const title = s.job.programmeTitle.toLowerCase();
         const region = s.job.region.toLowerCase();
         let haystack = "";
-        for (let i = 1; i <= 6; i++) {
-          const key =
-            `placement_${i}` as `placement_${1 | 2 | 3 | 4 | 5 | 6}`;
-          haystack += " " + s.job[key].site.toLowerCase();
-          haystack += " " + s.job[key].speciality.toLowerCase();
+        for (const p of s.job.placements) {
+          haystack += " " + p.site.toLowerCase();
+          haystack += " " + p.specialty.toLowerCase();
         }
         if (
           !title.includes(q) &&
@@ -935,7 +1146,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
   // IDs for SortableContext
   const filteredIds = useMemo(
-    () => filteredJobs.map((s) => s.job.id),
+    () => filteredJobs.map((s) => s.job.programmeTitle),
     [filteredJobs]
   );
 
@@ -946,7 +1157,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const virtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => viewMode === "list" ? 44 : 340,
+    estimateSize: () => viewMode === "list" ? (isMobile ? 88 : 56) : 340,
     overscan: viewMode === "list" ? 5 : 2,
   });
 
@@ -954,7 +1165,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   useEffect(() => {
     scrollRef.current?.scrollTo(0, 0);
     virtualizer.measure();
-  }, [searchQuery, regionFilter, hospitalFilter, specialtyFilter, viewMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchQuery, regionFilter, hospitalFilter, specialtyFilter, viewMode, isMobile]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Scroll to card after boost/bury/move
   useEffect(() => {
@@ -962,7 +1173,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     if (!targetId) return;
     scrollToJobIdRef.current = null;
 
-    const idx = filteredJobs.findIndex((sj) => sj.job.id === targetId);
+    const idx = filteredJobs.findIndex((sj) => sj.job.programmeTitle === targetId);
     if (idx === -1) return;
     const rowIdx = viewMode === "list" ? idx : Math.floor(idx / cardsPerRow);
 
@@ -972,19 +1183,33 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     });
   }, [filteredJobs, cardsPerRow, virtualizer]);
 
+  /* ── Debounced localStorage persistence ── */
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const json = JSON.stringify(rankedJobs);
+        localStorage.setItem("fy_scored_jobs", json);
+        sessionStorage.setItem("fy_scored_jobs", json);
+      } catch {
+        // storage full — silently ignore
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [rankedJobs]);
+
   /* ── Pinned rows ── */
   const pinnedRowIndices = useMemo(() => {
     const rows: number[] = [];
     if (viewMode === "list") {
       filteredJobs.forEach((sj, i) => {
-        if (pinnedJobIds.has(sj.job.id)) rows.push(i);
+        if (pinnedJobIds.has(sj.job.programmeTitle)) rows.push(i);
       });
     } else {
       for (let rowIdx = 0; rowIdx < rowCount; rowIdx++) {
         const start = rowIdx * cardsPerRow;
         const end = Math.min(start + cardsPerRow, filteredJobs.length);
         for (let i = start; i < end; i++) {
-          if (pinnedJobIds.has(filteredJobs[i].job.id)) {
+          if (pinnedJobIds.has(filteredJobs[i].job.programmeTitle)) {
             rows.push(rowIdx);
             break;
           }
@@ -1002,12 +1227,12 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       const visibleIds = new Set<string>();
       virtualItems.forEach((vRow) => {
         if (viewMode === "list") {
-          visibleIds.add(filteredJobs[vRow.index]?.job.id);
+          visibleIds.add(filteredJobs[vRow.index]?.job.programmeTitle);
         } else {
           const start = vRow.index * cardsPerRow;
           const end = Math.min(start + cardsPerRow, filteredJobs.length);
           for (let i = start; i < end; i++) {
-            visibleIds.add(filteredJobs[i].job.id);
+            visibleIds.add(filteredJobs[i].job.programmeTitle);
           }
         }
       });
@@ -1030,6 +1255,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   /* ── Boost / Bury ── */
   const handleBoost = useCallback(
     (jobId: string) => {
+      if (lockedJobIds.has(jobId)) return;
       scrollToJobIdRef.current = jobId;
       glowKeyRef.current.set(jobId, (glowKeyRef.current.get(jobId) ?? 0) + 1);
       setFlashMap((prev) => {
@@ -1047,7 +1273,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
       setRankedJobs((prev) => {
         const updated = prev.map((sj) =>
-          sj.job.id === jobId
+          sj.job.programmeTitle === jobId
             ? { ...sj, scoreAdjustment: (sj.scoreAdjustment ?? 0) + nudgeAmount }
             : sj
         );
@@ -1056,11 +1282,12 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         );
       });
     },
-    [nudgeAmount]
+    [nudgeAmount, lockedJobIds]
   );
 
   const handleBury = useCallback(
     (jobId: string) => {
+      if (lockedJobIds.has(jobId)) return;
       scrollToJobIdRef.current = jobId;
       glowKeyRef.current.set(jobId, (glowKeyRef.current.get(jobId) ?? 0) + 1);
       setFlashMap((prev) => {
@@ -1078,7 +1305,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
       setRankedJobs((prev) => {
         const updated = prev.map((sj) =>
-          sj.job.id === jobId
+          sj.job.programmeTitle === jobId
             ? { ...sj, scoreAdjustment: (sj.scoreAdjustment ?? 0) - nudgeAmount }
             : sj
         );
@@ -1087,14 +1314,15 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         );
       });
     },
-    [nudgeAmount]
+    [nudgeAmount, lockedJobIds]
   );
 
   /* ── Move To ── */
   const handleMoveTo = useCallback((jobId: string, targetRank: number) => {
+    if (lockedJobIds.has(jobId)) return;
     scrollToJobIdRef.current = jobId;
     setRankedJobs((prev) => {
-      const currentIdx = prev.findIndex((sj) => sj.job.id === jobId);
+      const currentIdx = prev.findIndex((sj) => sj.job.programmeTitle === jobId);
       if (currentIdx === -1) return prev;
       const targetIdx = Math.max(
         0,
@@ -1102,7 +1330,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       );
       return arrayMove(prev, currentIdx, targetIdx);
     });
-  }, []);
+  }, [lockedJobIds]);
 
   const openMoveTo = useCallback(
     (jobId: string, rank: number) => {
@@ -1127,7 +1355,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       const end = Math.min(start + cardsPerRow, filteredJobs.length);
       setSelectedIds((prev) => {
         const next = new Set(prev);
-        const rowIds = filteredJobs.slice(start, end).map((sj) => sj.job.id);
+        const rowIds = filteredJobs.slice(start, end).map((sj) => sj.job.programmeTitle);
         const allSelected = rowIds.every((id) => prev.has(id));
         if (allSelected) rowIds.forEach((id) => next.delete(id));
         else rowIds.forEach((id) => next.add(id));
@@ -1144,7 +1372,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   /* ── Bulk actions from toolbar ── */
   const handleBulkCompare = useCallback(() => {
     const jobs = rankedJobs
-      .filter((sj) => selectedIds.has(sj.job.id))
+      .filter((sj) => selectedIds.has(sj.job.programmeTitle))
       .slice(0, 3)
       .map((sj) => sj.job);
     setCompareJobs(jobs);
@@ -1152,7 +1380,8 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   }, [selectedIds, rankedJobs]);
 
   const handleBulkBoost = useCallback(() => {
-    const ids = selectedIds;
+    const ids = new Set([...selectedIds].filter((id) => !lockedJobIds.has(id)));
+    if (ids.size === 0) return;
     ids.forEach((id) => glowKeyRef.current.set(id, (glowKeyRef.current.get(id) ?? 0) + 1));
     setFlashMap(() => {
       const next = new Map<string, "up" | "down">();
@@ -1163,7 +1392,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
     setRankedJobs((prev) => {
       const updated = prev.map((sj) =>
-        ids.has(sj.job.id)
+        ids.has(sj.job.programmeTitle)
           ? { ...sj, scoreAdjustment: (sj.scoreAdjustment ?? 0) + nudgeAmount }
           : sj
       );
@@ -1171,10 +1400,11 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         (a, b) => effectiveScore(b) - effectiveScore(a)
       );
     });
-  }, [selectedIds, nudgeAmount]);
+  }, [selectedIds, nudgeAmount, lockedJobIds]);
 
   const handleBulkBury = useCallback(() => {
-    const ids = selectedIds;
+    const ids = new Set([...selectedIds].filter((id) => !lockedJobIds.has(id)));
+    if (ids.size === 0) return;
     ids.forEach((id) => glowKeyRef.current.set(id, (glowKeyRef.current.get(id) ?? 0) + 1));
     setFlashMap(() => {
       const next = new Map<string, "up" | "down">();
@@ -1185,7 +1415,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
     setRankedJobs((prev) => {
       const updated = prev.map((sj) =>
-        ids.has(sj.job.id)
+        ids.has(sj.job.programmeTitle)
           ? { ...sj, scoreAdjustment: (sj.scoreAdjustment ?? 0) - nudgeAmount }
           : sj
       );
@@ -1193,14 +1423,15 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         (a, b) => effectiveScore(b) - effectiveScore(a)
       );
     });
-  }, [selectedIds, nudgeAmount]);
+  }, [selectedIds, nudgeAmount, lockedJobIds]);
 
   const handleBulkMoveTo = useCallback(
     (targetRank: number) => {
       setRankedJobs((prev) => {
-        // Collect selected jobs in their current relative order
-        const selectedJobs = prev.filter((sj) => selectedIds.has(sj.job.id));
-        const remaining = prev.filter((sj) => !selectedIds.has(sj.job.id));
+        // Collect selected & unlocked jobs in their current relative order
+        const selectedJobs = prev.filter((sj) => selectedIds.has(sj.job.programmeTitle) && !lockedJobIds.has(sj.job.programmeTitle));
+        if (selectedJobs.length === 0) return prev;
+        const remaining = prev.filter((sj) => !(selectedIds.has(sj.job.programmeTitle) && !lockedJobIds.has(sj.job.programmeTitle)));
         const insertIdx = Math.max(
           0,
           Math.min(targetRank - 1, remaining.length)
@@ -1210,7 +1441,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         return result;
       });
     },
-    [selectedIds]
+    [selectedIds, lockedJobIds]
   );
 
   /* ── Pin row ── */
@@ -1222,6 +1453,37 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       return next;
     });
   }, []);
+
+  /* ── Lock row ── */
+  const toggleLock = useCallback((jobId: string) => {
+    setLockedJobIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(jobId)) next.delete(jobId);
+      else next.add(jobId);
+      return next;
+    });
+  }, []);
+
+  /* ── Import handler ── */
+  const handleImportFile = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const jobs = await importRankingsFromXlsx(file);
+        setRankedJobs(jobs);
+      } catch (err) {
+        alert(
+          err instanceof ImportError
+            ? err.message
+            : "Failed to read the file. Make sure it's a valid .xlsx export."
+        );
+      } finally {
+        if (importFileRef.current) importFileRef.current.value = "";
+      }
+    },
+    []
+  );
 
   /* ── DnD handlers ── */
 
@@ -1241,9 +1503,12 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     const activeIdStr = active.id as string;
     const overIdStr = over.id as string;
 
+    // Locked items cannot be dragged or displaced
+    if (lockedJobIds.has(activeIdStr) || lockedJobIds.has(overIdStr)) return;
+
     setRankedJobs((prev) => {
-      const oldIndex = prev.findIndex((s) => s.job.id === activeIdStr);
-      const newIndex = prev.findIndex((s) => s.job.id === overIdStr);
+      const oldIndex = prev.findIndex((s) => s.job.programmeTitle === activeIdStr);
+      const newIndex = prev.findIndex((s) => s.job.programmeTitle === overIdStr);
       if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex)
         return prev;
       const reordered = arrayMove(prev, oldIndex, newIndex);
@@ -1280,7 +1545,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
   /* ── Overlay data ── */
   const activeScored = activeId
-    ? rankedJobs.find((s) => s.job.id === activeId) ?? null
+    ? rankedJobs.find((s) => s.job.programmeTitle === activeId) ?? null
     : null;
   const activeScoredRank = activeId ? (indexById.get(activeId) ?? 0) + 1 : 0;
 
@@ -1303,20 +1568,20 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         }}
       >
         {rowCards.map((s) => {
-          const globalIdx = indexById.get(s.job.id) ?? 0;
+          const globalIdx = indexById.get(s.job.programmeTitle) ?? 0;
           return (
             <JobCard
-              key={s.job.id}
+              key={s.job.programmeTitle}
               scored={s}
               rank={globalIdx + 1}
-              isSelected={selectedIds.has(s.job.id)}
+              isSelected={selectedIds.has(s.job.programmeTitle)}
               onSelectDetail={setSelectedDetail}
               onToggleSelect={toggleSelect}
               onBoost={handleBoost}
               onBury={handleBury}
               onMoveToOpen={openMoveTo}
-              flashDirection={flashMap.get(s.job.id) ?? null}
-              glowKey={glowKeyRef.current.get(s.job.id) ?? 0}
+              flashDirection={flashMap.get(s.job.programmeTitle) ?? null}
+              glowKey={glowKeyRef.current.get(s.job.programmeTitle) ?? 0}
             />
           );
         })}
@@ -1328,20 +1593,25 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   function renderListRow(jobIndex: number) {
     const s = filteredJobs[jobIndex];
     if (!s) return null;
-    const globalIdx = indexById.get(s.job.id) ?? 0;
+    const globalIdx = indexById.get(s.job.programmeTitle) ?? 0;
     return (
       <ListRow
-        key={s.job.id}
+        key={s.job.programmeTitle}
         scored={s}
         rank={globalIdx + 1}
-        isSelected={selectedIds.has(s.job.id)}
+        isSelected={selectedIds.has(s.job.programmeTitle)}
+        isPinned={pinnedJobIds.has(s.job.programmeTitle)}
+        isLocked={lockedJobIds.has(s.job.programmeTitle)}
+        isMobile={isMobile}
         onSelectDetail={setSelectedDetail}
         onToggleSelect={toggleSelect}
+        onTogglePin={togglePin}
+        onToggleLock={toggleLock}
         onBoost={handleBoost}
         onBury={handleBury}
         onMoveToOpen={openMoveTo}
-        flashDirection={flashMap.get(s.job.id) ?? null}
-        glowKey={glowKeyRef.current.get(s.job.id) ?? 0}
+        flashDirection={flashMap.get(s.job.programmeTitle) ?? null}
+        glowKey={glowKeyRef.current.get(s.job.programmeTitle) ?? 0}
       />
     );
   }
@@ -1440,8 +1710,38 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
             </Button>
           )}
 
+          {/* Export / Import */}
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs"
+              onClick={() => exportRankingsToXlsx(rankedJobs)}
+            >
+              <Download className="h-3.5 w-3.5" />
+              Export .xlsx
+            </Button>
+            <input
+              ref={importFileRef}
+              type="file"
+              accept=".xlsx"
+              onChange={handleImportFile}
+              className="hidden"
+              id="import-rankings"
+            />
+            <Button
+              size="sm"
+              variant="ghost"
+              className="gap-1.5 text-xs"
+              onClick={() => importFileRef.current?.click()}
+            >
+              <Upload className="h-3.5 w-3.5" />
+              Import
+            </Button>
+          </div>
+
           {/* View mode toggle */}
-          <div className="flex items-center rounded-md border bg-background p-0.5 shrink-0">
+          <div className="hidden sm:flex items-center rounded-md border bg-background p-0.5 shrink-0">
             <button
               onClick={() => setViewMode("grid")}
               className={cn(
@@ -1505,7 +1805,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                   const { sites, specs } = getPlacementSummary(job);
                   return (
                     <div
-                      key={job.id}
+                      key={job.programmeTitle}
                       className={cn(
                         "rounded-xl border p-4 space-y-3",
                         style.bg,
@@ -1514,7 +1814,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                     >
                       <div>
                         <h3 className="font-semibold text-sm leading-tight">
-                          {job.programme_title}
+                          {job.programmeTitle}
                         </h3>
                         <span
                           className={cn(
@@ -1559,17 +1859,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                         <p className="text-xs font-medium text-muted-foreground">
                           All placements
                         </p>
-                        {([1, 2, 3, 4, 5, 6] as const).map((i) => {
-                          const p =
-                            job[
-                              `placement_${i}` as `placement_${
-                                | 1
-                                | 2
-                                | 3
-                                | 4
-                                | 5
-                                | 6}`
-                            ];
+                        {job.placements.map((p, i) => {
                           if (
                             !p.site ||
                             p.site === "None" ||
@@ -1584,7 +1874,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                               <span className="font-medium">{p.site}</span>
                               <span className="text-muted-foreground">
                                 {" "}
-                                — {p.speciality}
+                                — {p.specialty}
                               </span>
                             </div>
                           );
@@ -1657,7 +1947,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
               {/* Pinned rows at top */}
               {pinnedRowIndices.length > 0 &&
                 scrollDir === "down" && (
-                  <div className="shrink-0 z-10 shadow-md border-b">
+                  <div className="shrink-0 z-10 shadow-md border-b max-h-[30vh] overflow-y-auto">
                     {viewMode === "list"
                       ? pinnedRowIndices.map((jobIdx) => (
                           <div key={`pin-${jobIdx}`} className={cn(jobIdx % 2 === 0 ? "bg-row-even" : "bg-row-odd")}>
@@ -1712,6 +2002,26 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
               >
                 {viewMode === "list" ? (
                   /* ── List mode ── */
+                  <div>
+                    {/* Column headers */}
+                    <div
+                      className="hidden sm:grid items-center gap-x-0.5 h-[32px] border-b-2 border-border bg-secondary/30"
+                      style={{
+                        gridTemplateColumns: "40px auto minmax(100px,auto) repeat(6, minmax(90px, 1fr)) 90px 140px",
+                      }}
+                    >
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-right pr-2">#</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-center">Region</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pr-16">Programme</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pr-1.5">P1 <span className="font-normal text-muted-foreground">(FY1)</span></span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pr-1.5">P2 <span className="font-normal text-muted-foreground">(FY1)</span></span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pr-1.5">P3 <span className="font-normal text-muted-foreground">(FY1)</span></span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pr-1.5">P4 <span className="font-normal text-muted-foreground">(FY2)</span></span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pr-1.5">P5 <span className="font-normal text-muted-foreground">(FY2)</span></span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pr-1.5">P6 <span className="font-normal text-muted-foreground">(FY2)</span></span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-center">Score</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-center">Actions</span>
+                    </div>
                   <div
                     className="relative"
                     style={{ height: `${virtualizer.getTotalSize()}px` }}
@@ -1735,6 +2045,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                       );
                     })}
                   </div>
+                  </div>
                 ) : (
                   /* ── Grid mode ── */
                   <LayoutGroup>
@@ -1756,7 +2067,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                         );
                         const allRowSelected =
                           rowCards.length > 0 &&
-                          rowCards.every((s) => selectedIds.has(s.job.id));
+                          rowCards.every((s) => selectedIds.has(s.job.programmeTitle));
 
                         return (
                           <div
@@ -1800,7 +2111,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   const firstJob = filteredJobs[startIdx];
-                                  if (firstJob) togglePin(firstJob.job.id);
+                                  if (firstJob) togglePin(firstJob.job.programmeTitle);
                                 }}
                                 className={cn(
                                   "absolute bottom-1 left-1/2 -translate-x-1/2 transition-opacity",
@@ -1853,7 +2164,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
               {/* Pinned rows at bottom */}
               {pinnedRowIndices.length > 0 &&
                 scrollDir === "up" && (
-                  <div className="shrink-0 z-10 shadow-[0_-4px_6px_-1px_rgb(0_0_0/0.1)] border-t">
+                  <div className="shrink-0 z-10 shadow-[0_-4px_6px_-1px_rgb(0_0_0/0.1)] border-t max-h-[30vh] overflow-y-auto">
                     {viewMode === "list"
                       ? pinnedRowIndices.map((jobIdx) => (
                           <div key={`pin-${jobIdx}`} className={cn(jobIdx % 2 === 0 ? "bg-row-even" : "bg-row-odd")}>
@@ -1907,7 +2218,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
             <SelectionToolbar
               count={selectedIds.size}
               selectedJobs={rankedJobs.filter((sj) =>
-                selectedIds.has(sj.job.id)
+                selectedIds.has(sj.job.programmeTitle)
               )}
               onClear={clearSelection}
               onCompare={handleBulkCompare}
@@ -1934,6 +2245,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
               <ListDragOverlayRow
                 scored={activeScored}
                 rank={activeScoredRank}
+                isMobile={isMobile}
               />
             ) : (
               <DragOverlayCard

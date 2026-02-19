@@ -8,6 +8,10 @@ Next.js + TypeScript + shadcn/ui app. Source lives in `web/`.
 - **Avoid monotonousness.** Use visual hierarchy, distinct weights, and colour to differentiate elements.
 - **Prefer clear labels** over mystery values — always label scores, counts, etc.
 
+## Development Workflow
+
+- **Always use Playwright** when working on frontend UI development — take screenshots to verify changes visually before considering them done.
+
 ## shadcn CLI
 
 ```bash

@@ -1,0 +1,8 @@
+# Playwright CLI
+.playwright-cli/
+
+# Screenshots
+screenshots/
+
+# Claude
+.claude/

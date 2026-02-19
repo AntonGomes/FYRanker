@@ -6,6 +6,7 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -42,6 +43,7 @@ interface RankableListProps {
   title?: string;
   description?: string;
   stickyCount?: number;
+  onItemMoved?: (id: string) => void;
 }
 
 /* ── Individual draggable row ── */
@@ -92,7 +94,7 @@ const DraggableRow = memo(function DraggableRow({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group flex items-center gap-1.5 rounded-lg border px-2 py-1.5 transition-colors",
+        "group flex items-center gap-1.5 rounded-lg border px-2 py-2.5 transition-colors",
         regionStyle
           ? `${regionStyle.bg} ${regionStyle.border}`
           : isPinned
@@ -106,9 +108,9 @@ const DraggableRow = memo(function DraggableRow({
       <button
         {...attributes}
         {...listeners}
-        className="cursor-grab touch-none text-muted-foreground hover:text-foreground shrink-0"
+        className="cursor-grab touch-none text-muted-foreground hover:text-foreground shrink-0 p-1"
       >
-        <GripVertical className="h-3.5 w-3.5" />
+        <GripVertical className="h-4 w-4" />
       </button>
 
       {/* Rank number (click to edit) */}
@@ -171,8 +173,8 @@ const DraggableRow = memo(function DraggableRow({
 /* ── Overlay shown while dragging ── */
 const DragOverlayRow = memo(function DragOverlayRow({ item, index }: { item: RankableItem; index: number }) {
   return (
-    <div className="flex items-center gap-1.5 rounded-lg border border-primary/40 bg-card px-2 py-1.5 shadow-xl ring-2 ring-primary/20">
-      <GripVertical className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+    <div className="flex items-center gap-1.5 rounded-lg border border-primary/40 bg-card px-2 py-2.5 shadow-xl ring-2 ring-primary/20 scale-[1.03]">
+      <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
       <span className="w-9 shrink-0 text-center text-xs font-mono text-muted-foreground">
         {index + 1}
       </span>
@@ -193,6 +195,7 @@ export function RankableList({
   title,
   description,
   stickyCount = 5,
+  onItemMoved,
 }: RankableListProps) {
   const [search, setSearch] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -203,6 +206,9 @@ export function RankableList({
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 5 },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -251,13 +257,15 @@ export function RankableList({
       if (toPosition < 1 || toPosition > items.length) return;
       if (pinnedIds.has(items[fromIndex].id)) return;
 
+      const movedItem = items[fromIndex];
       const newItems = [...items];
       const [item] = newItems.splice(fromIndex, 1);
       newItems.splice(toPosition - 1, 0, item);
       onReorder(newItems);
+      onItemMoved?.(movedItem.id);
       setEditingIndex(null);
     },
-    [items, onReorder, pinnedIds]
+    [items, onReorder, pinnedIds, onItemMoved]
   );
 
   const handleRankKeyDown = useCallback(
@@ -285,6 +293,7 @@ export function RankableList({
       const newIndex = indexById.get(over.id as string) ?? -1;
       if (oldIndex !== -1 && newIndex !== -1) {
         onReorder(arrayMove(items, oldIndex, newIndex));
+        onItemMoved?.(active.id as string);
       }
     }
   }
@@ -296,7 +305,7 @@ export function RankableList({
   const virtualizer = useVirtualizer({
     count: scrollableItems.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 40,
+    estimateSize: () => 46,
     overscan: 10,
   });
 
@@ -340,6 +349,7 @@ export function RankableList({
         collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
+        autoScroll={{ threshold: { x: 0, y: 0.15 }, acceleration: 20 }}
       >
         <SortableContext
           items={items.map((i) => i.id)}

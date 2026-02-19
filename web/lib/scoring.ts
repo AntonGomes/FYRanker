@@ -60,18 +60,15 @@ export function scoreJobs(
     let specSum = 0;
     let specCount = 0;
 
-    for (let i = 1; i <= 6; i++) {
-      const key = `placement_${i}` as `placement_${1 | 2 | 3 | 4 | 5 | 6}`;
-      const placement = job[key];
-
-      const site = placement.site;
+    for (const p of job.placements) {
+      const site = p.site;
       if (site && site !== "None" && site.trim() !== "") {
         const rank = hospitalRanks.get(site) ?? hospitalTotal;
         hospSum += normalize(rank, hospitalTotal);
         hospCount++;
       }
 
-      const spec = placement.speciality;
+      const spec = p.specialty;
       if (spec && spec !== "None" && spec.trim() !== "") {
         const rank = specialtyRanks.get(spec) ?? specialtyTotal;
         specSum += normalize(rank, specialtyTotal);

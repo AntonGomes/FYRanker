@@ -94,7 +94,7 @@ export function SelectionToolbar({
           const score = effectiveScore(sj);
           return (
             <div
-              key={sj.job.id}
+              key={sj.job.programmeTitle}
               className="rounded-md border bg-background p-2 space-y-1"
             >
               <div className="flex items-center gap-1.5">
@@ -109,7 +109,7 @@ export function SelectionToolbar({
                   {sj.job.region}
                 </span>
                 <span className="text-[10px] font-mono font-medium text-foreground truncate flex-1 min-w-0">
-                  {sj.job.programme_title}
+                  {sj.job.programmeTitle}
                 </span>
               </div>
               <div className="text-[10px] text-muted-foreground font-mono">

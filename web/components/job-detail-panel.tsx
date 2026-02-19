@@ -22,7 +22,7 @@ export function JobDetailPanel({ job, onClose }: JobDetailPanelProps) {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-semibold leading-tight truncate">
-              {job.programme_title}
+              {job.programmeTitle}
             </h2>
             <span
               className={cn(
@@ -51,9 +51,7 @@ export function JobDetailPanel({ job, onClose }: JobDetailPanelProps) {
           Placements
         </h3>
         <div className="space-y-3">
-          {([1, 2, 3, 4, 5, 6] as const).map((i) => {
-            const key = `placement_${i}` as const;
-            const placement = job[key];
+          {job.placements.map((placement, i) => {
             if (
               !placement.site ||
               placement.site === "None" ||
@@ -68,7 +66,7 @@ export function JobDetailPanel({ job, onClose }: JobDetailPanelProps) {
               >
                 <div className="flex items-center gap-2">
                   <span className="flex items-center justify-center h-5 w-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
-                    {i}
+                    {i + 1}
                   </span>
                   <span className="font-medium text-sm">{placement.site}</span>
                 </div>
@@ -77,7 +75,7 @@ export function JobDetailPanel({ job, onClose }: JobDetailPanelProps) {
                     <span className="font-medium text-foreground">
                       Specialty:
                     </span>{" "}
-                    {placement.speciality}
+                    {placement.specialty}
                   </p>
                   {placement.description &&
                     placement.description !== "None" && (

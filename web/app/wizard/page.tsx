@@ -26,12 +26,15 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ProximitySorter } from "@/components/proximity-sorter";
 import type { Hospital, UserLocation } from "@/lib/proximity";
+import { SpecialtyDuel } from "@/components/specialty-duel";
+import { type EloState, initEloFromRanking } from "@/lib/elo";
 import {
   MapPin,
   Building2,
   Globe,
   Stethoscope,
   SlidersHorizontal,
+  Sparkles,
 } from "lucide-react";
 
 const STEPS = [
@@ -86,10 +89,16 @@ export default function WizardPage() {
   // Step 3: Global Hospital Ranking
   const [globalHospitals, setGlobalHospitals] = useState<SortableItem[]>([]);
   const [lockRegions, setLockRegions] = useState(false);
-  // Step 4: Rank Specialties
+  // Step 4: Rank Specialties (ELO duel)
   const [rankedSpecialties, setRankedSpecialties] = useState<SortableItem[]>(
     []
   );
+  const [eloState, setEloState] = useState<EloState | null>(null);
+  const [movedSpecialtyIds, setMovedSpecialtyIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [showRefinePrompt, setShowRefinePrompt] = useState(false);
+  const [isRefining, setIsRefining] = useState(false);
   // Proximity sorting
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
@@ -152,7 +161,13 @@ export default function WizardPage() {
     } else if (step === 3) {
       setStep(4);
     } else if (step === 4) {
-      setStep(5);
+      if (isRefining) {
+        // In ELO mode — advance to Step 5
+        setStep(5);
+      } else {
+        // In DnD mode — show refine prompt
+        setShowRefinePrompt(true);
+      }
     } else if (step === 5) {
       // Compute scores and navigate to results
       if (jobs) {
@@ -164,14 +179,23 @@ export default function WizardPage() {
           weights,
           lockRegions
         );
-        sessionStorage.setItem("fy_scored_jobs", JSON.stringify(scored));
+        const json = JSON.stringify(scored);
+        sessionStorage.setItem("fy_scored_jobs", json);
+        localStorage.setItem("fy_scored_jobs", json);
         router.push("/results");
       }
     }
   }
 
   function handleBack() {
-    if (step === 2 && regionSubStep > 0) {
+    if (step === 4 && isRefining) {
+      // Back from ELO → return to DnD view, preserving state
+      setIsRefining(false);
+      setShowRefinePrompt(false);
+    } else if (step === 4 && showRefinePrompt) {
+      // Dismiss refine prompt
+      setShowRefinePrompt(false);
+    } else if (step === 2 && regionSubStep > 0) {
       setRegionSubStep((s) => s - 1);
     } else if (step === 2) {
       setStep(1);
@@ -197,7 +221,9 @@ export default function WizardPage() {
           ? "Regions are kept separate — hospitals follow your region and per-region rankings with no cross-region mixing."
           : `Fine-tune the overall hospital order across all regions. ${globalHospitals.length} hospitals total — use search and keyboard repositioning for speed.`;
       case 4:
-        return `Rank specialties from most to least preferred. ${rankedSpecialties.length} specialties found.`;
+        return isRefining
+          ? "Compare specialties head-to-head to refine your ranking. More comparisons = more accurate results."
+          : "Drag to rank specialties from most to least preferred. You can refine with quick comparisons after.";
       case 5:
         return lockRegions
           ? "Region order is fixed. Adjust how much hospital and specialty preferences influence your score within each region."
@@ -337,14 +363,71 @@ export default function WizardPage() {
               </div>
             )}
 
-            {/* Step 4: Rank Specialties */}
-            {step === 4 && (
-              <div className="h-[55vh]">
-                <RankableList
-                  items={rankedSpecialties}
-                  onReorder={setRankedSpecialties}
-                />
+            {/* Step 4: Rank Specialties — DnD or ELO refinement */}
+            {step === 4 && !isRefining && (
+              <div className="space-y-3">
+                <div className="h-[50vh]">
+                  <RankableList
+                    items={rankedSpecialties}
+                    onReorder={setRankedSpecialties}
+                    onItemMoved={(id) =>
+                      setMovedSpecialtyIds((prev) => new Set(prev).add(id))
+                    }
+                  />
+                </div>
+
+                {/* Refine prompt */}
+                {showRefinePrompt && (
+                  <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-semibold text-foreground">
+                        Refine your rankings with quick comparisons?
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Answer a few head-to-head matchups to fine-tune your specialty
+                      order — especially the ones you didn&apos;t manually reorder.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => {
+                          const seeded = initEloFromRanking(
+                            rankedSpecialties,
+                            movedSpecialtyIds
+                          );
+                          setEloState(seeded);
+                          setIsRefining(true);
+                          setShowRefinePrompt(false);
+                        }}
+                        size="sm"
+                      >
+                        <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                        Refine
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setShowRefinePrompt(false);
+                          setStep(5);
+                        }}
+                      >
+                        Skip
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
+            )}
+            {step === 4 && isRefining && (
+              <SpecialtyDuel
+                specialties={rankedSpecialties.map((s) => s.label)}
+                eloState={eloState}
+                onStateChange={setEloState}
+                onRankingChange={setRankedSpecialties}
+                movedIds={movedSpecialtyIds}
+              />
             )}
 
             {/* Step 5: Set Weights */}

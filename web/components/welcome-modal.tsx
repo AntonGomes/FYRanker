@@ -36,14 +36,14 @@ export function WelcomeModal({ externalOpen, onExternalClose }: WelcomeModalProp
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[480px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl">
             Welcome to your Ranker 🤓
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 text-sm text-foreground leading-relaxed">
+        <div className="space-y-4 text-sm text-foreground leading-relaxed overflow-y-auto flex-1">
           <p>
             This is your initial ranking, calculated from the preferences you
             set in the wizard 🧙: region, hospital, and specialty priorities all
@@ -53,7 +53,7 @@ export function WelcomeModal({ externalOpen, onExternalClose }: WelcomeModalProp
 
           <div className="space-y-2.5">
             <p className="font-semibold text-foreground">
-              4 ways to reorder:
+              6 ways to manage your ranking:
             </p>
             <ol className="space-y-2 pl-1">
               <li className="flex gap-2.5">
@@ -85,6 +85,22 @@ export function WelcomeModal({ externalOpen, onExternalClose }: WelcomeModalProp
                   <strong>Multiselect</strong>: select multiple cards using the
                   circle in the top-right corner, then apply any of the above
                   actions to all of them at once.
+                </span>
+              </li>
+              <li className="flex gap-2.5">
+                <span className="shrink-0 font-semibold text-foreground">5.</span>
+                <span>
+                  <strong>Pin</strong>: pin a row to keep it visible at the top
+                  or bottom of the screen while you scroll — great for comparing
+                  against a fixed reference.
+                </span>
+              </li>
+              <li className="flex gap-2.5">
+                <span className="shrink-0 font-semibold text-foreground">6.</span>
+                <span>
+                  <strong>Lock</strong>: lock a row to freeze it in place.
+                  Locked rows can&apos;t be moved by drag-and-drop, boost/bury,
+                  or move-to.
                 </span>
               </li>
             </ol>
