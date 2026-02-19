@@ -31,7 +31,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { motion, LayoutGroup } from "framer-motion";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import type { ScoredJob } from "@/lib/scoring";
 import { effectiveScore, computeNudgeAmount } from "@/lib/scoring";
 import type { Job, Placement } from "@/lib/parse-xlsx";
@@ -53,6 +53,8 @@ import {
   Download,
   Upload,
   SlidersHorizontal,
+  Undo2,
+  Redo2,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { WelcomeModal } from "@/components/welcome-modal";
@@ -166,7 +168,7 @@ function AnimatedScore({
     setFlashClass(
       flashDirection === "up" ? "animate-score-up" : "animate-score-down"
     );
-    const timeout = setTimeout(() => setFlashClass(""), 900);
+    const timeout = setTimeout(() => setFlashClass(""), 600);
     return () => clearTimeout(timeout);
   }, [flashDirection]);
 
@@ -180,6 +182,31 @@ function AnimatedScore({
     >
       {displayValue.toFixed(3)}
     </span>
+  );
+}
+
+/* ── Rank change badge ── */
+function RankChangeBadge({ delta, direction }: { delta: number | null; direction: "up" | "down" | null }) {
+  return (
+    <AnimatePresence>
+      {delta != null && delta !== 0 && direction && (
+        <motion.span
+          key={delta}
+          initial={{ opacity: 0, x: -6 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className={cn(
+            "inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-bold font-mono tabular-nums leading-tight",
+            direction === "up"
+              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300"
+              : "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300"
+          )}
+        >
+          {direction === "up" ? "+" : ""}{delta}
+        </motion.span>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -215,10 +242,10 @@ const PlacementRow = memo(function PlacementRow({
       </span>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold text-foreground leading-tight truncate">
-          {entry.site}
+          {entry.site || "No site listed"}
         </p>
-        <p className="text-xs font-medium text-muted-foreground leading-tight truncate">
-          {entry.spec}
+        <p className="text-xs font-semibold italic text-foreground leading-tight truncate">
+          {entry.spec || "No specialty listed"}
         </p>
       </div>
     </div>
@@ -265,7 +292,13 @@ const FYGroup = memo(function FYGroup({
           entry ? (
             <PlacementRow key={entry.num} entry={entry} />
           ) : (
-            <div key={i} className="h-[30px]" />
+            <div key={i} className="flex gap-2 items-start py-0.5">
+              <span className="w-4 shrink-0 text-xs font-mono font-semibold text-muted-foreground text-right pt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground leading-tight">No placement</p>
+                <p className="text-xs text-muted-foreground leading-tight">&nbsp;</p>
+              </div>
+            </div>
           )
         )}
       </div>
@@ -301,6 +334,7 @@ const JobCard = memo(function JobCard({
   onMoveToOpen,
   flashDirection,
   glowKey,
+  rankDelta,
 }: {
   scored: ScoredJob;
   rank: number;
@@ -312,6 +346,7 @@ const JobCard = memo(function JobCard({
   onMoveToOpen: (jobId: string, rank: number) => void;
   flashDirection: "up" | "down" | null;
   glowKey: number;
+  rankDelta: number | null;
 }) {
   const {
     attributes,
@@ -331,12 +366,11 @@ const JobCard = memo(function JobCard({
   const { fy1, fy2 } = getJobPlacements(scored.job);
   const score = effectiveScore(scored);
 
-  // Use glowKey to force re-mount of the glow wrapper so CSS animation replays
-  const glowClass =
+  const washClass =
     flashDirection === "up"
-      ? "animate-card-glow-up"
+      ? "animate-wash-up"
       : flashDirection === "down"
-        ? "animate-card-glow-down"
+        ? "animate-wash-down"
         : "";
 
   return (
@@ -357,19 +391,20 @@ const JobCard = memo(function JobCard({
         {...attributes}
         {...listeners}
         className={cn(
-          "group rounded-lg border-0 hover:bg-card-hover hover:-translate-y-0.5 transition-all duration-150 cursor-grab flex flex-col bg-card",
+          "group relative rounded-lg border-0 hover:bg-card-hover hover:-translate-y-0.5 transition-all duration-150 cursor-grab flex flex-col bg-card",
           isSelected && "ring-2 ring-primary/60 bg-card-selected",
           isDragging && "opacity-30 scale-[0.97] z-50",
-          glowClass
+          washClass
         )}
         onClick={() => onSelectDetail(scored.job)}
       >
         {/* ── Header row ── */}
         <div className="flex items-center gap-1.5 px-2 pt-2 pb-1.5 border-b border-border">
-          {/* Rank number */}
+          {/* Rank number + delta */}
           <span className="text-sm font-bold font-mono text-foreground shrink-0">
             {rank}
           </span>
+          <RankChangeBadge delta={rankDelta} direction={flashDirection} />
 
           {/* Region badge */}
           <span
@@ -517,6 +552,83 @@ const DragOverlayCard = memo(function DragOverlayCard({
   );
 });
 
+/* ── Swipe-to-boost/bury hook (mobile) ── */
+const SWIPE_THRESHOLD = 60;
+
+function useSwipeBoostBury({
+  onBoost,
+  onBury,
+  isDragging,
+  isLocked,
+}: {
+  onBoost: () => void;
+  onBury: () => void;
+  isDragging: boolean;
+  isLocked: boolean;
+}) {
+  const touchRef = useRef<{ x: number; y: number; aborted: boolean } | null>(null);
+  const [swipeX, setSwipeX] = useState(0);
+  const [swipeCommitted, setSwipeCommitted] = useState<"boost" | "bury" | null>(null);
+  // Which action would fire on release — shown as iOS-style reveal
+  const [pendingAction, setPendingAction] = useState<"boost" | "bury" | null>(null);
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    if (isDragging || isLocked) return;
+    const touch = e.touches[0];
+    touchRef.current = { x: touch.clientX, y: touch.clientY, aborted: false };
+    setSwipeX(0);
+    setSwipeCommitted(null);
+    setPendingAction(null);
+  }, [isDragging, isLocked]);
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    const ref = touchRef.current;
+    if (!ref || ref.aborted || isDragging) return;
+    const touch = e.touches[0];
+    const dx = touch.clientX - ref.x;
+    const dy = touch.clientY - ref.y;
+    // If vertical movement dominates early on, abort permanently
+    if (Math.abs(dy) > Math.abs(dx) * 1.5 && Math.abs(dy) > 10) {
+      ref.aborted = true;
+      setSwipeX(0);
+      setPendingAction(null);
+      return;
+    }
+    if (Math.abs(dx) > 10) {
+      setSwipeX(dx);
+      // Update pending action based on threshold
+      if (dx >= SWIPE_THRESHOLD) setPendingAction("boost");
+      else if (dx <= -SWIPE_THRESHOLD) setPendingAction("bury");
+      else setPendingAction(null);
+    }
+  }, [isDragging]);
+
+  const onTouchEnd = useCallback(() => {
+    const ref = touchRef.current;
+    touchRef.current = null;
+    if (!ref || ref.aborted) {
+      setSwipeX(0);
+      setPendingAction(null);
+      return;
+    }
+
+    // Fire if past threshold — no time limit, user can hold as long as they want
+    if (pendingAction === "boost") {
+      setSwipeCommitted("boost");
+      onBoost();
+    } else if (pendingAction === "bury") {
+      setSwipeCommitted("bury");
+      onBury();
+    }
+
+    setSwipeX(0);
+    setPendingAction(null);
+    setTimeout(() => setSwipeCommitted(null), 400);
+  }, [pendingAction, onBoost, onBury]);
+
+  return { swipeX, swipeCommitted, pendingAction, onTouchStart, onTouchMove, onTouchEnd };
+}
+
 /* ── Sortable list row ── */
 const ListRow = memo(function ListRow({
   scored,
@@ -534,6 +646,7 @@ const ListRow = memo(function ListRow({
   onMoveToOpen,
   flashDirection,
   glowKey,
+  rankDelta,
 }: {
   scored: ScoredJob;
   rank: number;
@@ -550,6 +663,7 @@ const ListRow = memo(function ListRow({
   onMoveToOpen: (jobId: string, rank: number) => void;
   flashDirection: "up" | "down" | null;
   glowKey: number;
+  rankDelta: number | null;
 }) {
   const {
     attributes,
@@ -569,17 +683,27 @@ const ListRow = memo(function ListRow({
   const { fy1, fy2 } = getJobPlacements(scored.job);
   const score = effectiveScore(scored);
 
-  const glowClass =
+  const washClass =
     flashDirection === "up"
-      ? "animate-card-glow-up"
+      ? "animate-wash-up"
       : flashDirection === "down"
-        ? "animate-card-glow-down"
+        ? "animate-wash-down"
         : "";
 
   // Build placement array for all 6 slots
   const allPlacements: (PlacementEntry | null)[] = [];
   for (let i = 0; i < 3; i++) allPlacements.push(fy1[i] ?? null);
   for (let i = 0; i < 3; i++) allPlacements.push(fy2[i] ?? null);
+
+  // Swipe gesture for mobile boost/bury
+  const handleSwipeBoost = useCallback(() => onBoost(scored.job.programmeTitle), [onBoost, scored.job.programmeTitle]);
+  const handleSwipeBury = useCallback(() => onBury(scored.job.programmeTitle), [onBury, scored.job.programmeTitle]);
+  const { swipeX, swipeCommitted, pendingAction, onTouchStart, onTouchMove, onTouchEnd } = useSwipeBoostBury({
+    onBoost: handleSwipeBoost,
+    onBury: handleSwipeBury,
+    isDragging,
+    isLocked,
+  });
 
   if (isMobile) {
     return (
@@ -590,140 +714,137 @@ const ListRow = memo(function ListRow({
           ...style,
           boxShadow: isSelected
             ? undefined
-            : `inset 3px 0 0 ${regionStyle.color}40`,
+            : `0 2px 8px ${regionStyle.color}20, 0 1px 3px rgba(0,0,0,0.06)`,
         }}
         {...attributes}
         {...listeners}
         className={cn(
-          "flex flex-col py-2 px-2.5 border-b border-border transition-all duration-150",
+          "relative overflow-hidden rounded-xl mx-3 my-1 transition-all duration-150",
           isLocked ? "cursor-default" : "cursor-grab",
           isSelected
             ? "bg-card-selected ring-1 ring-primary/60"
             : "hover:bg-card-hover",
           isDragging && "opacity-30 scale-[0.97] z-50",
-          isLocked && "bg-amber-50/40 dark:bg-amber-950/20",
-          glowClass
+          isLocked && "bg-amber-50/40 dark:bg-amber-950/20"
         )}
         onClick={() => onSelectDetail(scored.job)}
         role="row"
       >
-        {/* Header: rank + region + title + score */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm font-bold font-mono text-foreground shrink-0">
-            {rank}
-          </span>
-          <span
-            className={cn(
-              "rounded-full px-1.5 py-0.5 text-[10px] font-semibold border shrink-0",
-              regionStyle.bg,
-              regionStyle.text,
-              regionStyle.border
+        {/* iOS-style action reveal behind the sliding row */}
+        {(swipeX > 0 || pendingAction === "boost") && (
+          <div className={cn(
+            "absolute inset-0 flex items-center justify-start pl-4 rounded-xl transition-colors duration-150",
+            pendingAction === "boost" ? "bg-emerald-500" : "bg-emerald-500/20"
+          )}>
+            {swipeX > 15 && (
+              <div className="flex items-center gap-2">
+                <ArrowUp />
+                <span className={cn(
+                  "text-sm font-bold transition-opacity",
+                  pendingAction === "boost" ? "text-white opacity-100" : "text-emerald-600 dark:text-emerald-400 opacity-70"
+                )}>Boost</span>
+              </div>
             )}
-          >
-            {scored.job.region}
-          </span>
-          <span className="flex-1 text-xs font-mono font-semibold text-foreground truncate min-w-0">
-            {scored.job.programmeTitle}
-          </span>
-          <div className="rounded-md bg-secondary/50 px-2 py-0.5 flex items-center gap-1 shrink-0">
-            <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Score
+          </div>
+        )}
+        {(swipeX < 0 || pendingAction === "bury") && (
+          <div className={cn(
+            "absolute inset-0 flex items-center justify-end pr-4 rounded-xl transition-colors duration-150",
+            pendingAction === "bury" ? "bg-red-500" : "bg-red-500/20"
+          )}>
+            {swipeX < -15 && (
+              <div className="flex items-center gap-2">
+                <span className={cn(
+                  "text-sm font-bold transition-opacity",
+                  pendingAction === "bury" ? "text-white opacity-100" : "text-red-600 dark:text-red-400 opacity-70"
+                )}>Bury</span>
+                <ArrowDown />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Sliding row content */}
+        <motion.div
+          className={cn("relative flex flex-col py-2 px-2.5 bg-card rounded-xl", washClass)}
+          animate={{ x: swipeX }}
+          transition={swipeX === 0 ? { type: "spring", stiffness: 500, damping: 30 } : { duration: 0 }}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
+          {/* Header: rank + region + title + score */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-bold font-mono text-foreground shrink-0">
+              {rank}
             </span>
-            <AnimatedScore value={score} flashDirection={flashDirection} />
-          </div>
-        </div>
-
-        {/* FY1 / FY2 placements – 2-column grid */}
-        <div className="grid grid-cols-2 gap-x-3 gap-y-0 mt-1.5">
-          {/* FY1 column */}
-          <div>
-            <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">FY1</span>
-            {[0, 1, 2].map((i) => {
-              const entry = fy1[i];
-              return entry ? (
-                <div key={entry.num} className="mt-0.5">
-                  <p className="text-[11px] font-semibold text-foreground leading-tight truncate">{entry.site}</p>
-                  <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate">{entry.spec}</p>
-                </div>
-              ) : (
-                <div key={i} className="mt-0.5">
-                  <span className="text-[11px] text-muted-foreground">—</span>
-                </div>
-              );
-            })}
-          </div>
-          {/* FY2 column */}
-          <div>
-            <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">FY2</span>
-            {[0, 1, 2].map((i) => {
-              const entry = fy2[i];
-              return entry ? (
-                <div key={entry.num} className="mt-0.5">
-                  <p className="text-[11px] font-semibold text-foreground leading-tight truncate">{entry.site}</p>
-                  <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate">{entry.spec}</p>
-                </div>
-              ) : (
-                <div key={i} className="mt-0.5">
-                  <span className="text-[11px] text-muted-foreground">—</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Actions row */}
-        <div className="flex items-center justify-center gap-1 mt-1.5">
-          <button
-            onClick={(e) => { e.stopPropagation(); onBoost(scored.job.programmeTitle); }}
-            onPointerDown={(e) => e.stopPropagation()}
-            className={cn("p-0.5 rounded text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 active:scale-90 transition-all", isLocked && "pointer-events-none opacity-30")}
-            title="Boost"
-          >
-            <ArrowUp />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onBury(scored.job.programmeTitle); }}
-            onPointerDown={(e) => e.stopPropagation()}
-            className={cn("p-0.5 rounded text-red-500 hover:text-red-400 hover:bg-red-500/10 active:scale-90 transition-all", isLocked && "pointer-events-none opacity-30")}
-            title="Bury"
-          >
-            <ArrowDown />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onMoveToOpen(scored.job.programmeTitle, rank); }}
-            onPointerDown={(e) => e.stopPropagation()}
-            className={cn("p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors", isLocked && "pointer-events-none opacity-30")}
-            title="Move to..."
-          >
-            <ArrowUpDown className="h-4 w-4" />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onTogglePin(scored.job.programmeTitle); }}
-            onPointerDown={(e) => e.stopPropagation()}
-            className={cn("p-0.5 rounded transition-colors", isPinned ? "text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}
-            title={isPinned ? "Unpin" : "Pin"}
-          >
-            <Pin className={cn("h-3.5 w-3.5", isPinned && "fill-primary")} />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleLock(scored.job.programmeTitle); }}
-            onPointerDown={(e) => e.stopPropagation()}
-            className={cn("p-0.5 rounded transition-colors", isLocked ? "text-amber-500" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}
-            title={isLocked ? "Unlock" : "Lock"}
-          >
-            <Lock className={cn("h-3.5 w-3.5", isLocked && "fill-amber-500/20")} />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleSelect(scored.job.programmeTitle); }}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="p-0.5 flex items-center justify-center"
-            title={isSelected ? "Deselect" : "Select"}
-          >
-            <div className={cn("h-4 w-4 rounded-full border-2 flex items-center justify-center transition-colors", isSelected ? "bg-primary border-primary" : "border-muted-foreground hover:border-primary")}>
-              {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />}
+            <RankChangeBadge delta={rankDelta} direction={flashDirection} />
+            <span
+              className={cn(
+                "rounded-full px-1.5 py-0.5 text-[10px] font-semibold border shrink-0",
+                regionStyle.bg,
+                regionStyle.text,
+                regionStyle.border
+              )}
+            >
+              {scored.job.region}
+            </span>
+            <span className="flex-1 text-xs font-mono font-semibold text-foreground truncate min-w-0">
+              {scored.job.programmeTitle}
+            </span>
+            <div className="rounded-md bg-secondary/50 px-2 py-0.5 flex items-center gap-1 shrink-0">
+              <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Score
+              </span>
+              <AnimatedScore value={score} flashDirection={flashDirection} />
             </div>
-          </button>
-        </div>
+          </div>
+
+          {/* FY1 / FY2 placements – numbered, fixed-geometry grid */}
+          <div className="grid grid-cols-2 gap-x-3 mt-1.5">
+            {([["FY1", fy1, 0], ["FY2", fy2, 3]] as const).map(([label, entries, offset]) => (
+              <div key={label}>
+                <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">
+                  {label}
+                </span>
+                {[0, 1, 2].map((i) => {
+                  const entry = entries[i];
+                  const slotNum = offset + i + 1;
+                  return (
+                    <div
+                      key={slotNum}
+                      className={cn(
+                        "mt-0.5 pt-0.5",
+                        i > 0 && "border-t border-border/40"
+                      )}
+                    >
+                      {entry ? (
+                        <>
+                          <p className="text-[11px] font-semibold text-foreground leading-tight truncate">
+                            <span className="inline-block w-3 text-[10px] font-bold text-muted-foreground tabular-nums">
+                              {slotNum}
+                            </span>
+                            {entry.site || "No site listed"}
+                          </p>
+                          <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate pl-3">
+                            {entry.spec || "No specialty listed"}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-[11px] text-muted-foreground leading-tight">
+                          <span className="inline-block w-3 text-[10px] font-bold tabular-nums">
+                            {slotNum}
+                          </span>
+                          —
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </motion.div>
       </div>
     );
   }
@@ -742,22 +863,25 @@ const ListRow = memo(function ListRow({
       {...attributes}
       {...listeners}
       className={cn(
-        "grid items-center gap-x-0.5 h-[56px] border-b border-border transition-all duration-150",
+        "relative grid items-center gap-x-0.5 h-[56px] border-b border-border transition-all duration-150",
         isLocked ? "cursor-default" : "cursor-grab",
         isSelected
           ? "bg-card-selected ring-1 ring-primary/60"
           : "hover:bg-card-hover",
         isDragging && "opacity-30 scale-[0.97] z-50",
         isLocked && "bg-amber-50/40 dark:bg-amber-950/20",
-        glowClass
+        washClass
       )}
       onClick={() => onSelectDetail(scored.job)}
       role="row"
     >
       {/* Rank */}
-      <span className="text-sm font-bold font-mono text-foreground text-right pr-2">
-        {rank}
-      </span>
+      <div className="flex items-center justify-end gap-1 pr-2">
+        <RankChangeBadge delta={rankDelta} direction={flashDirection} />
+        <span className="text-sm font-bold font-mono text-foreground">
+          {rank}
+        </span>
+      </div>
 
       {/* Region */}
       <span
@@ -950,12 +1074,12 @@ const ListDragOverlayRow = memo(function ListDragOverlayRow({
             {[0, 1, 2].map((i) => {
               const entry = fy1[i];
               return entry ? (
-                <div key={entry.num} className="mt-0.5">
+                <div key={entry.num} className="mt-1.5">
                   <p className="text-[11px] font-semibold text-foreground leading-tight truncate">{entry.site}</p>
                   <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate">{entry.spec}</p>
                 </div>
               ) : (
-                <div key={i} className="mt-0.5"><span className="text-[11px] text-muted-foreground">—</span></div>
+                <div key={i} className="mt-1.5"><span className="text-[11px] text-muted-foreground">—</span></div>
               );
             })}
           </div>
@@ -964,12 +1088,12 @@ const ListDragOverlayRow = memo(function ListDragOverlayRow({
             {[0, 1, 2].map((i) => {
               const entry = fy2[i];
               return entry ? (
-                <div key={entry.num} className="mt-0.5">
+                <div key={entry.num} className="mt-1.5">
                   <p className="text-[11px] font-semibold text-foreground leading-tight truncate">{entry.site}</p>
                   <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate">{entry.spec}</p>
                 </div>
               ) : (
-                <div key={i} className="mt-0.5"><span className="text-[11px] text-muted-foreground">—</span></div>
+                <div key={i} className="mt-1.5"><span className="text-[11px] text-muted-foreground">—</span></div>
               );
             })}
           </div>
@@ -1050,6 +1174,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
   // Boost/Bury flash tracking + glow key counter for re-triggering CSS animation
   const glowKeyRef = useRef<Map<string, number>>(new Map());
+  const rankDeltaRef = useRef<Map<string, number>>(new Map());
   const [flashMap, setFlashMap] = useState<
     Map<string, "up" | "down">
   >(new Map());
@@ -1076,6 +1201,36 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
   // Help modal
   const [showHelp, setShowHelp] = useState(false);
+
+  // Undo/Redo
+  const [history, setHistory] = useState<ScoredJob[][]>([]);
+  const [future, setFuture] = useState<ScoredJob[][]>([]);
+
+  const pushAndSetRanked = useCallback((updater: (prev: ScoredJob[]) => ScoredJob[]) => {
+    setRankedJobs(prev => {
+      setHistory(h => [...h.slice(-50), prev]);
+      setFuture([]);
+      return updater(prev);
+    });
+  }, []);
+
+  const handleUndo = useCallback(() => {
+    if (history.length === 0) return;
+    const prev = history[history.length - 1];
+    setHistory(h => h.slice(0, -1));
+    setFuture(f => [rankedJobs, ...f]);
+    setRankedJobs(prev);
+  }, [history, rankedJobs]);
+
+  const handleRedo = useCallback(() => {
+    if (future.length === 0) return;
+    setHistory(h => [...h, rankedJobs]);
+    setRankedJobs(future[0]);
+    setFuture(f => f.slice(1));
+  }, [future, rankedJobs]);
+
+  // Mobile search expanded state
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   // Mobile filters
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -1208,7 +1363,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const virtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => viewMode === "list" ? (isMobile ? 156 : 56) : 340,
+    estimateSize: () => viewMode === "list" ? (isMobile ? 172 : 56) : 340,
     overscan: viewMode === "list" ? 5 : 2,
   });
 
@@ -1307,7 +1462,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const handleBoost = useCallback(
     (jobId: string) => {
       if (lockedJobIds.has(jobId)) return;
-      scrollToJobIdRef.current = jobId;
       glowKeyRef.current.set(jobId, (glowKeyRef.current.get(jobId) ?? 0) + 1);
       setFlashMap((prev) => {
         const next = new Map(prev);
@@ -1320,26 +1474,32 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
           next.delete(jobId);
           return next;
         });
-      }, 6200);
+        rankDeltaRef.current.delete(jobId);
+      }, 2500);
 
-      setRankedJobs((prev) => {
+      pushAndSetRanked((prev) => {
+        const oldIdx = prev.findIndex((sj) => sj.job.programmeTitle === jobId);
         const updated = prev.map((sj) =>
           sj.job.programmeTitle === jobId
             ? { ...sj, scoreAdjustment: (sj.scoreAdjustment ?? 0) + nudgeAmount }
             : sj
         );
-        return [...updated].sort(
+        const sorted = [...updated].sort(
           (a, b) => effectiveScore(b) - effectiveScore(a)
         );
+        const newIdx = sorted.findIndex((sj) => sj.job.programmeTitle === jobId);
+        if (oldIdx !== -1 && newIdx !== -1) {
+          rankDeltaRef.current.set(jobId, oldIdx - newIdx);
+        }
+        return sorted;
       });
     },
-    [nudgeAmount, lockedJobIds]
+    [nudgeAmount, lockedJobIds, pushAndSetRanked]
   );
 
   const handleBury = useCallback(
     (jobId: string) => {
       if (lockedJobIds.has(jobId)) return;
-      scrollToJobIdRef.current = jobId;
       glowKeyRef.current.set(jobId, (glowKeyRef.current.get(jobId) ?? 0) + 1);
       setFlashMap((prev) => {
         const next = new Map(prev);
@@ -1352,27 +1512,34 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
           next.delete(jobId);
           return next;
         });
-      }, 6200);
+        rankDeltaRef.current.delete(jobId);
+      }, 2500);
 
-      setRankedJobs((prev) => {
+      pushAndSetRanked((prev) => {
+        const oldIdx = prev.findIndex((sj) => sj.job.programmeTitle === jobId);
         const updated = prev.map((sj) =>
           sj.job.programmeTitle === jobId
             ? { ...sj, scoreAdjustment: (sj.scoreAdjustment ?? 0) - nudgeAmount }
             : sj
         );
-        return [...updated].sort(
+        const sorted = [...updated].sort(
           (a, b) => effectiveScore(b) - effectiveScore(a)
         );
+        const newIdx = sorted.findIndex((sj) => sj.job.programmeTitle === jobId);
+        if (oldIdx !== -1 && newIdx !== -1) {
+          rankDeltaRef.current.set(jobId, oldIdx - newIdx);
+        }
+        return sorted;
       });
     },
-    [nudgeAmount, lockedJobIds]
+    [nudgeAmount, lockedJobIds, pushAndSetRanked]
   );
 
   /* ── Move To ── */
   const handleMoveTo = useCallback((jobId: string, targetRank: number) => {
     if (lockedJobIds.has(jobId)) return;
     scrollToJobIdRef.current = jobId;
-    setRankedJobs((prev) => {
+    pushAndSetRanked((prev) => {
       const currentIdx = prev.findIndex((sj) => sj.job.programmeTitle === jobId);
       if (currentIdx === -1) return prev;
       const targetIdx = Math.max(
@@ -1381,7 +1548,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       );
       return arrayMove(prev, currentIdx, targetIdx);
     });
-  }, [lockedJobIds]);
+  }, [lockedJobIds, pushAndSetRanked]);
 
   const openMoveTo = useCallback(
     (jobId: string, rank: number) => {
@@ -1439,19 +1606,29 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       ids.forEach((id) => next.set(id, "up"));
       return next;
     });
-    setTimeout(() => setFlashMap(new Map()), 6200);
+    setTimeout(() => {
+      setFlashMap(new Map());
+      ids.forEach((id) => rankDeltaRef.current.delete(id));
+    }, 2500);
 
-    setRankedJobs((prev) => {
+    pushAndSetRanked((prev) => {
+      const oldIndices = new Map<string, number>();
+      prev.forEach((sj, i) => { if (ids.has(sj.job.programmeTitle)) oldIndices.set(sj.job.programmeTitle, i); });
       const updated = prev.map((sj) =>
         ids.has(sj.job.programmeTitle)
           ? { ...sj, scoreAdjustment: (sj.scoreAdjustment ?? 0) + nudgeAmount }
           : sj
       );
-      return [...updated].sort(
+      const sorted = [...updated].sort(
         (a, b) => effectiveScore(b) - effectiveScore(a)
       );
+      sorted.forEach((sj, i) => {
+        const oldIdx = oldIndices.get(sj.job.programmeTitle);
+        if (oldIdx != null) rankDeltaRef.current.set(sj.job.programmeTitle, oldIdx - i);
+      });
+      return sorted;
     });
-  }, [selectedIds, nudgeAmount, lockedJobIds]);
+  }, [selectedIds, nudgeAmount, lockedJobIds, pushAndSetRanked]);
 
   const handleBulkBury = useCallback(() => {
     const ids = new Set([...selectedIds].filter((id) => !lockedJobIds.has(id)));
@@ -1462,24 +1639,33 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       ids.forEach((id) => next.set(id, "down"));
       return next;
     });
-    setTimeout(() => setFlashMap(new Map()), 6200);
+    setTimeout(() => {
+      setFlashMap(new Map());
+      ids.forEach((id) => rankDeltaRef.current.delete(id));
+    }, 2500);
 
-    setRankedJobs((prev) => {
+    pushAndSetRanked((prev) => {
+      const oldIndices = new Map<string, number>();
+      prev.forEach((sj, i) => { if (ids.has(sj.job.programmeTitle)) oldIndices.set(sj.job.programmeTitle, i); });
       const updated = prev.map((sj) =>
         ids.has(sj.job.programmeTitle)
           ? { ...sj, scoreAdjustment: (sj.scoreAdjustment ?? 0) - nudgeAmount }
           : sj
       );
-      return [...updated].sort(
+      const sorted = [...updated].sort(
         (a, b) => effectiveScore(b) - effectiveScore(a)
       );
+      sorted.forEach((sj, i) => {
+        const oldIdx = oldIndices.get(sj.job.programmeTitle);
+        if (oldIdx != null) rankDeltaRef.current.set(sj.job.programmeTitle, oldIdx - i);
+      });
+      return sorted;
     });
-  }, [selectedIds, nudgeAmount, lockedJobIds]);
+  }, [selectedIds, nudgeAmount, lockedJobIds, pushAndSetRanked]);
 
   const handleBulkMoveTo = useCallback(
     (targetRank: number) => {
-      setRankedJobs((prev) => {
-        // Collect selected & unlocked jobs in their current relative order
+      pushAndSetRanked((prev) => {
         const selectedJobs = prev.filter((sj) => selectedIds.has(sj.job.programmeTitle) && !lockedJobIds.has(sj.job.programmeTitle));
         if (selectedJobs.length === 0) return prev;
         const remaining = prev.filter((sj) => !(selectedIds.has(sj.job.programmeTitle) && !lockedJobIds.has(sj.job.programmeTitle)));
@@ -1492,7 +1678,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         return result;
       });
     },
-    [selectedIds, lockedJobIds]
+    [selectedIds, lockedJobIds, pushAndSetRanked]
   );
 
   /* ── Pin row ── */
@@ -1557,21 +1743,18 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     // Locked items cannot be dragged or displaced
     if (lockedJobIds.has(activeIdStr) || lockedJobIds.has(overIdStr)) return;
 
-    setRankedJobs((prev) => {
+    pushAndSetRanked((prev) => {
       const oldIndex = prev.findIndex((s) => s.job.programmeTitle === activeIdStr);
       const newIndex = prev.findIndex((s) => s.job.programmeTitle === overIdStr);
       if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex)
         return prev;
       const reordered = arrayMove(prev, oldIndex, newIndex);
 
-      // Match the moved card's score to its neighbor
       const moved = reordered[newIndex];
       let targetScore: number;
       if (newIndex === 0) {
-        // First position: match the card below
         targetScore = effectiveScore(reordered[1]);
       } else {
-        // Otherwise: match the card above
         targetScore = effectiveScore(reordered[newIndex - 1]);
       }
       const newAdj = targetScore - moved.score;
@@ -1634,6 +1817,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
               onMoveToOpen={openMoveTo}
               flashDirection={flashMap.get(s.job.programmeTitle) ?? null}
               glowKey={glowKeyRef.current.get(s.job.programmeTitle) ?? 0}
+              rankDelta={rankDeltaRef.current.get(s.job.programmeTitle) ?? null}
             />
           );
         })}
@@ -1664,6 +1848,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         onMoveToOpen={openMoveTo}
         flashDirection={flashMap.get(s.job.programmeTitle) ?? null}
         glowKey={glowKeyRef.current.get(s.job.programmeTitle) ?? 0}
+        rankDelta={rankDeltaRef.current.get(s.job.programmeTitle) ?? null}
       />
     );
   }
@@ -1792,6 +1977,30 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
             </Button>
           </div>
 
+          {/* Undo / Redo */}
+          <div className="flex items-center gap-0.5 shrink-0">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="gap-1 text-xs px-2"
+              onClick={handleUndo}
+              disabled={history.length === 0}
+              title="Undo"
+            >
+              <Undo2 className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="gap-1 text-xs px-2"
+              onClick={handleRedo}
+              disabled={future.length === 0}
+              title="Redo"
+            >
+              <Redo2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+
           {/* View mode toggle */}
           <div className="flex items-center rounded-md border bg-background p-0.5 shrink-0">
             <button
@@ -1831,53 +2040,118 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       </div>
 
       {/* Filter bar — mobile */}
-      <div className="shrink-0 border-b bg-gradient-to-r from-secondary/20 via-accent/10 to-secondary/20 px-3 py-2 sm:hidden">
-        {/* Collapsed row: count + Filters toggle + search + help */}
-        <div className="flex items-center gap-2">
-          <p className="text-xs text-muted-foreground shrink-0">
-            {filteredJobs.length === rankedJobs.length
-              ? `${rankedJobs.length}`
-              : `${filteredJobs.length}/${rankedJobs.length}`}
-          </p>
-
-          <button
-            onClick={() => setMobileFiltersOpen((o) => !o)}
-            className={cn(
-              "relative flex items-center gap-1 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors shrink-0",
-              mobileFiltersOpen
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-background text-foreground border-border"
-            )}
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            Filters
-            {hasActiveFilters && !mobileFiltersOpen && (
-              <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-primary border-2 border-background" />
-            )}
-          </button>
-
-          <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-md border bg-background pl-8 pr-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-ring/50 placeholder:text-muted-foreground"
-            />
+      <div className="shrink-0 border-b bg-gradient-to-r from-secondary/20 via-accent/10 to-secondary/20 px-2 py-1.5 sm:hidden">
+        {mobileSearchOpen ? (
+          /* Expanded search: full-width input with close button */
+          <div className="flex items-center gap-1.5">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search programmes, hospitals, specialties..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
+                className="w-full rounded-md border bg-background pl-8 pr-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-ring/50 placeholder:text-muted-foreground"
+              />
+            </div>
+            <button
+              onClick={() => { setMobileSearchOpen(false); setSearchQuery(""); }}
+              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+              title="Close search"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
+        ) : (
+          /* Compact icon row */
+          <div className="flex items-center gap-0.5">
+            <p className="text-xs font-medium text-muted-foreground shrink-0 px-1">
+              {filteredJobs.length === rankedJobs.length
+                ? `${rankedJobs.length}`
+                : `${filteredJobs.length}/${rankedJobs.length}`}
+            </p>
 
-          <button
-            onClick={() => setShowHelp(true)}
-            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
-            title="Help"
-          >
-            <HelpCircle className="h-4 w-4" />
-          </button>
-        </div>
+            <button
+              onClick={() => setMobileFiltersOpen((o) => !o)}
+              className={cn(
+                "relative p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md transition-colors shrink-0",
+                mobileFiltersOpen
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              )}
+              title="Filters"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              {hasActiveFilters && !mobileFiltersOpen && (
+                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary" />
+              )}
+            </button>
 
-        {/* Expanded: dropdowns + actions */}
-        {mobileFiltersOpen && (
+            <button
+              onClick={() => setMobileSearchOpen(true)}
+              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+              title="Search"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+
+            <button
+              onClick={() => exportRankingsToXlsx(rankedJobs)}
+              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+              title="Export"
+            >
+              <Download className="h-4 w-4" />
+            </button>
+
+            <button
+              onClick={() => importFileRef.current?.click()}
+              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+              title="Import"
+            >
+              <Upload className="h-4 w-4" />
+            </button>
+
+            <button
+              onClick={handleUndo}
+              disabled={history.length === 0}
+              className={cn(
+                "p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md transition-colors shrink-0",
+                history.length === 0
+                  ? "text-muted-foreground/30"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              )}
+              title="Undo"
+            >
+              <Undo2 className="h-4 w-4" />
+            </button>
+
+            <button
+              onClick={handleRedo}
+              disabled={future.length === 0}
+              className={cn(
+                "p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md transition-colors shrink-0",
+                future.length === 0
+                  ? "text-muted-foreground/30"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              )}
+              title="Redo"
+            >
+              <Redo2 className="h-4 w-4" />
+            </button>
+
+            <button
+              onClick={() => setShowHelp(true)}
+              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0 ml-auto"
+              title="Help"
+            >
+              <HelpCircle className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Expanded filter dropdowns */}
+        {mobileFiltersOpen && !mobileSearchOpen && (
           <div className="mt-2 space-y-2">
             <select
               value={regionFilter}
@@ -1912,41 +2186,19 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
               ))}
             </select>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              {hasActiveFilters && (
-                <button
-                  onClick={() => {
-                    setSearchQuery("");
-                    setRegionFilter("all");
-                    setHospitalFilter("all");
-                    setSpecialtyFilter("all");
-                  }}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Clear filters
-                </button>
-              )}
-              <div className="ml-auto flex items-center gap-1">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1 text-xs h-7"
-                  onClick={() => exportRankingsToXlsx(rankedJobs)}
-                >
-                  <Download className="h-3 w-3" />
-                  Export
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="gap-1 text-xs h-7"
-                  onClick={() => importFileRef.current?.click()}
-                >
-                  <Upload className="h-3 w-3" />
-                  Import
-                </Button>
-              </div>
-            </div>
+            {hasActiveFilters && (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setRegionFilter("all");
+                  setHospitalFilter("all");
+                  setSpecialtyFilter("all");
+                }}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -2123,7 +2375,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                   <div className="shrink-0 z-10 shadow-md border-b max-h-[30vh] overflow-y-auto">
                     {viewMode === "list"
                       ? pinnedRowIndices.map((jobIdx) => (
-                          <div key={`pin-${jobIdx}`} className={cn(jobIdx % 2 === 0 ? "bg-row-even" : "bg-row-odd")}>
+                          <div key={`pin-${jobIdx}`} className={cn(!isMobile && (jobIdx % 2 === 0 ? "bg-row-even" : "bg-row-odd"))}>
                             {renderListRow(jobIdx)}
                           </div>
                         ))
@@ -2206,7 +2458,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                           key={virtualRow.index}
                           className={cn(
                             "absolute left-0 right-0",
-                            isEvenRow ? "bg-row-even" : "bg-row-odd"
+                            !isMobile && (isEvenRow ? "bg-row-even" : "bg-row-odd")
                           )}
                           style={{
                             height: `${virtualRow.size}px`,
@@ -2340,7 +2592,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                   <div className="shrink-0 z-10 shadow-[0_-4px_6px_-1px_rgb(0_0_0/0.1)] border-t max-h-[30vh] overflow-y-auto">
                     {viewMode === "list"
                       ? pinnedRowIndices.map((jobIdx) => (
-                          <div key={`pin-${jobIdx}`} className={cn(jobIdx % 2 === 0 ? "bg-row-even" : "bg-row-odd")}>
+                          <div key={`pin-${jobIdx}`} className={cn(!isMobile && (jobIdx % 2 === 0 ? "bg-row-even" : "bg-row-odd"))}>
                             {renderListRow(jobIdx)}
                           </div>
                         ))
