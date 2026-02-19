@@ -12,7 +12,8 @@ import {
   DndContext,
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragOverlay,
@@ -51,6 +52,7 @@ import {
   List,
   Download,
   Upload,
+  SlidersHorizontal,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { WelcomeModal } from "@/components/welcome-modal";
@@ -355,9 +357,9 @@ const JobCard = memo(function JobCard({
         {...attributes}
         {...listeners}
         className={cn(
-          "group rounded-lg border-0 hover:bg-card-hover hover:-translate-y-0.5 transition-all duration-150 cursor-grab touch-none flex flex-col bg-card",
+          "group rounded-lg border-0 hover:bg-card-hover hover:-translate-y-0.5 transition-all duration-150 cursor-grab flex flex-col bg-card",
           isSelected && "ring-2 ring-primary/60 bg-card-selected",
-          isDragging && "opacity-40 z-50",
+          isDragging && "opacity-30 scale-[0.97] z-50",
           glowClass
         )}
         onClick={() => onSelectDetail(scored.job)}
@@ -484,10 +486,10 @@ const DragOverlayCard = memo(function DragOverlayCard({
 
   return (
     <div
-      className="rounded-lg border-0 bg-card-drag ring-2 ring-primary/30 scale-[1.02]"
+      className="rounded-lg border-0 bg-card-drag ring-2 ring-primary/50 scale-[1.03] transition-all duration-150"
       style={{
         ...(width ? { width } : {}),
-        boxShadow: `0 8px 24px ${regionStyle.color}30, 0 4px 12px rgba(0,0,0,0.1)`,
+        boxShadow: `0 12px 32px ${regionStyle.color}40, 0 6px 16px rgba(0,0,0,0.15)`,
       }}
     >
       <div className="flex items-center gap-1.5 px-2.5 pt-2 pb-1.5 border-b border-border">
@@ -579,15 +581,6 @@ const ListRow = memo(function ListRow({
   for (let i = 0; i < 3; i++) allPlacements.push(fy1[i] ?? null);
   for (let i = 0; i < 3; i++) allPlacements.push(fy2[i] ?? null);
 
-  // Build compact placement summary for mobile
-  const mobilePlacementSummary = useMemo(() => {
-    const entries = allPlacements.filter((e): e is PlacementEntry => e !== null);
-    return entries
-      .slice(0, 3)
-      .map((e) => `${e.site} · ${e.spec}`)
-      .join(" , ");
-  }, [allPlacements]);
-
   if (isMobile) {
     return (
       <div
@@ -602,19 +595,19 @@ const ListRow = memo(function ListRow({
         {...attributes}
         {...listeners}
         className={cn(
-          "flex flex-col py-2 px-2.5 border-b border-border transition-colors duration-100",
-          isLocked ? "cursor-default" : "cursor-grab touch-none",
+          "flex flex-col py-2 px-2.5 border-b border-border transition-all duration-150",
+          isLocked ? "cursor-default" : "cursor-grab",
           isSelected
             ? "bg-card-selected ring-1 ring-primary/60"
             : "hover:bg-card-hover",
-          isDragging && "opacity-40 z-50",
+          isDragging && "opacity-30 scale-[0.97] z-50",
           isLocked && "bg-amber-50/40 dark:bg-amber-950/20",
           glowClass
         )}
         onClick={() => onSelectDetail(scored.job)}
         role="row"
       >
-        {/* Line 1: rank + region + title */}
+        {/* Header: rank + region + title + score */}
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-bold font-mono text-foreground shrink-0">
             {rank}
@@ -632,73 +625,104 @@ const ListRow = memo(function ListRow({
           <span className="flex-1 text-xs font-mono font-semibold text-foreground truncate min-w-0">
             {scored.job.programmeTitle}
           </span>
-        </div>
-
-        {/* Line 2: compact placement summary */}
-        <p className="text-[11px] text-foreground truncate mt-0.5">
-          {mobilePlacementSummary || "No placements"}
-        </p>
-
-        {/* Line 3: score + actions */}
-        <div className="flex items-center mt-1">
-          <div className="rounded-md bg-secondary/50 px-2 py-0.5 flex items-center gap-1">
+          <div className="rounded-md bg-secondary/50 px-2 py-0.5 flex items-center gap-1 shrink-0">
             <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
               Score
             </span>
             <AnimatedScore value={score} flashDirection={flashDirection} />
           </div>
-          <div className="ml-auto flex items-center gap-0.5">
-            <button
-              onClick={(e) => { e.stopPropagation(); onBoost(scored.job.programmeTitle); }}
-              onPointerDown={(e) => e.stopPropagation()}
-              className={cn("p-0.5 rounded text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 active:scale-90 transition-all", isLocked && "pointer-events-none opacity-30")}
-              title="Boost"
-            >
-              <ArrowUp />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onBury(scored.job.programmeTitle); }}
-              onPointerDown={(e) => e.stopPropagation()}
-              className={cn("p-0.5 rounded text-red-500 hover:text-red-400 hover:bg-red-500/10 active:scale-90 transition-all", isLocked && "pointer-events-none opacity-30")}
-              title="Bury"
-            >
-              <ArrowDown />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onMoveToOpen(scored.job.programmeTitle, rank); }}
-              onPointerDown={(e) => e.stopPropagation()}
-              className={cn("p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors", isLocked && "pointer-events-none opacity-30")}
-              title="Move to..."
-            >
-              <ArrowUpDown className="h-4 w-4" />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onTogglePin(scored.job.programmeTitle); }}
-              onPointerDown={(e) => e.stopPropagation()}
-              className={cn("p-0.5 rounded transition-colors", isPinned ? "text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}
-              title={isPinned ? "Unpin" : "Pin"}
-            >
-              <Pin className={cn("h-3.5 w-3.5", isPinned && "fill-primary")} />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onToggleLock(scored.job.programmeTitle); }}
-              onPointerDown={(e) => e.stopPropagation()}
-              className={cn("p-0.5 rounded transition-colors", isLocked ? "text-amber-500" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}
-              title={isLocked ? "Unlock" : "Lock"}
-            >
-              <Lock className={cn("h-3.5 w-3.5", isLocked && "fill-amber-500/20")} />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onToggleSelect(scored.job.programmeTitle); }}
-              onPointerDown={(e) => e.stopPropagation()}
-              className="p-0.5 flex items-center justify-center"
-              title={isSelected ? "Deselect" : "Select"}
-            >
-              <div className={cn("h-4 w-4 rounded-full border-2 flex items-center justify-center transition-colors", isSelected ? "bg-primary border-primary" : "border-muted-foreground hover:border-primary")}>
-                {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />}
-              </div>
-            </button>
+        </div>
+
+        {/* FY1 / FY2 placements – 2-column grid */}
+        <div className="grid grid-cols-2 gap-x-3 gap-y-0 mt-1.5">
+          {/* FY1 column */}
+          <div>
+            <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">FY1</span>
+            {[0, 1, 2].map((i) => {
+              const entry = fy1[i];
+              return entry ? (
+                <div key={entry.num} className="mt-0.5">
+                  <p className="text-[11px] font-semibold text-foreground leading-tight truncate">{entry.site}</p>
+                  <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate">{entry.spec}</p>
+                </div>
+              ) : (
+                <div key={i} className="mt-0.5">
+                  <span className="text-[11px] text-muted-foreground">—</span>
+                </div>
+              );
+            })}
           </div>
+          {/* FY2 column */}
+          <div>
+            <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">FY2</span>
+            {[0, 1, 2].map((i) => {
+              const entry = fy2[i];
+              return entry ? (
+                <div key={entry.num} className="mt-0.5">
+                  <p className="text-[11px] font-semibold text-foreground leading-tight truncate">{entry.site}</p>
+                  <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate">{entry.spec}</p>
+                </div>
+              ) : (
+                <div key={i} className="mt-0.5">
+                  <span className="text-[11px] text-muted-foreground">—</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Actions row */}
+        <div className="flex items-center justify-center gap-1 mt-1.5">
+          <button
+            onClick={(e) => { e.stopPropagation(); onBoost(scored.job.programmeTitle); }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className={cn("p-0.5 rounded text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 active:scale-90 transition-all", isLocked && "pointer-events-none opacity-30")}
+            title="Boost"
+          >
+            <ArrowUp />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onBury(scored.job.programmeTitle); }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className={cn("p-0.5 rounded text-red-500 hover:text-red-400 hover:bg-red-500/10 active:scale-90 transition-all", isLocked && "pointer-events-none opacity-30")}
+            title="Bury"
+          >
+            <ArrowDown />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onMoveToOpen(scored.job.programmeTitle, rank); }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className={cn("p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors", isLocked && "pointer-events-none opacity-30")}
+            title="Move to..."
+          >
+            <ArrowUpDown className="h-4 w-4" />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onTogglePin(scored.job.programmeTitle); }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className={cn("p-0.5 rounded transition-colors", isPinned ? "text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}
+            title={isPinned ? "Unpin" : "Pin"}
+          >
+            <Pin className={cn("h-3.5 w-3.5", isPinned && "fill-primary")} />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleLock(scored.job.programmeTitle); }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className={cn("p-0.5 rounded transition-colors", isLocked ? "text-amber-500" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}
+            title={isLocked ? "Unlock" : "Lock"}
+          >
+            <Lock className={cn("h-3.5 w-3.5", isLocked && "fill-amber-500/20")} />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleSelect(scored.job.programmeTitle); }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="p-0.5 flex items-center justify-center"
+            title={isSelected ? "Deselect" : "Select"}
+          >
+            <div className={cn("h-4 w-4 rounded-full border-2 flex items-center justify-center transition-colors", isSelected ? "bg-primary border-primary" : "border-muted-foreground hover:border-primary")}>
+              {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />}
+            </div>
+          </button>
         </div>
       </div>
     );
@@ -718,12 +742,12 @@ const ListRow = memo(function ListRow({
       {...attributes}
       {...listeners}
       className={cn(
-        "grid items-center gap-x-0.5 h-[56px] border-b border-border transition-colors duration-100",
-        isLocked ? "cursor-default" : "cursor-grab touch-none",
+        "grid items-center gap-x-0.5 h-[56px] border-b border-border transition-all duration-150",
+        isLocked ? "cursor-default" : "cursor-grab",
         isSelected
           ? "bg-card-selected ring-1 ring-primary/60"
           : "hover:bg-card-hover",
-        isDragging && "opacity-40 z-50",
+        isDragging && "opacity-30 scale-[0.97] z-50",
         isLocked && "bg-amber-50/40 dark:bg-amber-950/20",
         glowClass
       )}
@@ -902,16 +926,10 @@ const ListDragOverlayRow = memo(function ListDragOverlayRow({
   for (let i = 0; i < 3; i++) allPlacements.push(fy2[i] ?? null);
 
   if (isMobile) {
-    const placementEntries = allPlacements.filter((e): e is PlacementEntry => e !== null);
-    const summary = placementEntries
-      .slice(0, 3)
-      .map((e) => `${e.site} · ${e.spec}`)
-      .join(" , ");
-
     return (
       <div
-        className="flex flex-col py-2 px-2.5 bg-card-drag ring-2 ring-primary/30 rounded-md"
-        style={{ boxShadow: `0 8px 24px ${regionStyle.color}30, 0 4px 12px rgba(0,0,0,0.1)` }}
+        className="flex flex-col py-2 px-2.5 bg-card-drag ring-2 ring-primary/50 scale-[1.03] rounded-md transition-all duration-150"
+        style={{ boxShadow: `0 12px 32px ${regionStyle.color}40, 0 6px 16px rgba(0,0,0,0.15)` }}
       >
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-bold font-mono text-foreground shrink-0">{rank}</span>
@@ -921,12 +939,39 @@ const ListDragOverlayRow = memo(function ListDragOverlayRow({
           <span className="flex-1 text-xs font-mono font-semibold text-foreground truncate min-w-0">
             {scored.job.programmeTitle}
           </span>
-        </div>
-        <p className="text-[11px] text-foreground truncate mt-0.5">{summary || "No placements"}</p>
-        <div className="flex items-center mt-1">
-          <div className="rounded-md bg-secondary/50 px-2 py-0.5 flex items-center gap-1">
+          <div className="rounded-md bg-secondary/50 px-2 py-0.5 flex items-center gap-1 shrink-0">
             <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">Score</span>
             <span className="font-mono tabular-nums text-xs font-semibold text-foreground">{score.toFixed(3)}</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-0 mt-1.5">
+          <div>
+            <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">FY1</span>
+            {[0, 1, 2].map((i) => {
+              const entry = fy1[i];
+              return entry ? (
+                <div key={entry.num} className="mt-0.5">
+                  <p className="text-[11px] font-semibold text-foreground leading-tight truncate">{entry.site}</p>
+                  <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate">{entry.spec}</p>
+                </div>
+              ) : (
+                <div key={i} className="mt-0.5"><span className="text-[11px] text-muted-foreground">—</span></div>
+              );
+            })}
+          </div>
+          <div>
+            <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">FY2</span>
+            {[0, 1, 2].map((i) => {
+              const entry = fy2[i];
+              return entry ? (
+                <div key={entry.num} className="mt-0.5">
+                  <p className="text-[11px] font-semibold text-foreground leading-tight truncate">{entry.site}</p>
+                  <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate">{entry.spec}</p>
+                </div>
+              ) : (
+                <div key={i} className="mt-0.5"><span className="text-[11px] text-muted-foreground">—</span></div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -935,10 +980,10 @@ const ListDragOverlayRow = memo(function ListDragOverlayRow({
 
   return (
     <div
-      className="grid items-center gap-x-0.5 h-[56px] bg-card-drag ring-2 ring-primary/30 rounded-md"
+      className="grid items-center gap-x-0.5 h-[56px] bg-card-drag ring-2 ring-primary/50 scale-[1.03] rounded-md transition-all duration-150"
       style={{
         gridTemplateColumns: "40px auto minmax(100px,auto) repeat(6, minmax(90px, 1fr)) 90px 140px",
-        boxShadow: `0 8px 24px ${regionStyle.color}30, 0 4px 12px rgba(0,0,0,0.1)`,
+        boxShadow: `0 12px 32px ${regionStyle.color}40, 0 6px 16px rgba(0,0,0,0.15)`,
       }}
     >
       <span className="text-sm font-bold font-mono text-foreground text-right pr-2">
@@ -1032,6 +1077,9 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   // Help modal
   const [showHelp, setShowHelp] = useState(false);
 
+  // Mobile filters
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
   // View mode
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
@@ -1064,7 +1112,10 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
   // Sensors
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 8 },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -1157,7 +1208,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const virtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => viewMode === "list" ? (isMobile ? 88 : 56) : 340,
+    estimateSize: () => viewMode === "list" ? (isMobile ? 156 : 56) : 340,
     overscan: viewMode === "list" ? 5 : 2,
   });
 
@@ -1534,13 +1585,14 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     setActiveId(null);
   }
 
-  /* ── Scroll direction tracking for pinned rows ── */
+  /* ── Scroll direction tracking for pinned rows + auto-collapse mobile filters ── */
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
     const dir = el.scrollTop > lastScrollTop.current ? "down" : "up";
     setScrollDir(dir);
     lastScrollTop.current = el.scrollTop;
+    setMobileFiltersOpen(false);
   }, []);
 
   /* ── Overlay data ── */
@@ -1625,8 +1677,8 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       <WelcomeModal externalOpen={showHelp} onExternalClose={() => setShowHelp(false)} />
       <SiteHeader />
 
-      {/* Filter bar */}
-      <div className="shrink-0 border-b bg-gradient-to-r from-secondary/20 via-accent/10 to-secondary/20 px-4 py-3">
+      {/* Filter bar — desktop */}
+      <div className="shrink-0 border-b bg-gradient-to-r from-secondary/20 via-accent/10 to-secondary/20 px-4 py-3 hidden sm:block">
         <div className="max-w-[1800px] mx-auto flex items-center gap-3 flex-wrap">
           <p className="text-sm text-muted-foreground shrink-0">
             {filteredJobs.length === rankedJobs.length
@@ -1741,7 +1793,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
           </div>
 
           {/* View mode toggle */}
-          <div className="hidden sm:flex items-center rounded-md border bg-background p-0.5 shrink-0">
+          <div className="flex items-center rounded-md border bg-background p-0.5 shrink-0">
             <button
               onClick={() => setViewMode("grid")}
               className={cn(
@@ -1776,6 +1828,127 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
             <HelpCircle className="h-5 w-5" />
           </button>
         </div>
+      </div>
+
+      {/* Filter bar — mobile */}
+      <div className="shrink-0 border-b bg-gradient-to-r from-secondary/20 via-accent/10 to-secondary/20 px-3 py-2 sm:hidden">
+        {/* Collapsed row: count + Filters toggle + search + help */}
+        <div className="flex items-center gap-2">
+          <p className="text-xs text-muted-foreground shrink-0">
+            {filteredJobs.length === rankedJobs.length
+              ? `${rankedJobs.length}`
+              : `${filteredJobs.length}/${rankedJobs.length}`}
+          </p>
+
+          <button
+            onClick={() => setMobileFiltersOpen((o) => !o)}
+            className={cn(
+              "relative flex items-center gap-1 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors shrink-0",
+              mobileFiltersOpen
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-background text-foreground border-border"
+            )}
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            Filters
+            {hasActiveFilters && !mobileFiltersOpen && (
+              <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-primary border-2 border-background" />
+            )}
+          </button>
+
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-md border bg-background pl-8 pr-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-ring/50 placeholder:text-muted-foreground"
+            />
+          </div>
+
+          <button
+            onClick={() => setShowHelp(true)}
+            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+            title="Help"
+          >
+            <HelpCircle className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Expanded: dropdowns + actions */}
+        {mobileFiltersOpen && (
+          <div className="mt-2 space-y-2">
+            <select
+              value={regionFilter}
+              onChange={(e) => setRegionFilter(e.target.value)}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none"
+            >
+              <option value="all">All Regions</option>
+              {allRegions.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+
+            <select
+              value={hospitalFilter}
+              onChange={(e) => setHospitalFilter(e.target.value)}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none"
+            >
+              <option value="all">All Hospitals</option>
+              {allHospitals.map((h) => (
+                <option key={h} value={h}>{h}</option>
+              ))}
+            </select>
+
+            <select
+              value={specialtyFilter}
+              onChange={(e) => setSpecialtyFilter(e.target.value)}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none"
+            >
+              <option value="all">All Specialties</option>
+              {allSpecialties.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {hasActiveFilters && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setRegionFilter("all");
+                    setHospitalFilter("all");
+                    setSpecialtyFilter("all");
+                  }}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Clear filters
+                </button>
+              )}
+              <div className="ml-auto flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1 text-xs h-7"
+                  onClick={() => exportRankingsToXlsx(rankedJobs)}
+                >
+                  <Download className="h-3 w-3" />
+                  Export
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="gap-1 text-xs h-7"
+                  onClick={() => importFileRef.current?.click()}
+                >
+                  <Upload className="h-3 w-3" />
+                  Import
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Compare overlay */}
