@@ -207,58 +207,89 @@
 
 @keyframes score-flash-up {
   0% { color: inherit; }
-  30% { color: oklch(0.55 0.2 145); }
+  20% { color: oklch(0.55 0.2 155); }
   100% { color: inherit; }
 }
 @keyframes score-flash-down {
   0% { color: inherit; }
-  30% { color: oklch(0.55 0.2 25); }
+  20% { color: oklch(0.55 0.2 25); }
   100% { color: inherit; }
 }
-.animate-score-up { animation: score-flash-up 0.9s ease-out; }
-.animate-score-down { animation: score-flash-down 0.9s ease-out; }
+.animate-score-up { animation: score-flash-up 0.6s ease-out; }
+.animate-score-down { animation: score-flash-down 0.6s ease-out; }
 
-@keyframes card-glow-up {
-  0% { outline-color: oklch(0.7 0.18 145 / 0); outline-width: 0px; }
-  4% { outline-color: oklch(0.7 0.18 145 / 0.55); outline-width: 6px; }
-  15% { outline-color: oklch(0.7 0.18 145 / 0.4); outline-width: 5px; }
-  30% { outline-color: oklch(0.7 0.18 145 / 0.25); outline-width: 5px; }
-  50% { outline-color: oklch(0.7 0.18 145 / 0.14); outline-width: 4px; }
-  65% { outline-color: oklch(0.7 0.18 145 / 0.08); outline-width: 3px; }
-  80% { outline-color: oklch(0.7 0.18 145 / 0.03); outline-width: 2px; }
-  90% { outline-color: oklch(0.7 0.18 145 / 0.01); outline-width: 1px; }
-  100% { outline-color: oklch(0.7 0.18 145 / 0); outline-width: 0px; }
+/* ── Wash: background-color tint that fades out ── */
+@keyframes wash-up {
+  0%   { background-color: oklch(0.88 0.12 155 / 0.5); }
+  15%  { background-color: oklch(0.88 0.12 155 / 0.5); }
+  100% { background-color: var(--card); }
 }
-@keyframes card-glow-down {
-  0% { outline-color: oklch(0.65 0.15 25 / 0); outline-width: 0px; }
-  4% { outline-color: oklch(0.65 0.15 25 / 0.55); outline-width: 6px; }
-  15% { outline-color: oklch(0.65 0.15 25 / 0.4); outline-width: 5px; }
-  30% { outline-color: oklch(0.65 0.15 25 / 0.25); outline-width: 5px; }
-  50% { outline-color: oklch(0.65 0.15 25 / 0.14); outline-width: 4px; }
-  65% { outline-color: oklch(0.65 0.15 25 / 0.08); outline-width: 3px; }
-  80% { outline-color: oklch(0.65 0.15 25 / 0.03); outline-width: 2px; }
-  90% { outline-color: oklch(0.65 0.15 25 / 0.01); outline-width: 1px; }
-  100% { outline-color: oklch(0.65 0.15 25 / 0); outline-width: 0px; }
+@keyframes wash-down {
+  0%   { background-color: oklch(0.88 0.10 25 / 0.45); }
+  15%  { background-color: oklch(0.88 0.10 25 / 0.45); }
+  100% { background-color: var(--card); }
 }
-.animate-card-glow-up {
-  animation: card-glow-up 6s linear forwards;
-  outline-style: solid;
-  outline-offset: 3px;
+@keyframes wash-up-dark {
+  0%   { background-color: oklch(0.30 0.08 155 / 0.5); }
+  15%  { background-color: oklch(0.30 0.08 155 / 0.5); }
+  100% { background-color: var(--card); }
 }
-.animate-card-glow-down {
-  animation: card-glow-down 6s linear forwards;
-  outline-style: solid;
-  outline-offset: 3px;
+@keyframes wash-down-dark {
+  0%   { background-color: oklch(0.30 0.07 25 / 0.45); }
+  15%  { background-color: oklch(0.30 0.07 25 / 0.45); }
+  100% { background-color: var(--card); }
 }
-.animate-card-glow-up-fast {
-  animation: card-glow-up 2s linear forwards;
-  outline-style: solid;
-  outline-offset: 2px;
+.animate-wash-up {
+  animation: wash-up 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
-.animate-card-glow-down-fast {
-  animation: card-glow-down 2s linear forwards;
-  outline-style: solid;
-  outline-offset: 2px;
+.animate-wash-down {
+  animation: wash-down 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.dark .animate-wash-up {
+  animation: wash-up-dark 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.dark .animate-wash-down {
+  animation: wash-down-dark 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ── Left accent stripe ── */
+@keyframes stripe-fade {
+  0%   { opacity: 1; }
+  15%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+.animate-wash-up::before,
+.animate-wash-down::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 12px 0 0 12px;
+  z-index: 10;
+  animation: stripe-fade 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.animate-wash-up::before {
+  background: oklch(0.65 0.22 155);
+}
+.animate-wash-down::before {
+  background: oklch(0.60 0.20 25);
+}
+
+/* ── Edge glow: directional indicator when item moves off-screen ── */
+@keyframes edge-glow {
+  0%   { opacity: 0.9; }
+  40%  { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+.edge-glow-green {
+  background: linear-gradient(to bottom, oklch(0.65 0.22 155 / 0.5), transparent);
+  animation: edge-glow 1.8s ease-out forwards;
+}
+.edge-glow-red {
+  background: linear-gradient(to top, oklch(0.60 0.20 25 / 0.5), transparent);
+  animation: edge-glow 1.8s ease-out forwards;
 }
 
 @layer base {

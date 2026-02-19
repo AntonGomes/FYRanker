@@ -382,6 +382,7 @@ const JobCard = memo(function JobCard({
       <div
         key={glowKey}
         ref={setNodeRef}
+        data-job-id={scored.job.programmeTitle}
         style={{
           ...style,
           boxShadow: isSelected
@@ -710,6 +711,7 @@ const ListRow = memo(function ListRow({
       <div
         key={glowKey}
         ref={setNodeRef}
+        data-job-id={scored.job.programmeTitle}
         style={{
           ...style,
           boxShadow: isSelected
@@ -853,6 +855,7 @@ const ListRow = memo(function ListRow({
     <div
       key={glowKey}
       ref={setNodeRef}
+      data-job-id={scored.job.programmeTitle}
       style={{
         ...style,
         gridTemplateColumns: "40px auto minmax(100px,auto) repeat(6, minmax(90px, 1fr)) 90px 140px",
@@ -1172,8 +1175,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const [showCompare, setShowCompare] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  // Boost/Bury flash tracking + glow key counter for re-triggering CSS animation
-  const glowKeyRef = useRef<Map<string, number>>(new Map());
+  // Boost/Bury flash tracking
   const rankDeltaRef = useRef<Map<string, number>>(new Map());
   const [flashMap, setFlashMap] = useState<
     Map<string, "up" | "down">
@@ -1253,12 +1255,33 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   // Scroll-to-card after boost/bury/move
   const scrollToJobIdRef = useRef<string | null>(null);
 
+  // Flying ghost card state (boost/bury visual feedback) — queue-based for concurrent ghosts
+  type GhostData = {
+    scored: ScoredJob;
+    rank: number;
+    fromRect: { top: number; left: number; width: number; height: number };
+    direction: 'up' | 'down';
+    targetY: number;
+    offScreen: boolean;
+  };
+  const [ghosts, setGhosts] = useState<Map<string, GhostData>>(new Map());
+  const ghostIdCounter = useRef(0);
+
+  // Edge glow state
+  const [edgeGlow, setEdgeGlow] = useState<{ side: 'top' | 'bottom'; color: 'green' | 'red' } | null>(null);
+
   // Ref for fresh state in DnD callbacks
   const rankedJobsRef = useRef(rankedJobs);
   rankedJobsRef.current = rankedJobs;
 
   const cardsPerRow = useCardsPerRow();
   const isMobile = cardsPerRow === 1;
+
+  // Refs for async callbacks (departure/edge glow)
+  const viewModeRef = useRef(viewMode);
+  viewModeRef.current = viewMode;
+  const cardsPerRowRef = useRef(cardsPerRow);
+  cardsPerRowRef.current = cardsPerRow;
 
   // Force list view on mobile
   useEffect(() => {
@@ -1350,6 +1373,9 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     });
   }, [rankedJobs, searchQuery, regionFilter, hospitalFilter, specialtyFilter]);
 
+  const filteredJobsRef = useRef(filteredJobs);
+  filteredJobsRef.current = filteredJobs;
+
   // IDs for SortableContext
   const filteredIds = useMemo(
     () => filteredJobs.map((s) => s.job.programmeTitle),
@@ -1366,6 +1392,8 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     estimateSize: () => viewMode === "list" ? (isMobile ? 172 : 56) : 340,
     overscan: viewMode === "list" ? 5 : 2,
   });
+  const virtualizerRef = useRef(virtualizer);
+  virtualizerRef.current = virtualizer;
 
   // Reset scroll on filter change or view mode switch
   useEffect(() => {
@@ -1402,6 +1430,13 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     }, 500);
     return () => clearTimeout(timer);
   }, [rankedJobs]);
+
+  /* ── Edge glow auto-clear ── */
+  useEffect(() => {
+    if (!edgeGlow) return;
+    const timer = setTimeout(() => setEdgeGlow(null), 2000);
+    return () => clearTimeout(timer);
+  }, [edgeGlow]);
 
   /* ── Pinned rows ── */
   const pinnedRowIndices = useMemo(() => {
@@ -1458,14 +1493,98 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
   /* ── Actions ── */
 
-  /* ── Boost / Bury ── */
-  const handleBoost = useCallback(
-    (jobId: string) => {
+  /* ── Ghost card helper: captures card position from DOM and launches flying ghost ── */
+  const launchGhost = useCallback((
+    jobId: string,
+    direction: 'up' | 'down',
+    scored: ScoredJob,
+    oldRank: number,
+    fromRect: DOMRect,
+    newIdx: number,
+  ) => {
+    const scrollEl = scrollRef.current;
+    if (!scrollEl) return;
+
+    const scrollRect = scrollEl.getBoundingClientRect();
+
+    // Estimate where the item lands after sort
+    const estRowH = viewModeRef.current === 'list'
+      ? (cardsPerRowRef.current === 1 ? 172 : 56)
+      : 340;
+    const newOffset = newIdx * estRowH;
+    const viewTop = scrollEl.scrollTop;
+    const viewBottom = viewTop + scrollEl.clientHeight;
+    const offScreen = newOffset + estRowH <= viewTop || newOffset >= viewBottom;
+
+    let targetY: number;
+    if (newOffset + estRowH <= viewTop) {
+      targetY = scrollRect.top - fromRect.height / 2;
+    } else if (newOffset >= viewBottom) {
+      targetY = scrollRect.bottom - fromRect.height / 2;
+    } else {
+      targetY = scrollRect.top + newOffset - viewTop;
+    }
+
+    // Fire edge glow immediately for off-screen destinations
+    if (offScreen) {
+      setEdgeGlow({
+        side: direction === 'up' ? 'top' : 'bottom',
+        color: direction === 'up' ? 'green' : 'red',
+      });
+    }
+
+    const ghostKey = `${jobId}-${ghostIdCounter.current++}`;
+    setGhosts(prev => {
+      const next = new Map(prev);
+      next.set(ghostKey, {
+        scored,
+        rank: oldRank,
+        fromRect: {
+          top: fromRect.top,
+          left: fromRect.left,
+          width: fromRect.width,
+          height: fromRect.height,
+        },
+        direction,
+        targetY,
+        offScreen,
+      });
+      return next;
+    });
+  }, []);
+
+  /* ── Boost / Bury (unified) ── */
+  const handleNudge = useCallback(
+    (jobId: string, direction: 'up' | 'down') => {
       if (lockedJobIds.has(jobId)) return;
-      glowKeyRef.current.set(jobId, (glowKeyRef.current.get(jobId) ?? 0) + 1);
+      const sign = direction === 'up' ? 1 : -1;
+
+      // Capture bounding rect from DOM BEFORE React re-sorts
+      const el = scrollRef.current?.querySelector(`[data-job-id="${jobId}"]`);
+      const fromRect = el?.getBoundingClientRect();
+
+      // Compute sort synchronously from ref (NOT inside setState updater,
+      // because React 18 queues updaters — they don't run inline)
+      const prev = rankedJobsRef.current;
+      const oldIdx = prev.findIndex((sj) => sj.job.programmeTitle === jobId);
+      if (oldIdx === -1) return;
+      const scored = prev[oldIdx];
+
+      const updated = prev.map((sj) =>
+        sj.job.programmeTitle === jobId
+          ? { ...sj, scoreAdjustment: (sj.scoreAdjustment ?? 0) + sign * nudgeAmount }
+          : sj
+      );
+      const sorted = [...updated].sort(
+        (a, b) => effectiveScore(b) - effectiveScore(a)
+      );
+      const newIdx = sorted.findIndex((sj) => sj.job.programmeTitle === jobId);
+
+      // Record rank delta + flash
+      rankDeltaRef.current.set(jobId, oldIdx - newIdx);
       setFlashMap((prev) => {
         const next = new Map(prev);
-        next.set(jobId, "up");
+        next.set(jobId, direction);
         return next;
       });
       setTimeout(() => {
@@ -1477,62 +1596,25 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         rankDeltaRef.current.delete(jobId);
       }, 2500);
 
-      pushAndSetRanked((prev) => {
-        const oldIdx = prev.findIndex((sj) => sj.job.programmeTitle === jobId);
-        const updated = prev.map((sj) =>
-          sj.job.programmeTitle === jobId
-            ? { ...sj, scoreAdjustment: (sj.scoreAdjustment ?? 0) + nudgeAmount }
-            : sj
-        );
-        const sorted = [...updated].sort(
-          (a, b) => effectiveScore(b) - effectiveScore(a)
-        );
-        const newIdx = sorted.findIndex((sj) => sj.job.programmeTitle === jobId);
-        if (oldIdx !== -1 && newIdx !== -1) {
-          rankDeltaRef.current.set(jobId, oldIdx - newIdx);
-        }
-        return sorted;
-      });
+      // Apply pre-computed sort
+      pushAndSetRanked(() => sorted);
+
+      // Launch ghost — indices are known synchronously
+      if (fromRect && oldIdx !== newIdx) {
+        launchGhost(jobId, direction, scored, oldIdx + 1, fromRect, newIdx);
+      }
     },
-    [nudgeAmount, lockedJobIds, pushAndSetRanked]
+    [nudgeAmount, lockedJobIds, pushAndSetRanked, launchGhost]
+  );
+
+  const handleBoost = useCallback(
+    (jobId: string) => handleNudge(jobId, 'up'),
+    [handleNudge]
   );
 
   const handleBury = useCallback(
-    (jobId: string) => {
-      if (lockedJobIds.has(jobId)) return;
-      glowKeyRef.current.set(jobId, (glowKeyRef.current.get(jobId) ?? 0) + 1);
-      setFlashMap((prev) => {
-        const next = new Map(prev);
-        next.set(jobId, "down");
-        return next;
-      });
-      setTimeout(() => {
-        setFlashMap((prev) => {
-          const next = new Map(prev);
-          next.delete(jobId);
-          return next;
-        });
-        rankDeltaRef.current.delete(jobId);
-      }, 2500);
-
-      pushAndSetRanked((prev) => {
-        const oldIdx = prev.findIndex((sj) => sj.job.programmeTitle === jobId);
-        const updated = prev.map((sj) =>
-          sj.job.programmeTitle === jobId
-            ? { ...sj, scoreAdjustment: (sj.scoreAdjustment ?? 0) - nudgeAmount }
-            : sj
-        );
-        const sorted = [...updated].sort(
-          (a, b) => effectiveScore(b) - effectiveScore(a)
-        );
-        const newIdx = sorted.findIndex((sj) => sj.job.programmeTitle === jobId);
-        if (oldIdx !== -1 && newIdx !== -1) {
-          rankDeltaRef.current.set(jobId, oldIdx - newIdx);
-        }
-        return sorted;
-      });
-    },
-    [nudgeAmount, lockedJobIds, pushAndSetRanked]
+    (jobId: string) => handleNudge(jobId, 'down'),
+    [handleNudge]
   );
 
   /* ── Move To ── */
@@ -1597,13 +1679,32 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     setShowCompare(true);
   }, [selectedIds, rankedJobs]);
 
-  const handleBulkBoost = useCallback(() => {
+  const handleBulkNudge = useCallback((direction: 'up' | 'down') => {
+    const sign = direction === 'up' ? 1 : -1;
     const ids = new Set([...selectedIds].filter((id) => !lockedJobIds.has(id)));
     if (ids.size === 0) return;
-    ids.forEach((id) => glowKeyRef.current.set(id, (glowKeyRef.current.get(id) ?? 0) + 1));
+
+    // Compute sort synchronously from ref
+    const prev = rankedJobsRef.current;
+    const oldIndices = new Map<string, number>();
+    prev.forEach((sj, i) => { if (ids.has(sj.job.programmeTitle)) oldIndices.set(sj.job.programmeTitle, i); });
+
+    const updated = prev.map((sj) =>
+      ids.has(sj.job.programmeTitle)
+        ? { ...sj, scoreAdjustment: (sj.scoreAdjustment ?? 0) + sign * nudgeAmount }
+        : sj
+    );
+    const sorted = [...updated].sort(
+      (a, b) => effectiveScore(b) - effectiveScore(a)
+    );
+    sorted.forEach((sj, i) => {
+      const oldIdx = oldIndices.get(sj.job.programmeTitle);
+      if (oldIdx != null) rankDeltaRef.current.set(sj.job.programmeTitle, oldIdx - i);
+    });
+
     setFlashMap(() => {
       const next = new Map<string, "up" | "down">();
-      ids.forEach((id) => next.set(id, "up"));
+      ids.forEach((id) => next.set(id, direction));
       return next;
     });
     setTimeout(() => {
@@ -1611,57 +1712,11 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       ids.forEach((id) => rankDeltaRef.current.delete(id));
     }, 2500);
 
-    pushAndSetRanked((prev) => {
-      const oldIndices = new Map<string, number>();
-      prev.forEach((sj, i) => { if (ids.has(sj.job.programmeTitle)) oldIndices.set(sj.job.programmeTitle, i); });
-      const updated = prev.map((sj) =>
-        ids.has(sj.job.programmeTitle)
-          ? { ...sj, scoreAdjustment: (sj.scoreAdjustment ?? 0) + nudgeAmount }
-          : sj
-      );
-      const sorted = [...updated].sort(
-        (a, b) => effectiveScore(b) - effectiveScore(a)
-      );
-      sorted.forEach((sj, i) => {
-        const oldIdx = oldIndices.get(sj.job.programmeTitle);
-        if (oldIdx != null) rankDeltaRef.current.set(sj.job.programmeTitle, oldIdx - i);
-      });
-      return sorted;
-    });
+    pushAndSetRanked(() => sorted);
   }, [selectedIds, nudgeAmount, lockedJobIds, pushAndSetRanked]);
 
-  const handleBulkBury = useCallback(() => {
-    const ids = new Set([...selectedIds].filter((id) => !lockedJobIds.has(id)));
-    if (ids.size === 0) return;
-    ids.forEach((id) => glowKeyRef.current.set(id, (glowKeyRef.current.get(id) ?? 0) + 1));
-    setFlashMap(() => {
-      const next = new Map<string, "up" | "down">();
-      ids.forEach((id) => next.set(id, "down"));
-      return next;
-    });
-    setTimeout(() => {
-      setFlashMap(new Map());
-      ids.forEach((id) => rankDeltaRef.current.delete(id));
-    }, 2500);
-
-    pushAndSetRanked((prev) => {
-      const oldIndices = new Map<string, number>();
-      prev.forEach((sj, i) => { if (ids.has(sj.job.programmeTitle)) oldIndices.set(sj.job.programmeTitle, i); });
-      const updated = prev.map((sj) =>
-        ids.has(sj.job.programmeTitle)
-          ? { ...sj, scoreAdjustment: (sj.scoreAdjustment ?? 0) - nudgeAmount }
-          : sj
-      );
-      const sorted = [...updated].sort(
-        (a, b) => effectiveScore(b) - effectiveScore(a)
-      );
-      sorted.forEach((sj, i) => {
-        const oldIdx = oldIndices.get(sj.job.programmeTitle);
-        if (oldIdx != null) rankDeltaRef.current.set(sj.job.programmeTitle, oldIdx - i);
-      });
-      return sorted;
-    });
-  }, [selectedIds, nudgeAmount, lockedJobIds, pushAndSetRanked]);
+  const handleBulkBoost = useCallback(() => handleBulkNudge('up'), [handleBulkNudge]);
+  const handleBulkBury = useCallback(() => handleBulkNudge('down'), [handleBulkNudge]);
 
   const handleBulkMoveTo = useCallback(
     (targetRank: number) => {
@@ -1816,8 +1871,9 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
               onBury={handleBury}
               onMoveToOpen={openMoveTo}
               flashDirection={flashMap.get(s.job.programmeTitle) ?? null}
-              glowKey={glowKeyRef.current.get(s.job.programmeTitle) ?? 0}
+              glowKey={0}
               rankDelta={rankDeltaRef.current.get(s.job.programmeTitle) ?? null}
+
             />
           );
         })}
@@ -1847,7 +1903,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         onBury={handleBury}
         onMoveToOpen={openMoveTo}
         flashDirection={flashMap.get(s.job.programmeTitle) ?? null}
-        glowKey={glowKeyRef.current.get(s.job.programmeTitle) ?? 0}
+        glowKey={0}
         rankDelta={rankDeltaRef.current.get(s.job.programmeTitle) ?? null}
       />
     );
@@ -2369,6 +2425,18 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
             strategy={viewMode === "list" ? verticalListSortingStrategy : rectSortingStrategy}
           >
             <div className="flex-1 flex flex-col overflow-hidden relative">
+              {/* Edge glow overlay */}
+              {edgeGlow && (
+                <div
+                  className={cn(
+                    "absolute left-0 right-0 h-20 z-30 pointer-events-none",
+                    edgeGlow.side === 'top' ? 'top-0' : 'bottom-0',
+                    edgeGlow.color === 'green' ? 'edge-glow-green' : 'edge-glow-red'
+                  )}
+                  onAnimationEnd={() => setEdgeGlow(null)}
+                />
+              )}
+
               {/* Pinned rows at top */}
               {pinnedRowIndices.length > 0 &&
                 scrollDir === "down" && (
@@ -2682,6 +2750,51 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      {/* Flying ghost cards for boost/bury visual feedback */}
+      <AnimatePresence>
+        {[...ghosts.entries()].map(([id, g]) => (
+          <motion.div
+            key={id}
+            className="fixed z-50 pointer-events-none"
+            style={{
+              top: g.fromRect.top,
+              left: g.fromRect.left,
+              width: g.fromRect.width,
+              height: g.fromRect.height,
+            }}
+            initial={{ y: 0, scale: 1, opacity: 1 }}
+            animate={{
+              y: g.targetY - g.fromRect.top,
+              scale: [1, 1.05, 1],
+              opacity: [1, 1, 0.7, 0],
+            }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+            onAnimationComplete={() => {
+              setGhosts(prev => {
+                const next = new Map(prev);
+                next.delete(id);
+                return next;
+              });
+            }}
+          >
+            {viewMode === "list" ? (
+              <ListDragOverlayRow
+                scored={g.scored}
+                rank={g.rank}
+                isMobile={isMobile}
+              />
+            ) : (
+              <DragOverlayCard
+                scored={g.scored}
+                rank={g.rank}
+                width={g.fromRect.width}
+              />
+            )}
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 }
