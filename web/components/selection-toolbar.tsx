@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { getRegionStyle } from "@/components/job-detail-panel";
+import { getRegionStyle } from "@/lib/region-colors";
 import type { ScoredJob } from "@/lib/scoring";
 import { effectiveScore } from "@/lib/scoring";
 import {
@@ -34,7 +34,6 @@ export function SelectionToolbar({
 }: SelectionToolbarProps) {
   return (
     <div className="w-56 shrink-0 border-l bg-card flex flex-col overflow-hidden">
-      {/* Header */}
       <div className="px-3 py-3 border-b flex items-center justify-between">
         <span className="text-sm font-semibold">{count} selected</span>
         <button
@@ -45,7 +44,6 @@ export function SelectionToolbar({
         </button>
       </div>
 
-      {/* Actions */}
       <div className="flex flex-col gap-1 p-3 border-b">
         {count >= 2 && (
           <Button
@@ -87,7 +85,6 @@ export function SelectionToolbar({
         </Button>
       </div>
 
-      {/* Selected card previews */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
         {selectedJobs.map((sj) => {
           const regionStyle = getRegionStyle(sj.job.region);

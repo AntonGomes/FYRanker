@@ -82,18 +82,5 @@ export async function importRankingsFromXlsx(
     };
   });
 
-  // Sort by Rank column (already in order from sheet, but be explicit)
-  scoredJobs.sort(
-    (a, b) => {
-      const aIdx = rows.findIndex(
-        (r) => String(r["Programme Title"]) === a.job.programmeTitle
-      );
-      const bIdx = rows.findIndex(
-        (r) => String(r["Programme Title"]) === b.job.programmeTitle
-      );
-      return aIdx - bIdx;
-    }
-  );
-
   return scoredJobs;
 }

@@ -16,7 +16,6 @@ export interface UserLocation {
   displayName?: string;
 }
 
-/** Haversine distance in kilometres between two lat/lng points. */
 export function haversineDistance(
   lat1: number,
   lng1: number,
@@ -36,7 +35,6 @@ export function haversineDistance(
   return R * c;
 }
 
-/** Normalise a hospital name for fuzzy comparison. */
 function normalise(name: string): string {
   return name
     .toLowerCase()
@@ -45,10 +43,6 @@ function normalise(name: string): string {
     .trim();
 }
 
-/**
- * Match a job-data hospital name to the closest entry in the hospital list.
- * 3-tier: exact (case-insensitive) → substring containment → word overlap.
- */
 export function matchHospitalName(
   jobName: string,
   hospitals: Hospital[]
@@ -85,7 +79,6 @@ export function matchHospitalName(
   return bestMatch;
 }
 
-/** Geocode a postcode or city name via Nominatim (OpenStreetMap). */
 export async function geocodeLocation(
   query: string
 ): Promise<UserLocation | null> {
@@ -112,10 +105,6 @@ export async function geocodeLocation(
   };
 }
 
-/**
- * Sort RankableItems by distance from user location.
- * Matched hospitals sorted closest-first; unmatched appended in original order.
- */
 export function sortHospitalsByProximity(
   items: RankableItem[],
   userLocation: UserLocation,

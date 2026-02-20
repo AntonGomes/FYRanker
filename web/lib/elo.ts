@@ -39,11 +39,6 @@ export function initElo(specialties: string[]): EloState {
   };
 }
 
-/**
- * Seed ELO state from a DnD ranking + which items the user manually moved.
- * Moved items get a higher virtual comparison count (more "settled"),
- * while unmoved items stay at 0 so active sampling prioritises them.
- */
 export function initEloFromRanking(
   items: SortableItem[],
   movedIds: Set<string>
@@ -56,15 +51,11 @@ export function initEloFromRanking(
 
   for (let i = 0; i < n; i++) {
     const id = items[i].id;
-    // Rank 1 gets highest rating, rank n gets lowest
     const rating = 1500 + (n / 2 - i) * spreadFactor;
     ratings.set(id, rating);
-    // Moved items start with virtual comparisons (more settled)
     comparisons.set(id, movedIds.has(id) ? 3 : 0);
   }
 
-  // Inject virtual pair comparisons between adjacent moved items
-  // to avoid re-asking questions the user already answered via DnD
   for (let i = 0; i < n - 1; i++) {
     const a = items[i].id;
     const b = items[i + 1].id;
@@ -91,22 +82,18 @@ export function updateElo(
   const rA = state.ratings.get(a) ?? 1500;
   const rB = state.ratings.get(b) ?? 1500;
 
-  // Expected scores
   const eA = 1 / (1 + Math.pow(10, (rB - rA) / 400));
   const eB = 1 - eA;
 
-  // Actual scores from weight: -2 = full win for A, +2 = full win for B
   const sA = 0.5 - weight * 0.25;
   const sB = 1 - sA;
 
-  // K-factor scales with preference strength (draws still cause a small update)
   const kBase = 32;
   const kScaled = kBase * Math.max(Math.abs(weight), 0.5) / 2;
 
   const newRA = rA + kScaled * (sA - eA);
   const newRB = rB + kScaled * (sB - eB);
 
-  // Clone maps
   const ratings = new Map(state.ratings);
   const comparisons = new Map(state.comparisons);
   const pairCounts = new Map(state.pairCounts);
@@ -134,19 +121,15 @@ export function selectNextMatchup(
   const items = Array.from(state.ratings.entries());
   if (items.length < 2) throw new Error("Need at least 2 items");
 
-  // Sort by rating for adjacent-pair candidates
   items.sort((a, b) => b[1] - a[1]);
   const names = items.map(([name]) => name);
 
-  // Build candidate set: adjacent pairs (close ratings) + random sample + uncompared
   const candidates: [string, string][] = [];
 
-  // Adjacent pairs in rating order (top-10 closest gaps)
   for (let i = 0; i < names.length - 1; i++) {
     candidates.push([names[i], names[i + 1]]);
   }
 
-  // Random sample of ~30 pairs
   for (let k = 0; k < 30; k++) {
     const i = Math.floor(Math.random() * names.length);
     let j = Math.floor(Math.random() * (names.length - 1));
@@ -154,7 +137,6 @@ export function selectNextMatchup(
     candidates.push([names[i], names[j]]);
   }
 
-  // Score each candidate and pick the best
   let bestScore = -Infinity;
   let bestPair: [string, string] = [names[0], names[1]];
 
@@ -164,10 +146,8 @@ export function selectNextMatchup(
     const rA = state.ratings.get(a) ?? 1500;
     const rB = state.ratings.get(b) ?? 1500;
 
-    // Uncertainty score: prefer uncompared pairs + close ratings
     let score = 1 / (pc + 1) + 1 / (1 + Math.abs(rA - rB) / 100);
 
-    // Boost uncertainty for items that were never manually moved in DnD
     if (movedIds) {
       const aUnmoved = !movedIds.has(a);
       const bUnmoved = !movedIds.has(b);
@@ -182,7 +162,6 @@ export function selectNextMatchup(
     }
   }
 
-  // Randomly swap order so left/right isn't biased
   if (Math.random() < 0.5) {
     return [bestPair[1], bestPair[0]];
   }
@@ -196,14 +175,12 @@ export function getConfidence(
   const n = state.ratings.size;
   if (n <= 1) return 1;
 
-  // Base confidence from DnD manual moves
   const baseConfidence = movedCount != null ? (movedCount / n) * 0.5 : 0;
 
   const totalComps = state.history.length;
   const targetComps = n * Math.log2(n) * 0.6;
   const compRatio = Math.min(totalComps / targetComps, 1);
 
-  // Rating spread: higher spread = more differentiation
   const ratings = Array.from(state.ratings.values());
   const mean = ratings.reduce((a, b) => a + b, 0) / ratings.length;
   const variance =
@@ -213,7 +190,6 @@ export function getConfidence(
 
   const eloConfidence = 0.7 * compRatio + 0.3 * spreadRatio;
 
-  // Combine: base from DnD + remaining from ELO comparisons
   return Math.min(baseConfidence + (1 - baseConfidence) * eloConfidence, 1);
 }
 
@@ -246,4 +222,3 @@ export function getFocusedNeighbourhood(
 
   return sorted.slice(start, end);
 }
-

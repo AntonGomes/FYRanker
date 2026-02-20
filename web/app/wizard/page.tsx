@@ -17,7 +17,7 @@ import type { Job } from "@/lib/parse-xlsx";
 import { loadJobs } from "@/lib/parse-csv";
 import { extractUniqueValues } from "@/lib/extract";
 import { scoreJobs } from "@/lib/scoring";
-import { REGION_COLORS } from "@/components/job-detail-panel";
+import { getRegionStyle } from "@/lib/region-colors";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { cn } from "@/lib/utils";
@@ -59,17 +59,6 @@ const WEIGHT_FIELDS = [
 function toItems(arr: string[]): SortableItem[] {
   return arr.map((s) => ({ id: s, label: s }));
 }
-
-function getRegionStyle(region: string) {
-  return REGION_COLORS[region] ?? {
-    bg: "bg-slate-950/40",
-    border: "border-slate-800",
-    text: "text-slate-300",
-  };
-}
-
-/* ── Step progress bar ── */
-
 function StepIndicator({
   currentStep,
   totalSteps,
@@ -91,9 +80,6 @@ function StepIndicator({
     </div>
   );
 }
-
-/* ── Inline search bar + sort controls ── */
-
 function SearchToolbar({
   searchOpen,
   searchQuery,
@@ -140,9 +126,6 @@ function SearchToolbar({
     </div>
   );
 }
-
-/* ── Confidence ring for ELO refinement ── */
-
 function ConfidenceRing({ percentage }: { percentage: number }) {
   return (
     <div className="ml-auto flex items-center gap-2">
@@ -160,9 +143,6 @@ function ConfidenceRing({ percentage }: { percentage: number }) {
     </div>
   );
 }
-
-/* ── Weight slider row ── */
-
 function WeightSlider({
   icon: Icon,
   label,
@@ -194,9 +174,6 @@ function WeightSlider({
     </div>
   );
 }
-
-/* ── Weight distribution visualization ── */
-
 function WeightDistribution({
   weights,
   lockRegions,
@@ -237,46 +214,36 @@ function WeightDistribution({
     </div>
   );
 }
-
-/* ── Main wizard page ── */
-
 export default function WizardPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [jobs, setJobs] = useState<Job[] | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Step 1: Rank Regions
   const [rankedRegions, setRankedRegions] = useState<SortableItem[]>([]);
-  // Step 2: Rank Hospitals per region
   const [hospitalsByRegion, setHospitalsByRegion] = useState<
     Record<string, SortableItem[]>
   >({});
   const [regionSubStep, setRegionSubStep] = useState(0);
-  // Step 3: Global Hospital Ranking
   const [globalHospitals, setGlobalHospitals] = useState<SortableItem[]>([]);
   const [lockRegions, setLockRegions] = useState(false);
-  // Step 4: Rank Specialties (ELO duel)
   const [rankedSpecialties, setRankedSpecialties] = useState<SortableItem[]>([]);
   const [eloState, setEloState] = useState<EloState | null>(null);
   const [movedSpecialtyIds, setMovedSpecialtyIds] = useState<Set<string>>(
     new Set()
   );
   const [specialtyPhase, setSpecialtyPhase] = useState<SpecialtyPhase>("explainer");
-  // Proximity sorting
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [sortMode, setSortMode] = useState<SortMode>("default");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  // Step 5: Set Weights
   const [weights, setWeights] = useState({
     region: 0.33,
     hospital: 0.33,
     specialty: 0.33,
   });
 
-  // Load jobs from static CSV and hospital location data on mount
   useEffect(() => {
     Promise.all([
       loadJobs(),
@@ -297,7 +264,6 @@ export default function WizardPage() {
     });
   }, []);
 
-  // Derive global hospitals from region + per-region rankings
   function deriveGlobalHospitals(): SortableItem[] {
     const result: SortableItem[] = [];
     for (const region of rankedRegions) {
@@ -318,7 +284,6 @@ export default function WizardPage() {
     setSearchQuery("");
   }
 
-  // Navigation
   function handleNext(): void {
     resetSearch();
 
@@ -402,7 +367,6 @@ export default function WizardPage() {
     return "Continue";
   }
 
-  // Current region hospital context (for step 2)
   const currentRegion = rankedRegions[regionSubStep];
   const currentHospitals = currentRegion
     ? hospitalsByRegion[currentRegion.id] || []
@@ -452,7 +416,6 @@ export default function WizardPage() {
 
       <main className="flex-1 flex flex-col items-center min-h-0 px-2 py-2 sm:px-4 sm:py-3">
         <div className="w-full max-w-2xl flex flex-col min-h-0 flex-1 gap-2">
-          {/* Progress indicator */}
           <div className="px-1 shrink-0">
             <StepIndicator currentStep={step} totalSteps={TOTAL_STEPS} />
           </div>
@@ -477,7 +440,6 @@ export default function WizardPage() {
                 </CardTitle>
               </div>
 
-              {/* Region badge for step 2 */}
               {step === 2 && currentRegion && (() => {
                 const style = getRegionStyle(currentRegion.id);
                 return (
@@ -491,7 +453,6 @@ export default function WizardPage() {
                 );
               })()}
 
-              {/* Confidence ring for ELO refinement */}
               {step === 4 && specialtyPhase === "refining" && eloState && (
                 <ConfidenceRing
                   percentage={Math.round(getConfidence(eloState, movedSpecialtyIds?.size) * 100)}
@@ -499,7 +460,6 @@ export default function WizardPage() {
               )}
             </div>
 
-            {/* Description + inline toolbar */}
             <div className="mt-2 space-y-2">
               <div className="flex items-center gap-2">
                 <CardDescription className="flex-1">
@@ -534,7 +494,6 @@ export default function WizardPage() {
           </CardHeader>
 
           <CardContent className={cn("flex-1 min-h-0 flex flex-col pb-0", step === 4 && specialtyPhase === "refining" ? "overflow-x-clip overflow-y-visible" : "overflow-hidden")}>
-            {/* Step 1: Rank Regions */}
             {step === 1 && (
               <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
                 <SortableList
@@ -549,7 +508,6 @@ export default function WizardPage() {
               </div>
             )}
 
-            {/* Step 2: Rank Hospitals per Region */}
             {step === 2 && currentRegion && (
               <div className="flex flex-col flex-1 min-h-0">
                 <RankableList
@@ -565,7 +523,6 @@ export default function WizardPage() {
               </div>
             )}
 
-            {/* Step 3: Global Hospital Ranking */}
             {step === 3 && (
               <div className="flex flex-col flex-1 min-h-0 gap-3">
                 <div className="flex items-center gap-3 rounded-lg border px-4 py-3 shrink-0">
@@ -593,7 +550,6 @@ export default function WizardPage() {
               </div>
             )}
 
-            {/* Step 4: Rank Specialties */}
             {step === 4 && specialtyPhase === "explainer" && (
               <SpecialtyExplainer specialtyCount={rankedSpecialties.length} />
             )}
@@ -619,7 +575,6 @@ export default function WizardPage() {
               />
             )}
 
-            {/* Step 5: Set Weights */}
             {step === 5 && (
               <div className="space-y-6">
                 <div className="space-y-5">
@@ -640,7 +595,6 @@ export default function WizardPage() {
             )}
           </CardContent>
 
-          {/* Nav buttons */}
           <div className="shrink-0 border-t px-4 py-2 sm:px-6 sm:py-3 flex items-center justify-between">
             {showBackButton ? (
               <Button variant="outline" onClick={handleBack}>

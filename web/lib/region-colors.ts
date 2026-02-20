@@ -1,9 +1,3 @@
-/**
- * Shared region color configuration.
- * Maps each Scottish deanery region to its Tailwind utility classes and CSS variable.
- * Used across the wizard, results, and data blog.
- */
-
 export type Region = "North" | "East" | "West" | "South and SE";
 
 export const REGIONS: Region[] = ["North", "East", "West", "South and SE"];
@@ -38,7 +32,6 @@ export const REGION_COLORS: Record<
   },
 };
 
-/** Raw hex colors for use in charts/SVG (not Tailwind classes) */
 export const REGION_HEX: Record<Region, string> = {
   West: "#2274A5",
   East: "#E96ED8",

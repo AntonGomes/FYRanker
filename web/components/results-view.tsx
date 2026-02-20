@@ -34,7 +34,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { ScoredJob } from "@/lib/scoring";
 import { effectiveScore, computeNudgeAmount } from "@/lib/scoring";
 import type { Job } from "@/lib/parse-xlsx";
-import { JobDetailPanel, getRegionStyle } from "@/components/job-detail-panel";
+import { JobDetailPanel } from "@/components/job-detail-panel";
+import { getRegionStyle } from "@/lib/region-colors";
 import { MoveToDialog } from "@/components/move-to-dialog";
 import { SelectionToolbar } from "@/components/selection-toolbar";
 import { Button } from "@/components/ui/button";
@@ -58,13 +59,9 @@ import { WelcomeModal } from "@/components/welcome-modal";
 import { exportRankingsToXlsx } from "@/lib/export-xlsx";
 import { importRankingsFromXlsx, ImportError } from "@/lib/import-xlsx";
 
-/* ── Types ── */
-
 interface ResultsViewProps {
   scoredJobs: ScoredJob[];
 }
-
-/* ── Helpers ── */
 
 function toggleInSet(set: Set<string>, key: string): Set<string> {
   const next = new Set(set);
@@ -75,31 +72,19 @@ function toggleInSet(set: Set<string>, key: string): Set<string> {
 
 type PlacementEntry = { site: string; spec: string; num: number };
 
-function getJobPlacements(job: Job): {
-  fy1: PlacementEntry[];
-  fy2: PlacementEntry[];
-} {
-  const fy1: PlacementEntry[] = [];
-  const fy2: PlacementEntry[] = [];
-  for (let i = 0; i < job.placements.length; i++) {
+function getJobPlacements(job: Job): (PlacementEntry | null)[] {
+  const slots: (PlacementEntry | null)[] = [];
+  for (let i = 0; i < 6; i++) {
     const p = job.placements[i];
-    if (p.site && p.site !== "None" && p.site.trim() !== "") {
-      const entry = { site: p.site, spec: p.specialty, num: i + 1 };
-      if (i < 3) fy1.push(entry);
-      else fy2.push(entry);
-    }
+    slots.push(
+      p?.site && p.site !== "None" && p.site.trim() !== ""
+        ? { site: p.site, spec: p.specialty, num: i + 1 }
+        : null
+    );
   }
-  return { fy1, fy2 };
+  return slots;
 }
 
-function buildAllPlacements(fy1: PlacementEntry[], fy2: PlacementEntry[]): (PlacementEntry | null)[] {
-  const all: (PlacementEntry | null)[] = [];
-  for (let i = 0; i < 3; i++) all.push(fy1[i] ?? null);
-  for (let i = 0; i < 3; i++) all.push(fy2[i] ?? null);
-  return all;
-}
-
-/* ── Animated score display ── */
 function AnimatedScore({
   value,
   flashDirection,
@@ -161,7 +146,6 @@ function AnimatedScore({
   );
 }
 
-/* ── Rank change badge ── */
 function RankChangeBadge({ delta, direction }: { delta: number | null; direction: "up" | "down" | null }) {
   return (
     <AnimatePresence>
@@ -186,7 +170,6 @@ function RankChangeBadge({ delta, direction }: { delta: number | null; direction
   );
 }
 
-/* ── Arrow icon for boost/bury ── */
 function NudgeArrow({ direction }: { direction: "up" | "down" }) {
   const isUp = direction === "up";
   return (
@@ -197,11 +180,91 @@ function NudgeArrow({ direction }: { direction: "up" | "down" }) {
   );
 }
 
+function PlacementSlot({ entry, slotNum }: { entry: PlacementEntry | null; slotNum: number }) {
+  if (!entry) {
+    return (
+      <p className="text-[11px] text-muted-foreground leading-tight">
+        <span className="inline-block w-3 text-[10px] font-bold tabular-nums">{slotNum}</span>
+        —
+      </p>
+    );
+  }
+  return (
+    <>
+      <p className="text-[11px] font-semibold text-foreground leading-tight truncate">
+        <span className="inline-block w-3 text-[10px] font-bold text-muted-foreground tabular-nums">{slotNum}</span>
+        {entry.site || "No site listed"}
+      </p>
+      <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate pl-3">
+        {entry.spec || "No specialty listed"}
+      </p>
+    </>
+  );
+}
+
+function MobilePlacementGrid({ placements }: { placements: (PlacementEntry | null)[] }) {
+  const fy1 = placements.slice(0, 3);
+  const fy2 = placements.slice(3, 6);
+  return (
+    <div className="grid grid-cols-2 gap-x-3 mt-1.5">
+      {([["FY1", fy1, 0], ["FY2", fy2, 3]] as const).map(([label, entries, offset]) => (
+        <div key={label}>
+          <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</span>
+          {[0, 1, 2].map((i) => (
+            <div key={i} className={cn("mt-0.5 pt-0.5", i > 0 && "border-t border-border/40")}>
+              <PlacementSlot entry={entries[i] ?? null} slotNum={offset + i + 1} />
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ScoreBadge({ score, animated, flashDirection }: { score: number; animated?: boolean; flashDirection?: "up" | "down" | null }) {
+  return (
+    <div className="rounded-md bg-secondary/50 px-2 py-0.5 flex items-center gap-1 shrink-0">
+      <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">Score</span>
+      {animated ? (
+        <AnimatedScore value={score} flashDirection={flashDirection ?? null} />
+      ) : (
+        <span className="font-mono tabular-nums text-xs font-semibold text-foreground">{score.toFixed(3)}</span>
+      )}
+    </div>
+  );
+}
+
+function RegionBadge({ region, style }: { region: string; style: ReturnType<typeof getRegionStyle> }) {
+  return (
+    <span className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-semibold border shrink-0", style.bg, style.text, style.border)}>
+      {region}
+    </span>
+  );
+}
+
+function DesktopPlacementCells({ placements }: { placements: (PlacementEntry | null)[] }) {
+  return (
+    <>
+      {placements.map((entry, i) => (
+        <div key={i} className="min-w-0 pr-0.5">
+          {entry ? (
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold text-foreground leading-tight truncate">{entry.site}</p>
+              <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate">{entry.spec}</p>
+            </div>
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          )}
+        </div>
+      ))}
+    </>
+  );
+}
+
 const GRID_COLS = "40px auto minmax(100px,auto) repeat(6, minmax(90px, 1fr)) 90px 140px";
 const MOBILE_ICON_BTN = "p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md transition-colors shrink-0";
 const MOBILE_ICON_BTN_DEFAULT = cn(MOBILE_ICON_BTN, "text-muted-foreground hover:text-foreground hover:bg-muted");
 
-/* ── Column header definitions ── */
 const COLUMN_HEADERS: { label: string; align?: string; sub?: string }[] = [
   { label: "#", align: "text-right pr-2" },
   { label: "Region", align: "text-center" },
@@ -216,7 +279,6 @@ const COLUMN_HEADERS: { label: string; align?: string; sub?: string }[] = [
   { label: "Actions", align: "text-center" },
 ];
 
-/* ── Swipe-to-boost/bury hook (mobile) ── */
 const SWIPE_THRESHOLD = 60;
 
 function useSwipeBoostBury({
@@ -233,7 +295,6 @@ function useSwipeBoostBury({
   const touchRef = useRef<{ x: number; y: number; aborted: boolean } | null>(null);
   const [swipeX, setSwipeX] = useState(0);
   const [swipeCommitted, setSwipeCommitted] = useState<"boost" | "bury" | null>(null);
-  // Which action would fire on release — shown as iOS-style reveal
   const [pendingAction, setPendingAction] = useState<"boost" | "bury" | null>(null);
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
@@ -251,7 +312,6 @@ function useSwipeBoostBury({
     const touch = e.touches[0];
     const dx = touch.clientX - ref.x;
     const dy = touch.clientY - ref.y;
-    // If vertical movement dominates early on, abort permanently
     if (Math.abs(dy) > Math.abs(dx) * 1.5 && Math.abs(dy) > 10) {
       ref.aborted = true;
       setSwipeX(0);
@@ -260,7 +320,6 @@ function useSwipeBoostBury({
     }
     if (Math.abs(dx) > 10) {
       setSwipeX(dx);
-      // Update pending action based on threshold
       if (dx >= SWIPE_THRESHOLD) setPendingAction("boost");
       else if (dx <= -SWIPE_THRESHOLD) setPendingAction("bury");
       else setPendingAction(null);
@@ -276,7 +335,6 @@ function useSwipeBoostBury({
       return;
     }
 
-    // Fire if past threshold — no time limit, user can hold as long as they want
     if (pendingAction === "boost") {
       setSwipeCommitted("boost");
       onBoost();
@@ -293,7 +351,6 @@ function useSwipeBoostBury({
   return { swipeX, swipeCommitted, pendingAction, onTouchStart, onTouchMove, onTouchEnd };
 }
 
-/* ── Sortable list row ── */
 const ListRow = memo(function ListRow({
   scored,
   rank,
@@ -345,20 +402,15 @@ const ListRow = memo(function ListRow({
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    // When dnd-kit shifts this row, elevate it above sibling virtualizer
-    // wrappers so opaque row backgrounds don't obscure the shifted content.
     ...(transform ? { position: 'relative' as const, zIndex: 1 } : undefined),
   };
 
   const regionStyle = getRegionStyle(scored.job.region);
-  const { fy1, fy2 } = getJobPlacements(scored.job);
+  const placements = getJobPlacements(scored.job);
   const score = effectiveScore(scored);
 
   const washClass = flashDirection === "up" ? "animate-wash-up" : flashDirection === "down" ? "animate-wash-down" : "";
 
-  const allPlacements = buildAllPlacements(fy1, fy2);
-
-  // Swipe gesture for mobile boost/bury
   const handleSwipeBoost = useCallback(() => onBoost(id), [onBoost, id]);
   const handleSwipeBury = useCallback(() => onBury(id), [onBury, id]);
   const { swipeX, swipeCommitted, pendingAction, onTouchStart, onTouchMove, onTouchEnd } = useSwipeBoostBury({
@@ -394,7 +446,6 @@ const ListRow = memo(function ListRow({
         onClick={() => onSelectDetail(scored.job)}
         role="row"
       >
-        {/* iOS-style action reveal behind the sliding row */}
         {(swipeX > 0 || pendingAction === "boost") && (
           <div className={cn(
             "absolute inset-0 flex items-center justify-start pl-4 rounded-xl transition-colors duration-150",
@@ -428,7 +479,6 @@ const ListRow = memo(function ListRow({
           </div>
         )}
 
-        {/* Sliding row content */}
         <motion.div
           className={cn("relative flex flex-col py-2 px-2.5 bg-card rounded-xl", washClass)}
           animate={{ x: swipeX }}
@@ -437,77 +487,19 @@ const ListRow = memo(function ListRow({
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
-          {/* Header: rank + region + title + score */}
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold font-mono text-foreground shrink-0">
               {rank}
             </span>
             <RankChangeBadge delta={rankDelta} direction={flashDirection} />
-            <span
-              className={cn(
-                "rounded-full px-1.5 py-0.5 text-[10px] font-semibold border shrink-0",
-                regionStyle.bg,
-                regionStyle.text,
-                regionStyle.border
-              )}
-            >
-              {scored.job.region}
-            </span>
+            <RegionBadge region={scored.job.region} style={regionStyle} />
             <span className="flex-1 text-xs font-mono font-semibold text-foreground truncate min-w-0">
               {scored.job.programmeTitle}
             </span>
-            <div className="rounded-md bg-secondary/50 px-2 py-0.5 flex items-center gap-1 shrink-0">
-              <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Score
-              </span>
-              <AnimatedScore value={score} flashDirection={flashDirection} />
-            </div>
+            <ScoreBadge score={score} animated flashDirection={flashDirection} />
           </div>
 
-          {/* FY1 / FY2 placements – numbered, fixed-geometry grid */}
-          <div className="grid grid-cols-2 gap-x-3 mt-1.5">
-            {([["FY1", fy1, 0], ["FY2", fy2, 3]] as const).map(([label, entries, offset]) => (
-              <div key={label}>
-                <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">
-                  {label}
-                </span>
-                {[0, 1, 2].map((i) => {
-                  const entry = entries[i];
-                  const slotNum = offset + i + 1;
-                  return (
-                    <div
-                      key={slotNum}
-                      className={cn(
-                        "mt-0.5 pt-0.5",
-                        i > 0 && "border-t border-border/40"
-                      )}
-                    >
-                      {entry ? (
-                        <>
-                          <p className="text-[11px] font-semibold text-foreground leading-tight truncate">
-                            <span className="inline-block w-3 text-[10px] font-bold text-muted-foreground tabular-nums">
-                              {slotNum}
-                            </span>
-                            {entry.site || "No site listed"}
-                          </p>
-                          <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate pl-3">
-                            {entry.spec || "No specialty listed"}
-                          </p>
-                        </>
-                      ) : (
-                        <p className="text-[11px] text-muted-foreground leading-tight">
-                          <span className="inline-block w-3 text-[10px] font-bold tabular-nums">
-                            {slotNum}
-                          </span>
-                          —
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
+          <MobilePlacementGrid placements={placements} />
         </motion.div>
       </div>
     );
@@ -540,7 +532,6 @@ const ListRow = memo(function ListRow({
       onClick={() => onSelectDetail(scored.job)}
       role="row"
     >
-      {/* Rank */}
       <div className="flex items-center justify-end gap-1 pr-2">
         <RankChangeBadge delta={rankDelta} direction={flashDirection} />
         <span className="text-sm font-bold font-mono text-foreground">
@@ -548,52 +539,20 @@ const ListRow = memo(function ListRow({
         </span>
       </div>
 
-      {/* Region */}
-      <span
-        className={cn(
-          "rounded-full px-1.5 py-0.5 text-[10px] font-semibold border truncate text-center mr-1",
-          regionStyle.bg,
-          regionStyle.text,
-          regionStyle.border
-        )}
-      >
+      <span className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-semibold border truncate text-center mr-1", regionStyle.bg, regionStyle.text, regionStyle.border)}>
         {scored.job.region}
       </span>
 
-      {/* Programme title */}
       <span className="text-xs font-mono font-semibold text-foreground truncate pr-16">
         {scored.job.programmeTitle}
       </span>
 
-      {/* 6 individual placement columns */}
-      {allPlacements.map((entry, i) => (
-        <div key={i} className="min-w-0 pr-0.5">
-          {entry ? (
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold text-foreground leading-tight truncate">
-                {entry.site}
-              </p>
-              <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate">
-                {entry.spec}
-              </p>
-            </div>
-          ) : (
-            <span className="text-xs text-muted-foreground">—</span>
-          )}
-        </div>
-      ))}
+      <DesktopPlacementCells placements={placements} />
 
-      {/* Score */}
       <div className="flex justify-center">
-        <div className="rounded-md bg-secondary/50 px-2 py-0.5 flex items-center gap-1">
-          <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Score
-          </span>
-          <AnimatedScore value={score} flashDirection={flashDirection} />
-        </div>
+        <ScoreBadge score={score} animated flashDirection={flashDirection} />
       </div>
 
-      {/* Actions */}
       <div className="flex items-center justify-center gap-0.5">
         <button onClick={(e) => { stop(e); onBoost(id); }} onPointerDown={stop}
           className={cn("p-0.5 rounded text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 active:scale-90 transition-all", isLocked && "pointer-events-none opacity-30")}
@@ -631,7 +590,6 @@ const ListRow = memo(function ListRow({
   );
 });
 
-/* ── List drag overlay row ── */
 const ListDragOverlayRow = memo(function ListDragOverlayRow({
   scored,
   rank,
@@ -642,10 +600,8 @@ const ListDragOverlayRow = memo(function ListDragOverlayRow({
   isMobile?: boolean;
 }) {
   const regionStyle = getRegionStyle(scored.job.region);
-  const { fy1, fy2 } = getJobPlacements(scored.job);
+  const placements = getJobPlacements(scored.job);
   const score = effectiveScore(scored);
-
-  const allPlacements = buildAllPlacements(fy1, fy2);
 
   if (isMobile) {
     return (
@@ -655,60 +611,13 @@ const ListDragOverlayRow = memo(function ListDragOverlayRow({
       >
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-bold font-mono text-foreground shrink-0">{rank}</span>
-          <span className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-semibold border shrink-0", regionStyle.bg, regionStyle.text, regionStyle.border)}>
-            {scored.job.region}
-          </span>
+          <RegionBadge region={scored.job.region} style={regionStyle} />
           <span className="flex-1 text-xs font-mono font-semibold text-foreground truncate min-w-0">
             {scored.job.programmeTitle}
           </span>
-          <div className="rounded-md bg-secondary/50 px-2 py-0.5 flex items-center gap-1 shrink-0">
-            <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">Score</span>
-            <span className="font-mono tabular-nums text-xs font-semibold text-foreground">{score.toFixed(3)}</span>
-          </div>
+          <ScoreBadge score={score} />
         </div>
-        <div className="grid grid-cols-2 gap-x-3 mt-1.5">
-          {([["FY1", fy1, 0], ["FY2", fy2, 3]] as const).map(([label, entries, offset]) => (
-            <div key={label}>
-              <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">
-                {label}
-              </span>
-              {[0, 1, 2].map((i) => {
-                const entry = entries[i];
-                const slotNum = offset + i + 1;
-                return (
-                  <div
-                    key={slotNum}
-                    className={cn(
-                      "mt-0.5 pt-0.5",
-                      i > 0 && "border-t border-border/40"
-                    )}
-                  >
-                    {entry ? (
-                      <>
-                        <p className="text-[11px] font-semibold text-foreground leading-tight truncate">
-                          <span className="inline-block w-3 text-[10px] font-bold text-muted-foreground tabular-nums">
-                            {slotNum}
-                          </span>
-                          {entry.site || "No site listed"}
-                        </p>
-                        <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate pl-3">
-                          {entry.spec || "No specialty listed"}
-                        </p>
-                      </>
-                    ) : (
-                      <p className="text-[11px] text-muted-foreground leading-tight">
-                        <span className="inline-block w-3 text-[10px] font-bold tabular-nums">
-                          {slotNum}
-                        </span>
-                        —
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
+        <MobilePlacementGrid placements={placements} />
       </div>
     );
   }
@@ -724,52 +633,19 @@ const ListDragOverlayRow = memo(function ListDragOverlayRow({
       <span className="text-sm font-bold font-mono text-foreground text-right pr-2">
         {rank}
       </span>
-      <span
-        className={cn(
-          "rounded-full px-1.5 py-0.5 text-[10px] font-semibold border truncate text-center",
-          regionStyle.bg,
-          regionStyle.text,
-          regionStyle.border
-        )}
-      >
-        {scored.job.region}
-      </span>
+      <RegionBadge region={scored.job.region} style={regionStyle} />
       <span className="text-xs font-mono font-semibold text-foreground truncate pr-16">
         {scored.job.programmeTitle}
       </span>
-      {allPlacements.map((entry, i) => (
-        <div key={i} className="min-w-0 pr-0.5">
-          {entry ? (
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold text-foreground leading-tight truncate">
-                {entry.site}
-              </p>
-              <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate">
-                {entry.spec}
-              </p>
-            </div>
-          ) : (
-            <span className="text-xs text-muted-foreground">—</span>
-          )}
-        </div>
-      ))}
+      <DesktopPlacementCells placements={placements} />
       <div className="flex justify-center">
-        <div className="rounded-md bg-secondary/50 px-2 py-0.5 flex items-center gap-1">
-          <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Score
-          </span>
-          <span className="font-mono tabular-nums text-xs font-semibold text-foreground">
-            {score.toFixed(3)}
-          </span>
-        </div>
+        <ScoreBadge score={score} />
       </div>
       <span />
     </div>
   );
 });
 
-/* ── Isolated DragOverlay: reads active item via dnd context
-      so the parent doesn't re-render on drag start ── */
 const SortableDragOverlay = memo(function SortableDragOverlay({
   rankedJobs,
   indexById,
@@ -799,9 +675,6 @@ const SortableDragOverlay = memo(function SortableDragOverlay({
   );
 });
 
-/* ════════════════════════════════════════════════════════════
-   Main results view
-   ════════════════════════════════════════════════════════════ */
 export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const [rankedJobs, setRankedJobs] = useState<ScoredJob[]>(() =>
     scoredJobs.map((sj) => ({
@@ -859,7 +732,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollToJobIdRef = useRef<string | null>(null);
 
-  // Flying ghost card state (boost/bury visual feedback) — queue-based for concurrent ghosts
   type GhostData = {
     scored: ScoredJob;
     rank: number;
@@ -871,7 +743,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const [ghosts, setGhosts] = useState<Map<string, GhostData>>(new Map());
   const ghostIdCounter = useRef(0);
 
-  // Cascade animation state
   type CascadeGhostData = {
     scored: ScoredJob;
     rank: number;
@@ -891,10 +762,8 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     timeoutId: ReturnType<typeof setTimeout>;
   } | null>(null);
 
-  // Edge glow state
   const [edgeGlow, setEdgeGlow] = useState<{ side: 'top' | 'bottom'; color: 'green' | 'red' } | null>(null);
 
-  // Ref for fresh state in DnD callbacks
   const rankedJobsRef = useRef(rankedJobs);
   rankedJobsRef.current = rankedJobs;
 
@@ -908,7 +777,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const isMobileRef = useRef(isMobile);
   isMobileRef.current = isMobile;
 
-  // Sensors
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, {
@@ -919,16 +787,11 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     })
   );
 
-  /* ── Nudge amount (stable — score distribution doesn't change on reorder) ── */
   const nudgeAmountRef = useRef<number | null>(null);
   if (nudgeAmountRef.current === null) {
     nudgeAmountRef.current = computeNudgeAmount(rankedJobs);
   }
   const nudgeAmount = nudgeAmountRef.current;
-
-  /* ── Derived data ── */
-
-  // Stable job set ref — only updates when the set of jobs changes (not on reorder/score tweaks)
   const jobIdsRef = useRef<Set<string>>(new Set(rankedJobs.map(s => s.job.programmeTitle)));
   const [stableJobs, setStableJobs] = useState(rankedJobs);
   useEffect(() => {
@@ -966,7 +829,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     return Array.from(set).sort();
   }, [stableJobs]);
 
-  // O(1) lookup: id → global index in rankedJobs
   const indexById = useMemo(() => {
     const map = new Map<string, number>();
     rankedJobs.forEach((s, i) => map.set(s.job.programmeTitle, i));
@@ -990,13 +852,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const filteredJobsRef = useRef(filteredJobs);
   filteredJobsRef.current = filteredJobs;
 
-  // All IDs (used by handleDragEnd for index lookups)
-  const filteredIds = useMemo(
-    () => filteredJobs.map((s) => s.job.programmeTitle),
-    [filteredJobs]
-  );
-
-  // Row-based virtualization
   const rowCount = filteredJobs.length;
   const virtualizer = useVirtualizer({
     count: rowCount,
@@ -1007,23 +862,16 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const virtualizerRef = useRef(virtualizer);
   virtualizerRef.current = virtualizer;
 
-  // All IDs for SortableContext — dnd-kit needs the full ordered list to
-  // compute correct transforms during drag. Only rendered rows have useSortable
-  // hooks, so the perf cost is minimal. Collision detection already filters to
-  // visible droppables via customCollisionDetection.
-  const virtualItems = virtualizer.getVirtualItems();
   const sortableIds = useMemo(
     () => filteredJobs.map((sj) => sj.job.programmeTitle),
     [filteredJobs]
   );
 
-  // Reset scroll on filter change or view mode switch
   useEffect(() => {
     scrollRef.current?.scrollTo(0, 0);
     virtualizer.measure();
   }, [searchQuery, regionFilter, hospitalFilter, specialtyFilter, isMobile]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Scroll to card after boost/bury/move
   useEffect(() => {
     const targetId = scrollToJobIdRef.current;
     if (!targetId) return;
@@ -1032,13 +880,11 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     const idx = filteredJobs.findIndex((sj) => sj.job.programmeTitle === targetId);
     if (idx === -1) return;
 
-    // Small delay to let framer-motion layout animation start
     requestAnimationFrame(() => {
       virtualizer.scrollToIndex(idx, { align: "center", behavior: "smooth" });
     });
   }, [filteredJobs, virtualizer]);
 
-  /* ── Debounced localStorage persistence ── */
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
@@ -1046,20 +892,17 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         localStorage.setItem("fy_scored_jobs", json);
         sessionStorage.setItem("fy_scored_jobs", json);
       } catch {
-        // storage full — silently ignore
       }
     }, 500);
     return () => clearTimeout(timer);
   }, [rankedJobs]);
 
-  /* ── Edge glow auto-clear ── */
   useEffect(() => {
     if (!edgeGlow) return;
     const timer = setTimeout(() => setEdgeGlow(null), 2000);
     return () => clearTimeout(timer);
   }, [edgeGlow]);
 
-  /* ── Pinned rows ── */
   const pinnedRowIndices = useMemo(() => {
     const rows: number[] = [];
     filteredJobs.forEach((sj, i) => {
@@ -1068,9 +911,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     return rows;
   }, [filteredJobs, pinnedJobIds]);
 
-  /* ── Custom collision detection ──
-     Filter to only rendered (virtualized) items for performance.
-     Uses refs to avoid recreating the function on every render. */
   const customCollisionDetection: CollisionDetection = useCallback(
     (args) => {
       const virt = virtualizerRef.current;
@@ -1093,10 +933,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     },
     [] // stable — reads from refs
   );
-
-  /* ── Actions ── */
-
-  /* ── Ghost card helper: captures card position from DOM and launches flying ghost ── */
   const launchGhost = useCallback((
     jobId: string,
     direction: 'up' | 'down',
@@ -1110,7 +946,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
     const scrollRect = scrollEl.getBoundingClientRect();
 
-    // Estimate where the item lands after sort
     const estRowH = isMobileRef.current ? 172 : 56;
     const newOffset = newIdx * estRowH;
     const viewTop = scrollEl.scrollTop;
@@ -1126,7 +961,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       targetY = scrollRect.top + newOffset - viewTop;
     }
 
-    // Fire edge glow immediately for off-screen destinations
     if (offScreen) {
       setEdgeGlow({
         side: direction === 'up' ? 'top' : 'bottom',
@@ -1153,9 +987,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       return next;
     });
   }, []);
-
-  /* ── Cascade animation helpers ── */
-
   const applyPendingSort = useCallback(() => {
     const pending = pendingSortRef.current;
     if (!pending) return;
@@ -1180,7 +1011,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
     const contentRect = contentEl.getBoundingClientRect();
 
-    // Build a rect cache for all displaced items + the gap position
     const rectCache = new Map<number, DOMRect>();
     for (let i = lo; i <= hi; i++) {
       const sj = prevJobs[i];
@@ -1188,7 +1018,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       const el = scrollEl.querySelector(`[data-job-id="${sj.job.programmeTitle}"]`);
       if (el) rectCache.set(i, el.getBoundingClientRect());
     }
-    // Also cache the gap slot (the nudged card, still in DOM at opacity:0 or about to be hidden)
     const gapSj = prevJobs[gapIdx];
     if (gapSj) {
       const gapEl = scrollEl.querySelector(`[data-job-id="${gapSj.job.programmeTitle}"]`);
@@ -1198,13 +1027,10 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     const newCascades = new Map<string, CascadeGhostData>();
     let count = 0;
 
-    // Iterate from closest-to-gap toward destination
     const indices: number[] = [];
     if (direction === 'up') {
-      // Boost: gap at oldIdx, items lo..hi shift down (+1). Closest to gap = hi
       for (let i = hi; i >= lo; i--) indices.push(i);
     } else {
-      // Bury: gap at oldIdx, items lo..hi shift up (-1). Closest to gap = lo
       for (let i = lo; i <= hi; i++) indices.push(i);
     }
 
@@ -1218,13 +1044,9 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       const fromRect = rectCache.get(idx);
       if (!fromRect) continue; // not in DOM (virtualized away)
 
-      // Each displaced card moves to the position of its neighbor toward the gap
-      // Boost (direction=up): card at idx moves to idx+1's position
-      // Bury (direction=down): card at idx moves to idx-1's position
       const targetIdx = direction === 'up' ? idx + 1 : idx - 1;
       const targetRect = rectCache.get(targetIdx);
 
-      // Compute pixel delta — use exact DOM rects when available, fall back to zero shift
       let deltaX = 0;
       let deltaY = 0;
       if (targetRect) {
@@ -1232,7 +1054,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         deltaY = targetRect.top - fromRect.top;
       }
 
-      // Skip if no movement (both rects identical or target not found)
       if (deltaX === 0 && deltaY === 0 && !targetRect) continue;
 
       const delay = count * staggerSec;
@@ -1271,12 +1092,10 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     return count;
   }, []);
 
-  /* ── Boost / Bury (unified) ── */
   const handleNudge = useCallback(
     (jobId: string, direction: 'up' | 'down') => {
       if (lockedJobIds.has(jobId)) return;
 
-      // Cancel any in-progress animation
       if (pendingSortRef.current) {
         clearTimeout(pendingSortRef.current.timeoutId);
         pushAndSetRanked(() => pendingSortRef.current!.sorted);
@@ -1288,11 +1107,9 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
       const sign = direction === 'up' ? 1 : -1;
 
-      // Capture bounding rect from DOM BEFORE React re-sorts
       const el = scrollRef.current?.querySelector(`[data-job-id="${jobId}"]`);
       const fromRect = el?.getBoundingClientRect();
 
-      // Compute sort synchronously from ref
       const prev = rankedJobsRef.current;
       const oldIdx = prev.findIndex((sj) => sj.job.programmeTitle === jobId);
       if (oldIdx === -1) return;
@@ -1308,13 +1125,11 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       );
       const newIdx = sorted.findIndex((sj) => sj.job.programmeTitle === jobId);
 
-      // No movement → just apply score change
       if (oldIdx === newIdx) {
         pushAndSetRanked(() => sorted);
         return;
       }
 
-      // Record rank delta + flash
       rankDeltaRef.current.set(jobId, oldIdx - newIdx);
       setFlashMap((prev) => {
         const next = new Map(prev);
@@ -1330,21 +1145,17 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         rankDeltaRef.current.delete(jobId);
       }, 2500);
 
-      // DON'T apply sort yet — defer until animations complete
       setHiddenJobIds(new Set([jobId]));
 
-      // Launch main ghost
       if (fromRect) {
         launchGhost(jobId, direction, scored, oldIdx + 1, fromRect, newIdx);
       }
 
-      // Launch cascade ghosts for displaced items
       const [lo, hi] = direction === 'up'
         ? [newIdx, oldIdx - 1]   // boost: items at newIdx..oldIdx-1 shift down
         : [oldIdx + 1, newIdx];  // bury: items at oldIdx+1..newIdx shift up
       launchCascadeGhosts(prev, lo, hi, direction, oldIdx);
 
-      // Track pending sort — main ghost completion or safety timeout triggers it
       const safetyTimeout = setTimeout(() => applyPendingSort(), 900);
       pendingSortRef.current = {
         sorted,
@@ -1358,7 +1169,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const handleBoost = useCallback((jobId: string) => handleNudge(jobId, 'up'), [handleNudge]);
   const handleBury = useCallback((jobId: string) => handleNudge(jobId, 'down'), [handleNudge]);
 
-  /* ── Move To ── */
   const handleMoveTo = useCallback((jobId: string, targetRank: number) => {
     if (lockedJobIds.has(jobId)) return;
     scrollToJobIdRef.current = jobId;
@@ -1375,7 +1185,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
   const openMoveTo = useCallback((jobId: string, rank: number) => setMoveToState({ jobId, rank }), []);
 
-  /* ── Multiselect ── */
   const toggleSelect = useCallback((jobId: string) => {
     setSelectedIds((prev) => toggleInSet(prev, jobId));
   }, []);
@@ -1384,7 +1193,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     setSelectedIds(new Set());
   }, []);
 
-  /* ── Bulk actions from toolbar ── */
   const handleBulkCompare = useCallback(() => {
     const jobs = rankedJobs
       .filter((sj) => selectedIds.has(sj.job.programmeTitle))
@@ -1399,7 +1207,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     const ids = new Set([...selectedIds].filter((id) => !lockedJobIds.has(id)));
     if (ids.size === 0) return;
 
-    // Compute sort synchronously from ref
     const prev = rankedJobsRef.current;
     const oldIndices = new Map<string, number>();
     prev.forEach((sj, i) => { if (ids.has(sj.job.programmeTitle)) oldIndices.set(sj.job.programmeTitle, i); });
@@ -1433,7 +1240,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const handleBulkBoost = useCallback(() => handleBulkNudge('up'), [handleBulkNudge]);
   const handleBulkBury = useCallback(() => handleBulkNudge('down'), [handleBulkNudge]);
 
-  /* ── Clear all filters ── */
   const clearAllFilters = useCallback(() => {
     setSearchQuery("");
     setRegionFilter("all");
@@ -1461,7 +1267,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     setLockedJobIds((prev) => toggleInSet(prev, jobId));
   }, []);
 
-  /* ── Import handler ── */
   const handleImportFile = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -1481,9 +1286,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     },
     []
   );
-
-  /* ── DnD handlers ── */
-
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -1492,7 +1294,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     const activeIdStr = active.id as string;
     const overIdStr = over.id as string;
 
-    // Locked items cannot be dragged or displaced
     if (lockedJobIds.has(activeIdStr) || lockedJobIds.has(overIdStr)) return;
 
     pushAndSetRanked((prev) => {
@@ -1517,7 +1318,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     });
   }, [lockedJobIds, pushAndSetRanked]);
 
-  /* ── Scroll direction tracking for pinned rows + auto-collapse mobile filters ── */
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -1533,7 +1333,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     hospitalFilter !== "all" ||
     specialtyFilter !== "all";
 
-  /* ── Helper: render a single list row ── */
   const renderListRow = useCallback((jobIndex: number) => {
     const jobs = filteredJobsRef.current;
     const s = jobs[jobIndex];
@@ -1566,16 +1365,11 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     );
   }, [filteredJobs, indexById, hiddenJobIds, selectedIds, pinnedJobIds, lockedJobIds, isMobile, flashMap, toggleSelect, togglePin, toggleLock, handleBoost, handleBury, openMoveTo]);
 
-  /* ══════════════════════════════════════════
-     Render
-     ══════════════════════════════════════════ */
-
   return (
     <div className="h-screen flex flex-col bg-background">
       <WelcomeModal externalOpen={showHelp} onExternalClose={() => setShowHelp(false)} />
       <SiteHeader />
 
-      {/* Filter bar — desktop */}
       <div className="shrink-0 border-b bg-gradient-to-r from-secondary/20 via-accent/10 to-secondary/20 px-4 py-3 hidden sm:block">
         <div className="max-w-[1800px] mx-auto flex items-center gap-3 flex-wrap">
           <p className="text-sm text-muted-foreground shrink-0">
@@ -1655,7 +1449,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
             </Button>
           )}
 
-          {/* Export / Import */}
           <div className="flex items-center gap-1 shrink-0">
             <Button
               size="sm"
@@ -1685,7 +1478,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
             </Button>
           </div>
 
-          {/* Undo / Redo */}
           <div className="flex items-center gap-0.5 shrink-0">
             <Button
               size="sm"
@@ -1719,7 +1511,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         </div>
       </div>
 
-      {/* Filter bar — mobile */}
       <div className="shrink-0 border-b bg-gradient-to-r from-secondary/20 via-accent/10 to-secondary/20 px-2 py-1.5 sm:hidden">
         {mobileSearchOpen ? (
           /* Expanded search: full-width input with close button */
@@ -1830,7 +1621,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
           </div>
         )}
 
-        {/* Expanded filter dropdowns */}
         {mobileFiltersOpen && !mobileSearchOpen && (
           <div className="mt-2 space-y-2">
             <select
@@ -1867,15 +1657,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
             </select>
 
             {hasActiveFilters && (
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setRegionFilter("all");
-                  setHospitalFilter("all");
-                  setSpecialtyFilter("all");
-                }}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
+              <button onClick={clearAllFilters} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
                 Clear filters
               </button>
             )}
@@ -1883,7 +1665,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         )}
       </div>
 
-      {/* Compare overlay */}
       {showCompare && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-6">
           <div className="bg-card border rounded-xl shadow-xl w-full max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
@@ -2007,7 +1788,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         </div>
       )}
 
-      {/* Move To dialog (single card) */}
       <MoveToDialog
         open={moveToState !== null}
         onOpenChange={(open) => {
@@ -2020,7 +1800,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         }}
       />
 
-      {/* Move To dialog (bulk) */}
       <MoveToDialog
         open={bulkMoveToOpen}
         onOpenChange={setBulkMoveToOpen}
@@ -2032,7 +1811,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         }}
       />
 
-      {/* ── Main content ── */}
       <DndContext
         sensors={sensors}
         collisionDetection={customCollisionDetection}
@@ -2048,7 +1826,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
             strategy={verticalListSortingStrategy}
           >
             <div ref={contentRef} className="flex-1 flex flex-col overflow-hidden relative">
-              {/* Edge glow overlay */}
               {edgeGlow && (
                 <div
                   className={cn(
@@ -2060,7 +1837,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                 />
               )}
 
-              {/* Pinned rows at top */}
               {pinnedRowIndices.length > 0 &&
                 scrollDir === "down" && (
                   <div className="shrink-0 z-10 shadow-md border-b max-h-[30vh] overflow-y-auto">
@@ -2072,14 +1848,12 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                   </div>
                 )}
 
-              {/* Scrollable area */}
               <div
                 ref={scrollRef}
                 className="flex-1 overflow-y-auto"
                 onScroll={handleScroll}
               >
                 <div>
-                  {/* Column headers */}
                   <div
                     className="hidden sm:grid items-center gap-x-0.5 h-[32px] border-b-2 border-border bg-secondary/30"
                     style={{
@@ -2113,25 +1887,14 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
                 {filteredJobs.length === 0 && rankedJobs.length > 0 && (
                   <div className="text-center py-12 text-muted-foreground">
-                    <p className="text-sm">
-                      No programmes match your filters.
-                    </p>
-                    <button
-                      onClick={() => {
-                        setSearchQuery("");
-                        setRegionFilter("all");
-                        setHospitalFilter("all");
-                        setSpecialtyFilter("all");
-                      }}
-                      className="text-xs text-primary hover:underline mt-1"
-                    >
+                    <p className="text-sm">No programmes match your filters.</p>
+                    <button onClick={clearAllFilters} className="text-xs text-primary hover:underline mt-1">
                       Clear all filters
                     </button>
                   </div>
                 )}
               </div>
 
-              {/* Pinned rows at bottom */}
               {pinnedRowIndices.length > 0 &&
                 scrollDir === "up" && (
                   <div className="shrink-0 z-10 shadow-[0_-4px_6px_-1px_rgb(0_0_0/0.1)] border-t max-h-[30vh] overflow-y-auto">
@@ -2143,7 +1906,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                   </div>
                 )}
 
-              {/* Cascade ghosts — absolutely positioned, clipped by overflow-hidden */}
               <AnimatePresence>
                 {[...cascadeGhosts.entries()].map(([id, g]) => (
                   <motion.div
@@ -2179,7 +1941,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
             </div>
           </SortableContext>
 
-          {/* Selection toolbar */}
           {selectedIds.size >= 1 && (
             <SelectionToolbar
               count={selectedIds.size}
@@ -2194,7 +1955,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
             />
           )}
 
-          {/* Right: Detail panel */}
           {selectedDetail && (
             <div className="w-90 shrink-0">
               <JobDetailPanel
@@ -2208,7 +1968,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         <SortableDragOverlay rankedJobs={rankedJobs} indexById={indexById} isMobile={isMobile} />
       </DndContext>
 
-      {/* Flying ghost cards for boost/bury visual feedback */}
       <AnimatePresence>
         {[...ghosts.entries()].map(([id, g]) => (
           <motion.div
@@ -2246,7 +2005,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         ))}
       </AnimatePresence>
 
-      {/* Cascade ghosts are rendered inside contentRef container */}
     </div>
   );
 }

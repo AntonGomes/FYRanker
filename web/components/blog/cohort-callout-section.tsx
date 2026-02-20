@@ -62,7 +62,6 @@ export function CohortCalloutSection({ data }: CohortCalloutSectionProps) {
       <RegionFilterBar className="mb-10" />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-        {/* Largest cohort */}
         <motion.div
           className="rounded-2xl border-2 p-8 text-center"
           style={{ borderColor: accentColor }}
@@ -95,7 +94,6 @@ export function CohortCalloutSection({ data }: CohortCalloutSectionProps) {
           </div>
         </motion.div>
 
-        {/* Smallest cohort */}
         <motion.div
           className="rounded-2xl border-2 p-8 text-center"
           style={{ borderColor: accentColor }}

@@ -123,7 +123,6 @@ export function FYComparisonChart({ data }: FYComparisonChartProps) {
 
       <RegionFilterBar className="mb-8" />
 
-      {/* Side by side on desktop, stacked on mobile */}
       <div className="flex flex-col md:flex-row gap-6">
         <FYBarChart
           title="FY1"
