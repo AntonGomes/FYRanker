@@ -79,7 +79,6 @@ function SortableRow({ item }: { item: SortableItem }) {
   );
 }
 
-/* ── Overlay shown while dragging ── */
 const DragOverlayRow = memo(function DragOverlayRow({ item }: { item: SortableItem }) {
   return (
     <div className={cn(

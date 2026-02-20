@@ -4,11 +4,6 @@ import { useRegionFilter } from "./region-filter-context";
 import { REGIONS, REGION_HEX } from "@/lib/region-colors";
 import { cn } from "@/lib/utils";
 
-/**
- * Inline pill bar for filtering all blog charts by region.
- * Renders 4 region pills + an "All" option. Clicking a region toggles it;
- * clicking the active region (or "All") clears the filter.
- */
 export function RegionFilterBar({ className }: { className?: string }) {
   const { activeRegion, toggleRegion, setActiveRegion } = useRegionFilter();
 
@@ -19,7 +14,6 @@ export function RegionFilterBar({ className }: { className?: string }) {
         className
       )}
     >
-      {/* "All" pill */}
       <button
         onClick={() => setActiveRegion(null)}
         className={cn(
@@ -32,7 +26,6 @@ export function RegionFilterBar({ className }: { className?: string }) {
         All Regions
       </button>
 
-      {/* Region pills */}
       {REGIONS.map((region) => {
         const hex = REGION_HEX[region];
         const isActive = activeRegion === region;

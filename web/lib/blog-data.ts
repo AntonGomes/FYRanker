@@ -1,18 +1,11 @@
-/**
- * TypeScript interfaces for the pre-computed blog JSON data files.
- * Each interface matches the shape exported by data/analysis.ipynb.
- */
-
 import type { Region } from "./region-colors";
 
-/* ── overview.json ─────────────────────────────────────────────────────────── */
 export interface OverviewData {
   rotations: number;
   sites: number;
   specialties: number;
 }
 
-/* ── regions.json ──────────────────────────────────────────────────────────── */
 export interface RegionStats {
   rotations: number;
   sites: number;
@@ -20,7 +13,6 @@ export interface RegionStats {
 }
 export type RegionsData = Record<Region, RegionStats>;
 
-/* ── specialty-tiers.json ──────────────────────────────────────────────────── */
 export interface SpecialtyTierEntry {
   name: string;
   count: number;
@@ -33,7 +25,6 @@ export interface SpecialtyTiersData {
   byRegion: Record<Region, SpecialtyTierEntry[]>;
 }
 
-/* ── fy-comparison.json ────────────────────────────────────────────────────── */
 export interface FYSpecialtyEntry {
   name: string;
   count: number;
@@ -48,7 +39,6 @@ export interface FYComparisonData {
   fy2: FYData;
 }
 
-/* ── placement-distribution.json ───────────────────────────────────────────── */
 export interface PlacementDistEntry {
   name: string;
   distribution: Record<string, number>;
@@ -62,7 +52,6 @@ export interface PlacementDistData {
   specialties: PlacementDistEntry[];
 }
 
-/* ── cohorts.json ──────────────────────────────────────────────────────────── */
 export interface CohortEntry {
   site: string;
   specialty: string;
@@ -75,7 +64,6 @@ export interface RegionCohorts {
 }
 export type CohortsData = Record<Region, RegionCohorts>;
 
-/* ── Combined blog data (all files loaded together) ────────────────────────── */
 export interface BlogData {
   overview: OverviewData;
   regions: RegionsData;

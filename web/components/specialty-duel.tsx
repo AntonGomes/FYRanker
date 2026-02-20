@@ -46,7 +46,6 @@ function randomPick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-/** Compute rank map from an ELO state's ratings. */
 function computeRanks(ratings: Map<string, number>): Map<string, number> {
   return new Map(
     Array.from(ratings.entries())
@@ -55,7 +54,6 @@ function computeRanks(ratings: Map<string, number>): Map<string, number> {
   );
 }
 
-/** Confetti burst from top-right corner of card */
 function ConfettiBurst({ count = 18 }: { count?: number }) {
   const particles = useMemo(
     () =>
@@ -99,7 +97,6 @@ function ConfettiBurst({ count = 18 }: { count?: number }) {
   );
 }
 
-/** Emoji reaction that floats up like iMessage */
 function EmojiReaction({ emoji }: { emoji: string }) {
   return (
     <motion.div
@@ -119,10 +116,6 @@ function EmojiReaction({ emoji }: { emoji: string }) {
   );
 }
 
-/**
- * Compute dramatic "going super saiyan" card styles.
- * Progression: dark purple -> hot pink -> blazing white.
- */
 function getCardStyle(intensity: number, isDark: boolean) {
   if (intensity <= 0) return {};
 
@@ -165,9 +158,6 @@ function getCardStyle(intensity: number, isDark: boolean) {
     },
   };
 }
-
-/* ── Duel card (left or right) ── */
-
 function DuelCard({
   spec,
   matchupKey,
@@ -225,9 +215,6 @@ function DuelCard({
     </motion.div>
   );
 }
-
-/* ── Ranking neighbourhood row ── */
-
 function NeighbourhoodRow({
   entry,
   isInMatchup,
@@ -287,9 +274,6 @@ function NeighbourhoodRow({
     </motion.div>
   );
 }
-
-/* ── Main component ── */
-
 export function SpecialtyDuel({
   specialties,
   eloState,
@@ -299,7 +283,6 @@ export function SpecialtyDuel({
 }: SpecialtyDuelProps) {
   const state = eloState ?? initElo(specialties);
 
-  // Track dark mode for inline styles
   const [isDark, setIsDark] = useState(false);
   useEffect(() => {
     const el = document.documentElement;
@@ -358,7 +341,6 @@ export function SpecialtyDuel({
       onStateChange(newState);
       onRankingChange(toRankedList(newState));
 
-      // Equal preference -- no animation, advance immediately
       if (weight === 0) {
         advanceToNextMatchup(newState);
         return;
@@ -369,7 +351,6 @@ export function SpecialtyDuel({
       const winnerDelta = (ranksBefore.get(winner) ?? 0) - (ranksAfter.get(winner) ?? 0);
       const loserDelta = (ranksBefore.get(loser) ?? 0) - (ranksAfter.get(loser) ?? 0);
 
-      // Increment glow keys to retrigger CSS animations
       glowKeyRef.current.set(winner, (glowKeyRef.current.get(winner) ?? 0) + 1);
       glowKeyRef.current.set(loser, (glowKeyRef.current.get(loser) ?? 0) + 1);
       setFlashMap(() => {
@@ -379,7 +360,6 @@ export function SpecialtyDuel({
         return next;
       });
 
-      // Phase 1: Show confetti + emoji reaction
       const side = weight < 0 ? "left" : "right";
       setWinSide(side);
       setLoserEmoji(randomPick(LOSER_EMOJIS));
@@ -389,10 +369,8 @@ export function SpecialtyDuel({
       setNeighbourhood(getFocusedNeighbourhood(newState, winner, 7));
       setIsTransitioning(true);
 
-      // Phase 2: Fly the loser off after emoji shows
       setTimeout(() => setLoserFlyOff(true), 600);
 
-      // Phase 3: Reset and load next matchup
       setTimeout(() => {
         resetTransitionState();
         advanceToNextMatchup(newState);
@@ -403,7 +381,6 @@ export function SpecialtyDuel({
 
   const [leftSpec, rightSpec] = currentMatchup;
 
-  // Compute card glow intensity from slider value
   const leftGlow = Math.max(0, -sliderValue) / 2;
   const rightGlow = Math.max(0, sliderValue) / 2;
   const leftStyle = leftGlow > 0 ? getCardStyle(leftGlow, isDark) : null;
@@ -411,7 +388,6 @@ export function SpecialtyDuel({
 
   return (
     <div className="flex flex-col flex-1 min-h-0 justify-evenly gap-2">
-      {/* Ranking neighbourhood */}
       <div className="shrink-0 max-h-[160px] sm:max-h-[180px] overflow-hidden px-1">
         <div className="bg-muted/40 dark:bg-black/20 shadow-[inset_0_2px_8px_rgba(0,0,0,0.25)] border border-border/30 rounded-xl pointer-events-none p-2">
           <LayoutGroup>
@@ -434,7 +410,6 @@ export function SpecialtyDuel({
         </div>
       </div>
 
-      {/* Matchup + slider */}
       <div className="shrink-0 border-2 border-border rounded-xl bg-muted/20 dark:bg-muted/10 px-3 sm:px-5 pt-4 sm:pt-5 pb-3 overflow-visible">
         <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground text-center mb-4 uppercase tracking-wide">Choose your preference</p>
         <div className="border-b border-border/50 -mx-3 sm:-mx-5 mb-4" />
@@ -451,7 +426,6 @@ export function SpecialtyDuel({
             side="left"
           />
 
-          {/* VS pill */}
           <div className="flex items-center shrink-0">
             <div className="flex items-center gap-1.5 sm:gap-2">
               <div className="w-3 sm:w-4 h-px bg-border" />
@@ -477,7 +451,6 @@ export function SpecialtyDuel({
 
         <div className="border-b border-border/50 -mx-3 sm:-mx-5 mt-4" />
 
-        {/* Slider */}
         <div className="pt-4 pb-1 px-1 touch-none">
         <div className="relative">
           <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-[4px] bg-border rounded-full" />

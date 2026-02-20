@@ -8,9 +8,6 @@ import { RegionFilterBar } from "./region-filter-bar";
 import { useRegionFilter } from "./region-filter-context";
 import type { SpecialtyTiersData, SpecialtyTierEntry } from "@/lib/blog-data";
 
-/**
- * Rarity tier legend labels
- */
 const TIER_LEGEND: { tier: string; label: string; color: string }[] = [
   { tier: "Legendary", label: "<0.5%", color: "#f59e0b" },
   { tier: "Epic", label: "0.5–1.5%", color: "#a855f7" },
@@ -116,7 +113,6 @@ export function SpecialtyBubbleChart({ data }: SpecialtyBubbleChartProps) {
 
       <RegionFilterBar className="mb-8" />
 
-      {/* Bubble chart SVG */}
       <div ref={containerRef} className="w-full relative">
         <svg
           viewBox={`0 0 ${size} ${size}`}
@@ -149,7 +145,6 @@ export function SpecialtyBubbleChart({ data }: SpecialtyBubbleChartProps) {
                 }}
                 onMouseLeave={() => setTooltip(null)}
               >
-                {/* Circle */}
                 <motion.circle
                   r={node.r}
                   fill={node.tierColor}
@@ -162,7 +157,6 @@ export function SpecialtyBubbleChart({ data }: SpecialtyBubbleChartProps) {
                   transition={{ duration: 0.5, ease: "easeOut" }}
                 />
 
-                {/* Label (only for large enough circles) */}
                 {node.r > labelThreshold && (
                   <>
                     <text
@@ -194,7 +188,6 @@ export function SpecialtyBubbleChart({ data }: SpecialtyBubbleChartProps) {
           </AnimatePresence>
         </svg>
 
-        {/* Tooltip */}
         {tooltip && (
           <div
             className="fixed z-50 pointer-events-none px-3 py-2 rounded-lg bg-card border border-border shadow-lg text-sm"
@@ -216,7 +209,6 @@ export function SpecialtyBubbleChart({ data }: SpecialtyBubbleChartProps) {
         )}
       </div>
 
-      {/* Tier legend */}
       <div className="flex flex-wrap justify-center gap-4 mt-6">
         {TIER_LEGEND.map(({ tier, label, color }) => (
           <div key={tier} className="flex items-center gap-2">

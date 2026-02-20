@@ -50,7 +50,6 @@ export function HeroSection({ data }: HeroSectionProps) {
       ref={ref}
       className="relative flex min-h-screen flex-col items-center justify-center px-4 sm:px-6 lg:px-8"
     >
-      {/* Headline */}
       <motion.h1
         className="text-center text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold leading-[1.1] tracking-tight"
         initial={{ opacity: 0, y: 30 }}
@@ -67,7 +66,6 @@ export function HeroSection({ data }: HeroSectionProps) {
         </span>
       </motion.h1>
 
-      {/* Animated counters */}
       <div className="mt-12 sm:mt-16 flex flex-wrap items-center justify-center gap-8 sm:gap-12 md:gap-16">
         <AnimatedStat
           value={data.rotations}
@@ -89,7 +87,6 @@ export function HeroSection({ data }: HeroSectionProps) {
         />
       </div>
 
-      {/* Subtitle */}
       <motion.p
         className="mt-6 text-lg sm:text-xl text-foreground text-center max-w-xl"
         initial={{ opacity: 0 }}
@@ -99,7 +96,6 @@ export function HeroSection({ data }: HeroSectionProps) {
         Across 4 Scottish regions. Here&apos;s what the data says.
       </motion.p>
 
-      {/* CTA */}
       <motion.div
         className="mt-8"
         initial={{ opacity: 0, scale: 0.9 }}
@@ -114,7 +110,6 @@ export function HeroSection({ data }: HeroSectionProps) {
         </Link>
       </motion.div>
 
-      {/* Scroll indicator */}
       <motion.div
         className="absolute bottom-8 left-1/2 -translate-x-1/2"
         animate={{ y: [0, 10, 0] }}

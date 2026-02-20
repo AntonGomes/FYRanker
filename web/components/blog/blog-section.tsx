@@ -12,10 +12,6 @@ interface BlogSectionProps {
   fullHeight?: boolean;
 }
 
-/**
- * Scroll-animated section wrapper for the data blog.
- * Content fades in and slides up when scrolling into view.
- */
 export function BlogSection({
   id,
   children,

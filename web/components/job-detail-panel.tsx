@@ -4,8 +4,7 @@ import type { Job } from "@/lib/parse-xlsx";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-import { getRegionStyle, REGION_COLORS } from "@/lib/region-colors";
-export { getRegionStyle, REGION_COLORS };
+import { getRegionStyle } from "@/lib/region-colors";
 
 interface JobDetailPanelProps {
   job: Job;
@@ -17,7 +16,6 @@ export function JobDetailPanel({ job, onClose }: JobDetailPanelProps) {
 
   return (
     <div className="h-full flex flex-col bg-card border-l">
-      {/* Header */}
       <div className={cn("px-5 py-4 border-b", style.bg)}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
@@ -45,7 +43,6 @@ export function JobDetailPanel({ job, onClose }: JobDetailPanelProps) {
         </div>
       </div>
 
-      {/* Placements */}
       <div className="flex-1 overflow-y-auto px-5 py-4">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
           Placements

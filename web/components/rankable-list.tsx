@@ -27,7 +27,7 @@ import {
   Lock,
   Unlock,
 } from "lucide-react";
-import { REGION_COLORS } from "@/components/job-detail-panel";
+import { REGION_COLORS } from "@/lib/region-colors";
 
 export interface RankableItem {
   id: string;
@@ -44,7 +44,6 @@ interface RankableListProps {
   searchFilter?: string;
 }
 
-/* ── Individual draggable row ── */
 const DraggableRow = memo(function DraggableRow({
   item,
   index,
@@ -70,7 +69,6 @@ const DraggableRow = memo(function DraggableRow({
     transition,
   };
 
-  // Derive region color from badge if it matches a known region
   const regionStyle = item.badge ? REGION_COLORS[item.badge] : undefined;
 
   return (
@@ -87,15 +85,12 @@ const DraggableRow = memo(function DraggableRow({
         isDragging && "opacity-40 shadow-lg z-50"
       )}
     >
-      {/* Rank number */}
       <span className="w-9 shrink-0 text-center text-xs font-mono text-muted-foreground">
         {index + 1}
       </span>
 
-      {/* Label */}
       <span className="flex-1 text-sm truncate min-w-0">{item.label}</span>
 
-      {/* Badge */}
       {item.badge && (
         <span className={cn(
           "shrink-0 rounded-md px-1.5 py-0.5 text-xs font-medium",
@@ -107,7 +102,6 @@ const DraggableRow = memo(function DraggableRow({
         </span>
       )}
 
-      {/* Pin */}
       <button
         onClick={() => onTogglePin(item.id)}
         className={cn(
@@ -128,7 +122,6 @@ const DraggableRow = memo(function DraggableRow({
   );
 });
 
-/* ── Overlay shown while dragging ── */
 const DragOverlayRow = memo(function DragOverlayRow({ item, index }: { item: RankableItem; index: number }) {
   return (
     <div className="flex items-center gap-1.5 rounded-lg border border-primary/40 bg-card px-2 py-2.5 shadow-xl ring-2 ring-primary/20 scale-[1.03]">
@@ -145,7 +138,6 @@ const DragOverlayRow = memo(function DragOverlayRow({ item, index }: { item: Ran
   );
 });
 
-/* ── Main component ── */
 export function RankableList({
   items,
   onReorder,
@@ -226,7 +218,6 @@ export function RankableList({
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* Header */}
       {(title || description) && (
         <div className="mb-3 shrink-0">
           {title && <h3 className="text-sm font-semibold text-foreground">{title}</h3>}
@@ -236,7 +227,6 @@ export function RankableList({
         </div>
       )}
 
-      {/* DnD context wraps both sticky and scrollable */}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -248,7 +238,6 @@ export function RankableList({
           items={items.map((i) => i.id)}
           strategy={verticalListSortingStrategy}
         >
-          {/* Virtualized list */}
           <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 pr-1">
             <div style={{ height: `${virtualizer.getTotalSize()}px`, position: "relative" }}>
               {virtualizer.getVirtualItems().map((virtualRow) => {
@@ -286,7 +275,6 @@ export function RankableList({
         </DragOverlay>
       </DndContext>
 
-      {/* Footer info */}
       <div className="mt-2 flex items-center text-xs text-muted-foreground border-t pt-2 shrink-0">
         <span>
           {items.length} items
