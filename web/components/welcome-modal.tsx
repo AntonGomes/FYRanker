@@ -101,8 +101,8 @@ export function WelcomeModal({ externalOpen, onExternalClose }: WelcomeModalProp
                   <span className="shrink-0 font-semibold text-foreground">2.</span>
                   <span>
                     <strong>Boost & bury</strong>: use the{" "}
-                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">&#9650;</span>{" "}
-                    <span className="text-red-500 dark:text-red-400 font-bold">&#9660;</span>{" "}
+                    <span className="text-emerald-400 font-bold">&#9650;</span>{" "}
+                    <span className="text-red-400 font-bold">&#9660;</span>{" "}
                     triangles to nudge a programme&apos;s score up or down in the ranking*.
                   </span>
                 </li>

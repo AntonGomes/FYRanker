@@ -250,9 +250,9 @@ export default function WizardPage() {
   // Helper to get region color style
   function getRegionStyle(region: string) {
     return REGION_COLORS[region] ?? {
-      bg: "bg-slate-50 dark:bg-slate-950/40",
-      border: "border-slate-200 dark:border-slate-800",
-      text: "text-slate-700 dark:text-slate-300",
+      bg: "bg-slate-950/40",
+      border: "border-slate-800",
+      text: "text-slate-300",
     };
   }
 

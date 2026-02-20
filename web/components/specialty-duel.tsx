@@ -26,9 +26,9 @@ interface SpecialtyDuelProps {
 
 const PREFERENCE_OPTIONS = [
   { weight: -2, icon: ChevronsLeft, label: "Strong", color: "bg-blue-600 hover:bg-blue-700 text-white" },
-  { weight: -1, icon: ChevronLeft, label: "Slight", color: "bg-blue-500/20 hover:bg-blue-500/30 text-blue-700 dark:text-blue-300" },
+  { weight: -1, icon: ChevronLeft, label: "Slight", color: "bg-blue-500/20 hover:bg-blue-500/30 text-blue-300" },
   { weight: 0, icon: Equal, label: "Draw", color: "bg-muted hover:bg-muted/80 text-foreground" },
-  { weight: 1, icon: ChevronRight, label: "Slight", color: "bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 dark:text-amber-300" },
+  { weight: 1, icon: ChevronRight, label: "Slight", color: "bg-amber-500/20 hover:bg-amber-500/30 text-amber-300" },
   { weight: 2, icon: ChevronsRight, label: "Strong", color: "bg-amber-600 hover:bg-amber-700 text-white" },
 ] as const;
 

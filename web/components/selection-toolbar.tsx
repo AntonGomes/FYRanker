@@ -70,7 +70,7 @@ export function SelectionToolbar({
         <Button
           size="sm"
           variant="outline"
-          className="w-full justify-start gap-2 text-xs text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+          className="w-full justify-start gap-2 text-xs text-emerald-400 hover:bg-emerald-950/30"
           onClick={onBoostAll}
         >
           <ChevronUp className="h-3.5 w-3.5" />
@@ -79,7 +79,7 @@ export function SelectionToolbar({
         <Button
           size="sm"
           variant="outline"
-          className="w-full justify-start gap-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
+          className="w-full justify-start gap-2 text-xs text-red-400 hover:bg-red-950/30"
           onClick={onBuryAll}
         >
           <ChevronDown className="h-3.5 w-3.5" />

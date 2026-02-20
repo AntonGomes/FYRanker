@@ -2,8 +2,6 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -69,76 +67,7 @@
 
 :root {
   --radius: 0.625rem;
-  /* Purple-tinted midtone background */
-  --background: oklch(0.91 0.025 295);
-  /* Near-black foreground for max contrast */
-  --foreground: oklch(0.13 0.02 285);
-  /* Lifted card surface */
-  --card: oklch(0.95 0.018 295);
-  --card-foreground: oklch(0.13 0.02 285);
-  --popover: oklch(0.95 0.018 295);
-  --popover-foreground: oklch(0.13 0.02 285);
-  /* Card interaction states */
-  --card-hover: oklch(0.97 0.022 280);
-  --card-selected: oklch(0.93 0.06 300);
-  --card-drag: oklch(0.98 0.015 290);
-  /* Vibrant purple-pink primary */
-  --primary: oklch(0.52 0.26 300);
-  --primary-foreground: oklch(0.99 0 0);
-  /* Light blue secondary */
-  --secondary: oklch(0.88 0.06 230);
-  --secondary-foreground: oklch(0.2 0.06 300);
-  /* Warm muted tones */
-  --muted: oklch(0.92 0.018 80);
-  --muted-foreground: oklch(0.35 0.04 285);
-  /* Pink accent */
-  --accent: oklch(0.88 0.08 340);
-  --accent-foreground: oklch(0.2 0.06 300);
-  --destructive: oklch(0.55 0.24 27);
-  /* Visible borders — rose tint */
-  --border: oklch(0.85 0.03 320);
-  --input: oklch(0.85 0.03 320);
-  --ring: oklch(0.52 0.26 300);
-  /* Cheerful chart palette */
-  --chart-1: oklch(0.6 0.25 300);
-  --chart-2: oklch(0.65 0.2 200);
-  --chart-3: oklch(0.6 0.22 150);
-  --chart-4: oklch(0.65 0.2 50);
-  --chart-5: oklch(0.6 0.22 340);
-  --sidebar: oklch(0.91 0.025 295);
-  --sidebar-foreground: oklch(0.13 0.02 285);
-  --sidebar-primary: oklch(0.52 0.26 300);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.88 0.08 340);
-  --sidebar-accent-foreground: oklch(0.2 0.06 300);
-  --sidebar-border: oklch(0.85 0.025 295);
-  --sidebar-ring: oklch(0.52 0.26 300);
-  /* Row colours: violet-tinted alternation */
-  --row-odd: oklch(0.99 0.005 300);
-  --row-even: oklch(0.92 0.035 295);
-  --sheet-border: oklch(0.82 0.045 310);
-  --row-tab: oklch(0.65 0.18 320);
-  /* Region colors */
-  --region-east: #E96ED8;
-  --region-east-bg: oklch(0.92 0.08 330);
-  --region-east-border: oklch(0.75 0.15 330);
-  --region-east-fg: oklch(0.35 0.12 330);
-  --region-west: #2274A5;
-  --region-west-bg: oklch(0.92 0.06 230);
-  --region-west-border: oklch(0.65 0.12 230);
-  --region-west-fg: oklch(0.30 0.08 230);
-  --region-north: #00B85C;
-  --region-north-bg: oklch(0.93 0.06 155);
-  --region-north-border: oklch(0.68 0.14 155);
-  --region-north-fg: oklch(0.30 0.08 155);
-  --region-south: #F75C03;
-  --region-south-bg: oklch(0.93 0.06 55);
-  --region-south-border: oklch(0.72 0.14 55);
-  --region-south-fg: oklch(0.35 0.10 55);
-}
-
-.dark {
-  /* Lifted navy background — closer to light mode brightness */
+  /* Lifted navy background */
   --background: oklch(0.22 0.04 290);
   /* Bright foreground for max contrast */
   --foreground: oklch(0.95 0.01 280);
@@ -186,7 +115,7 @@
   --row-even: oklch(0.28 0.055 295);
   --sheet-border: oklch(0.38 0.06 310);
   --row-tab: oklch(0.50 0.18 340);
-  /* Region colors — dark mode */
+  /* Region colors */
   --region-east: #E96ED8;
   --region-east-bg: oklch(0.30 0.08 330);
   --region-east-border: oklch(0.55 0.15 330);
@@ -220,21 +149,11 @@
 
 /* ── Wash: background-color tint that fades out ── */
 @keyframes wash-up {
-  0%   { background-color: oklch(0.88 0.12 155 / 0.5); }
-  15%  { background-color: oklch(0.88 0.12 155 / 0.5); }
-  100% { background-color: var(--card); }
-}
-@keyframes wash-down {
-  0%   { background-color: oklch(0.88 0.10 25 / 0.45); }
-  15%  { background-color: oklch(0.88 0.10 25 / 0.45); }
-  100% { background-color: var(--card); }
-}
-@keyframes wash-up-dark {
   0%   { background-color: oklch(0.30 0.08 155 / 0.5); }
   15%  { background-color: oklch(0.30 0.08 155 / 0.5); }
   100% { background-color: var(--card); }
 }
-@keyframes wash-down-dark {
+@keyframes wash-down {
   0%   { background-color: oklch(0.30 0.07 25 / 0.45); }
   15%  { background-color: oklch(0.30 0.07 25 / 0.45); }
   100% { background-color: var(--card); }
@@ -244,12 +163,6 @@
 }
 .animate-wash-down {
   animation: wash-down 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-.dark .animate-wash-up {
-  animation: wash-up-dark 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-.dark .animate-wash-down {
-  animation: wash-down-dark 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 /* ── Left accent stripe ── */
@@ -279,17 +192,17 @@
 
 /* ── Edge glow: directional indicator when item moves off-screen ── */
 @keyframes edge-glow {
-  0%   { opacity: 0.9; }
-  40%  { opacity: 0.9; }
+  0%   { opacity: 0.6; }
+  30%  { opacity: 0.6; }
   100% { opacity: 0; }
 }
 .edge-glow-green {
-  background: linear-gradient(to bottom, oklch(0.65 0.22 155 / 0.5), transparent);
-  animation: edge-glow 1.8s ease-out forwards;
+  background: linear-gradient(to bottom, oklch(0.65 0.22 155 / 0.25), transparent);
+  animation: edge-glow 1.4s ease-out forwards;
 }
 .edge-glow-red {
-  background: linear-gradient(to top, oklch(0.60 0.20 25 / 0.5), transparent);
-  animation: edge-glow 1.8s ease-out forwards;
+  background: linear-gradient(to top, oklch(0.60 0.20 25 / 0.25), transparent);
+  animation: edge-glow 1.4s ease-out forwards;
 }
 
 @layer base {
