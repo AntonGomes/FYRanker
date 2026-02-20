@@ -17,7 +17,7 @@ import {
   useSensor,
   useSensors,
   DragOverlay,
-  type DragStartEvent,
+  useDndContext,
   type DragEndEvent,
   type CollisionDetection,
 } from "@dnd-kit/core";
@@ -33,7 +33,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ScoredJob } from "@/lib/scoring";
 import { effectiveScore, computeNudgeAmount } from "@/lib/scoring";
-import type { Job, Placement } from "@/lib/parse-xlsx";
+import type { Job } from "@/lib/parse-xlsx";
 import { JobDetailPanel, getRegionStyle } from "@/components/job-detail-panel";
 import { MoveToDialog } from "@/components/move-to-dialog";
 import { SelectionToolbar } from "@/components/selection-toolbar";
@@ -47,7 +47,6 @@ import {
   Pin,
   Lock,
   HelpCircle,
-
   Download,
   Upload,
   SlidersHorizontal,
@@ -67,21 +66,11 @@ interface ResultsViewProps {
 
 /* ── Helpers ── */
 
-function isValidPlacement(p: Placement) {
-  return p.site && p.site !== "None" && p.site.trim() !== "";
-}
-
-function getPlacementSummary(job: Job) {
-  const sites: string[] = [];
-  const specs = new Set<string>();
-  for (const p of job.placements) {
-    if (isValidPlacement(p)) {
-      if (!sites.includes(p.site)) sites.push(p.site);
-    }
-    if (p.specialty && p.specialty !== "None" && p.specialty.trim() !== "")
-      specs.add(p.specialty);
-  }
-  return { sites, specs: Array.from(specs) };
+function toggleInSet(set: Set<string>, key: string): Set<string> {
+  const next = new Set(set);
+  if (next.has(key)) next.delete(key);
+  else next.add(key);
+  return next;
 }
 
 type PlacementEntry = { site: string; spec: string; num: number };
@@ -94,13 +83,20 @@ function getJobPlacements(job: Job): {
   const fy2: PlacementEntry[] = [];
   for (let i = 0; i < job.placements.length; i++) {
     const p = job.placements[i];
-    if (isValidPlacement(p)) {
+    if (p.site && p.site !== "None" && p.site.trim() !== "") {
       const entry = { site: p.site, spec: p.specialty, num: i + 1 };
       if (i < 3) fy1.push(entry);
       else fy2.push(entry);
     }
   }
   return { fy1, fy2 };
+}
+
+function buildAllPlacements(fy1: PlacementEntry[], fy2: PlacementEntry[]): (PlacementEntry | null)[] {
+  const all: (PlacementEntry | null)[] = [];
+  for (let i = 0; i < 3; i++) all.push(fy1[i] ?? null);
+  for (let i = 0; i < 3; i++) all.push(fy2[i] ?? null);
+  return all;
 }
 
 /* ── Animated score display ── */
@@ -190,117 +186,35 @@ function RankChangeBadge({ delta, direction }: { delta: number | null; direction
   );
 }
 
-/* ── Arrow icons for boost/bury ── */
-function ArrowUp() {
+/* ── Arrow icon for boost/bury ── */
+function NudgeArrow({ direction }: { direction: "up" | "down" }) {
+  const isUp = direction === "up";
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 19V5" />
-      <path d="M5 12L12 5L19 12" />
-    </svg>
-  );
-}
-function ArrowDown() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 5V19" />
-      <path d="M19 12L12 19L5 12" />
+      <path d={isUp ? "M12 19V5" : "M12 5V19"} />
+      <path d={isUp ? "M5 12L12 5L19 12" : "M19 12L12 19L5 12"} />
     </svg>
   );
 }
 
-/* ── Placement row: two-line layout (hospital + specialty) ── */
+const GRID_COLS = "40px auto minmax(100px,auto) repeat(6, minmax(90px, 1fr)) 90px 140px";
+const MOBILE_ICON_BTN = "p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md transition-colors shrink-0";
+const MOBILE_ICON_BTN_DEFAULT = cn(MOBILE_ICON_BTN, "text-muted-foreground hover:text-foreground hover:bg-muted");
 
-const PlacementRow = memo(function PlacementRow({
-  entry,
-}: {
-  entry: PlacementEntry;
-}) {
-  return (
-    <div className="flex gap-2 items-start py-0.5">
-      <span className="w-4 shrink-0 text-xs font-mono font-semibold text-muted-foreground text-right pt-0.5">
-        {entry.num}
-      </span>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold text-foreground leading-tight truncate">
-          {entry.site || "No site listed"}
-        </p>
-        <p className="text-xs font-semibold italic text-foreground leading-tight truncate">
-          {entry.spec || "No specialty listed"}
-        </p>
-      </div>
-    </div>
-  );
-});
-
-/* ── Single FY group: bracket on left, rows on right ── */
-const FYGroup = memo(function FYGroup({
-  label,
-  entries,
-}: {
-  label: string;
-  entries: PlacementEntry[];
-}) {
-  const slots: (PlacementEntry | null)[] = [
-    entries[0] ?? null,
-    entries[1] ?? null,
-    entries[2] ?? null,
-  ];
-
-  return (
-    <div className="flex items-stretch gap-0">
-      {/* Label + left curly bracket */}
-      <div className="flex items-center shrink-0 pr-1.5">
-        <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mr-1 whitespace-nowrap">
-          {label}
-        </span>
-        <svg
-          className="text-muted-foreground shrink-0"
-          width="10"
-          viewBox="0 0 10 60"
-          preserveAspectRatio="none"
-          style={{ height: "100%" }}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-        >
-          <path d="M10,2 Q4,2 4,15 Q4,28 0,30 Q4,32 4,45 Q4,58 10,58" />
-        </svg>
-      </div>
-      {/* Rows */}
-      <div className="flex-1 min-w-0 flex flex-col">
-        {slots.map((entry, i) =>
-          entry ? (
-            <PlacementRow key={entry.num} entry={entry} />
-          ) : (
-            <div key={i} className="flex gap-2 items-start py-0.5">
-              <span className="w-4 shrink-0 text-xs font-mono font-semibold text-muted-foreground text-right pt-0.5" />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground leading-tight">No placement</p>
-                <p className="text-xs text-muted-foreground leading-tight">&nbsp;</p>
-              </div>
-            </div>
-          )
-        )}
-      </div>
-    </div>
-  );
-});
-
-/* ── Placement list (FY1 + FY2 groups) ── */
-const PlacementList = memo(function PlacementList({
-  fy1,
-  fy2,
-}: {
-  fy1: PlacementEntry[];
-  fy2: PlacementEntry[];
-}) {
-  return (
-    <div className="space-y-0.5">
-      <FYGroup label="FY1" entries={fy1} />
-      <FYGroup label="FY2" entries={fy2} />
-    </div>
-  );
-});
+/* ── Column header definitions ── */
+const COLUMN_HEADERS: { label: string; align?: string; sub?: string }[] = [
+  { label: "#", align: "text-right pr-2" },
+  { label: "Region", align: "text-center" },
+  { label: "Programme", align: "pr-16" },
+  { label: "P1", sub: "(FY1)" },
+  { label: "P2", sub: "(FY1)" },
+  { label: "P3", sub: "(FY1)" },
+  { label: "P4", sub: "(FY2)" },
+  { label: "P5", sub: "(FY2)" },
+  { label: "P6", sub: "(FY2)" },
+  { label: "Score", align: "text-center" },
+  { label: "Actions", align: "text-center" },
+];
 
 /* ── Swipe-to-boost/bury hook (mobile) ── */
 const SWIPE_THRESHOLD = 60;
@@ -386,6 +300,7 @@ const ListRow = memo(function ListRow({
   isSelected,
   isPinned,
   isLocked,
+  isEvenRow,
   isMobile,
   onSelectDetail,
   onToggleSelect,
@@ -403,6 +318,7 @@ const ListRow = memo(function ListRow({
   isSelected: boolean;
   isPinned: boolean;
   isLocked: boolean;
+  isEvenRow: boolean;
   isMobile?: boolean;
   onSelectDetail: (job: Job) => void;
   onToggleSelect: (jobId: string) => void;
@@ -415,6 +331,8 @@ const ListRow = memo(function ListRow({
   glowKey: number;
   rankDelta: number | null;
 }) {
+  const id = scored.job.programmeTitle;
+  const stop = (e: React.MouseEvent | React.PointerEvent) => e.stopPropagation();
   const {
     attributes,
     listeners,
@@ -422,32 +340,27 @@ const ListRow = memo(function ListRow({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: scored.job.programmeTitle, disabled: isLocked });
+  } = useSortable({ id, disabled: isLocked });
 
-  const style = {
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
+    // When dnd-kit shifts this row, elevate it above sibling virtualizer
+    // wrappers so opaque row backgrounds don't obscure the shifted content.
+    ...(transform ? { position: 'relative' as const, zIndex: 1 } : undefined),
   };
 
   const regionStyle = getRegionStyle(scored.job.region);
   const { fy1, fy2 } = getJobPlacements(scored.job);
   const score = effectiveScore(scored);
 
-  const washClass =
-    flashDirection === "up"
-      ? "animate-wash-up"
-      : flashDirection === "down"
-        ? "animate-wash-down"
-        : "";
+  const washClass = flashDirection === "up" ? "animate-wash-up" : flashDirection === "down" ? "animate-wash-down" : "";
 
-  // Build placement array for all 6 slots
-  const allPlacements: (PlacementEntry | null)[] = [];
-  for (let i = 0; i < 3; i++) allPlacements.push(fy1[i] ?? null);
-  for (let i = 0; i < 3; i++) allPlacements.push(fy2[i] ?? null);
+  const allPlacements = buildAllPlacements(fy1, fy2);
 
   // Swipe gesture for mobile boost/bury
-  const handleSwipeBoost = useCallback(() => onBoost(scored.job.programmeTitle), [onBoost, scored.job.programmeTitle]);
-  const handleSwipeBury = useCallback(() => onBury(scored.job.programmeTitle), [onBury, scored.job.programmeTitle]);
+  const handleSwipeBoost = useCallback(() => onBoost(id), [onBoost, id]);
+  const handleSwipeBury = useCallback(() => onBury(id), [onBury, id]);
   const { swipeX, swipeCommitted, pendingAction, onTouchStart, onTouchMove, onTouchEnd } = useSwipeBoostBury({
     onBoost: handleSwipeBoost,
     onBury: handleSwipeBury,
@@ -460,7 +373,7 @@ const ListRow = memo(function ListRow({
       <div
         key={glowKey}
         ref={setNodeRef}
-        data-job-id={scored.job.programmeTitle}
+        data-job-id={id}
         style={{
           ...style,
           boxShadow: isSelected
@@ -489,7 +402,7 @@ const ListRow = memo(function ListRow({
           )}>
             {swipeX > 15 && (
               <div className="flex items-center gap-2">
-                <ArrowUp />
+                <NudgeArrow direction="up" />
                 <span className={cn(
                   "text-sm font-bold transition-opacity",
                   pendingAction === "boost" ? "text-white opacity-100" : "text-emerald-400 opacity-70"
@@ -509,7 +422,7 @@ const ListRow = memo(function ListRow({
                   "text-sm font-bold transition-opacity",
                   pendingAction === "bury" ? "text-white opacity-100" : "text-red-400 opacity-70"
                 )}>Bury</span>
-                <ArrowDown />
+                <NudgeArrow direction="down" />
               </div>
             )}
           </div>
@@ -604,10 +517,10 @@ const ListRow = memo(function ListRow({
     <div
       key={glowKey}
       ref={setNodeRef}
-      data-job-id={scored.job.programmeTitle}
+      data-job-id={id}
       style={{
         ...style,
-        gridTemplateColumns: "40px auto minmax(100px,auto) repeat(6, minmax(90px, 1fr)) 90px 140px",
+        gridTemplateColumns: GRID_COLS,
         boxShadow: isSelected
           ? undefined
           : `inset 3px 0 0 ${regionStyle.color}40`,
@@ -619,7 +532,7 @@ const ListRow = memo(function ListRow({
         isLocked ? "cursor-default" : "cursor-grab",
         isSelected
           ? "bg-card-selected ring-1 ring-primary/60"
-          : "hover:bg-card-hover",
+          : isEvenRow ? "bg-row-even hover:bg-card-hover" : "bg-row-odd hover:bg-card-hover",
         isDragging && "opacity-30 scale-[0.97] z-50",
         isLocked && "bg-amber-950/20",
         washClass
@@ -682,100 +595,35 @@ const ListRow = memo(function ListRow({
 
       {/* Actions */}
       <div className="flex items-center justify-center gap-0.5">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onBoost(scored.job.programmeTitle);
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-          className={cn(
-            "p-0.5 rounded text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 active:scale-90 transition-all",
-            isLocked && "pointer-events-none opacity-30"
-          )}
-          title="Boost"
-        >
-          <ArrowUp />
+        <button onClick={(e) => { stop(e); onBoost(id); }} onPointerDown={stop}
+          className={cn("p-0.5 rounded text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 active:scale-90 transition-all", isLocked && "pointer-events-none opacity-30")}
+          title="Boost">
+          <NudgeArrow direction="up" />
         </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onBury(scored.job.programmeTitle);
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-          className={cn(
-            "p-0.5 rounded text-red-500 hover:text-red-400 hover:bg-red-500/10 active:scale-90 transition-all",
-            isLocked && "pointer-events-none opacity-30"
-          )}
-          title="Bury"
-        >
-          <ArrowDown />
+        <button onClick={(e) => { stop(e); onBury(id); }} onPointerDown={stop}
+          className={cn("p-0.5 rounded text-red-500 hover:text-red-400 hover:bg-red-500/10 active:scale-90 transition-all", isLocked && "pointer-events-none opacity-30")}
+          title="Bury">
+          <NudgeArrow direction="down" />
         </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onMoveToOpen(scored.job.programmeTitle, rank);
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-          className={cn(
-            "p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors",
-            isLocked && "pointer-events-none opacity-30"
-          )}
-          title="Move to..."
-        >
+        <button onClick={(e) => { stop(e); onMoveToOpen(id, rank); }} onPointerDown={stop}
+          className={cn("p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors", isLocked && "pointer-events-none opacity-30")}
+          title="Move to...">
           <ArrowUpDown className="h-4 w-4" />
         </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onTogglePin(scored.job.programmeTitle);
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-          className={cn(
-            "p-0.5 rounded transition-colors",
-            isPinned
-              ? "text-primary"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          )}
-          title={isPinned ? "Unpin" : "Pin"}
-        >
+        <button onClick={(e) => { stop(e); onTogglePin(id); }} onPointerDown={stop}
+          className={cn("p-0.5 rounded transition-colors", isPinned ? "text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}
+          title={isPinned ? "Unpin" : "Pin"}>
           <Pin className={cn("h-3.5 w-3.5", isPinned && "fill-primary")} />
         </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleLock(scored.job.programmeTitle);
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-          className={cn(
-            "p-0.5 rounded transition-colors",
-            isLocked
-              ? "text-amber-500"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-          )}
-          title={isLocked ? "Unlock" : "Lock"}
-        >
+        <button onClick={(e) => { stop(e); onToggleLock(id); }} onPointerDown={stop}
+          className={cn("p-0.5 rounded transition-colors", isLocked ? "text-amber-500" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}
+          title={isLocked ? "Unlock" : "Lock"}>
           <Lock className={cn("h-3.5 w-3.5", isLocked && "fill-amber-500/20")} />
         </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleSelect(scored.job.programmeTitle);
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-          className="p-0.5 flex items-center justify-center"
-          title={isSelected ? "Deselect" : "Select"}
-        >
-          <div
-            className={cn(
-              "h-4 w-4 rounded-full border-2 flex items-center justify-center transition-colors",
-              isSelected
-                ? "bg-primary border-primary"
-                : "border-muted-foreground hover:border-primary"
-            )}
-          >
-            {isSelected && (
-              <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />
-            )}
+        <button onClick={(e) => { stop(e); onToggleSelect(id); }} onPointerDown={stop}
+          className="p-0.5 flex items-center justify-center" title={isSelected ? "Deselect" : "Select"}>
+          <div className={cn("h-4 w-4 rounded-full border-2 flex items-center justify-center transition-colors", isSelected ? "bg-primary border-primary" : "border-muted-foreground hover:border-primary")}>
+            {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />}
           </div>
         </button>
       </div>
@@ -797,9 +645,7 @@ const ListDragOverlayRow = memo(function ListDragOverlayRow({
   const { fy1, fy2 } = getJobPlacements(scored.job);
   const score = effectiveScore(scored);
 
-  const allPlacements: (PlacementEntry | null)[] = [];
-  for (let i = 0; i < 3; i++) allPlacements.push(fy1[i] ?? null);
-  for (let i = 0; i < 3; i++) allPlacements.push(fy2[i] ?? null);
+  const allPlacements = buildAllPlacements(fy1, fy2);
 
   if (isMobile) {
     return (
@@ -820,35 +666,48 @@ const ListDragOverlayRow = memo(function ListDragOverlayRow({
             <span className="font-mono tabular-nums text-xs font-semibold text-foreground">{score.toFixed(3)}</span>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-x-3 gap-y-0 mt-1.5">
-          <div>
-            <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">FY1</span>
-            {[0, 1, 2].map((i) => {
-              const entry = fy1[i];
-              return entry ? (
-                <div key={entry.num} className="mt-1.5">
-                  <p className="text-[11px] font-semibold text-foreground leading-tight truncate">{entry.site}</p>
-                  <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate">{entry.spec}</p>
-                </div>
-              ) : (
-                <div key={i} className="mt-1.5"><span className="text-[11px] text-muted-foreground">—</span></div>
-              );
-            })}
-          </div>
-          <div>
-            <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">FY2</span>
-            {[0, 1, 2].map((i) => {
-              const entry = fy2[i];
-              return entry ? (
-                <div key={entry.num} className="mt-1.5">
-                  <p className="text-[11px] font-semibold text-foreground leading-tight truncate">{entry.site}</p>
-                  <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate">{entry.spec}</p>
-                </div>
-              ) : (
-                <div key={i} className="mt-1.5"><span className="text-[11px] text-muted-foreground">—</span></div>
-              );
-            })}
-          </div>
+        <div className="grid grid-cols-2 gap-x-3 mt-1.5">
+          {([["FY1", fy1, 0], ["FY2", fy2, 3]] as const).map(([label, entries, offset]) => (
+            <div key={label}>
+              <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">
+                {label}
+              </span>
+              {[0, 1, 2].map((i) => {
+                const entry = entries[i];
+                const slotNum = offset + i + 1;
+                return (
+                  <div
+                    key={slotNum}
+                    className={cn(
+                      "mt-0.5 pt-0.5",
+                      i > 0 && "border-t border-border/40"
+                    )}
+                  >
+                    {entry ? (
+                      <>
+                        <p className="text-[11px] font-semibold text-foreground leading-tight truncate">
+                          <span className="inline-block w-3 text-[10px] font-bold text-muted-foreground tabular-nums">
+                            {slotNum}
+                          </span>
+                          {entry.site || "No site listed"}
+                        </p>
+                        <p className="text-[11px] font-semibold italic text-foreground leading-tight truncate pl-3">
+                          {entry.spec || "No specialty listed"}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground leading-tight">
+                        <span className="inline-block w-3 text-[10px] font-bold tabular-nums">
+                          {slotNum}
+                        </span>
+                        —
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -858,7 +717,7 @@ const ListDragOverlayRow = memo(function ListDragOverlayRow({
     <div
       className="grid items-center gap-x-0.5 h-[56px] bg-card-drag ring-2 ring-primary/50 scale-[1.03] rounded-md transition-all duration-150"
       style={{
-        gridTemplateColumns: "40px auto minmax(100px,auto) repeat(6, minmax(90px, 1fr)) 90px 140px",
+        gridTemplateColumns: GRID_COLS,
         boxShadow: `0 12px 32px ${regionStyle.color}40, 0 6px 16px rgba(0,0,0,0.15)`,
       }}
     >
@@ -909,6 +768,37 @@ const ListDragOverlayRow = memo(function ListDragOverlayRow({
   );
 });
 
+/* ── Isolated DragOverlay: reads active item via dnd context
+      so the parent doesn't re-render on drag start ── */
+const SortableDragOverlay = memo(function SortableDragOverlay({
+  rankedJobs,
+  indexById,
+  isMobile,
+}: {
+  rankedJobs: ScoredJob[];
+  indexById: Map<string, number>;
+  isMobile: boolean;
+}) {
+  const { active } = useDndContext();
+  const activeId = active?.id as string | undefined;
+  const activeScored = activeId
+    ? rankedJobs[indexById.get(activeId) ?? -1] ?? null
+    : null;
+  const activeScoredRank = activeId ? (indexById.get(activeId) ?? 0) + 1 : 0;
+
+  return (
+    <DragOverlay dropAnimation={null}>
+      {activeScored ? (
+        <ListDragOverlayRow
+          scored={activeScored}
+          rank={activeScoredRank}
+          isMobile={isMobile}
+        />
+      ) : null}
+    </DragOverlay>
+  );
+});
+
 /* ════════════════════════════════════════════════════════════
    Main results view
    ════════════════════════════════════════════════════════════ */
@@ -922,38 +812,16 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const [selectedDetail, setSelectedDetail] = useState<Job | null>(null);
   const [compareJobs, setCompareJobs] = useState<Job[]>([]);
   const [showCompare, setShowCompare] = useState(false);
-  const [activeId, setActiveId] = useState<string | null>(null);
-
-  // Boost/Bury flash tracking
   const rankDeltaRef = useRef<Map<string, number>>(new Map());
-  const [flashMap, setFlashMap] = useState<
-    Map<string, "up" | "down">
-  >(new Map());
-
-  // Move To dialog
-  const [moveToState, setMoveToState] = useState<{
-    jobId: string;
-    rank: number;
-  } | null>(null);
-
-  // Multiselect
+  const [flashMap, setFlashMap] = useState<Map<string, "up" | "down">>(new Map());
+  const [moveToState, setMoveToState] = useState<{ jobId: string; rank: number } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
-  // Move To for bulk (from toolbar)
   const [bulkMoveToOpen, setBulkMoveToOpen] = useState(false);
-
-  // Pin
   const [pinnedJobIds, setPinnedJobIds] = useState<Set<string>>(new Set());
   const [scrollDir, setScrollDir] = useState<"down" | "up">("down");
   const lastScrollTop = useRef(0);
-
-  // Lock
   const [lockedJobIds, setLockedJobIds] = useState<Set<string>>(new Set());
-
-  // Help modal
   const [showHelp, setShowHelp] = useState(false);
-
-  // Undo/Redo
   const [history, setHistory] = useState<ScoredJob[][]>([]);
   const [future, setFuture] = useState<ScoredJob[][]>([]);
 
@@ -980,27 +848,15 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     setFuture(f => f.slice(1));
   }, [future, rankedJobs]);
 
-  // Mobile search expanded state
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-
-  // Mobile filters
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-
-
-  // Import
   const importFileRef = useRef<HTMLInputElement>(null);
-
-  // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [regionFilter, setRegionFilter] = useState<string>("all");
   const [hospitalFilter, setHospitalFilter] = useState<string>("all");
   const [specialtyFilter, setSpecialtyFilter] = useState<string>("all");
-
-  // Scroll ref
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-
-  // Scroll-to-card after boost/bury/move
   const scrollToJobIdRef = useRef<string | null>(null);
 
   // Flying ghost card state (boost/bury visual feedback) — queue-based for concurrent ghosts
@@ -1063,39 +919,52 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     })
   );
 
-  /* ── Nudge amount ── */
-  const nudgeAmount = useMemo(
-    () => computeNudgeAmount(rankedJobs),
-    [rankedJobs]
-  );
+  /* ── Nudge amount (stable — score distribution doesn't change on reorder) ── */
+  const nudgeAmountRef = useRef<number | null>(null);
+  if (nudgeAmountRef.current === null) {
+    nudgeAmountRef.current = computeNudgeAmount(rankedJobs);
+  }
+  const nudgeAmount = nudgeAmountRef.current;
 
   /* ── Derived data ── */
 
+  // Stable job set ref — only updates when the set of jobs changes (not on reorder/score tweaks)
+  const jobIdsRef = useRef<Set<string>>(new Set(rankedJobs.map(s => s.job.programmeTitle)));
+  const [stableJobs, setStableJobs] = useState(rankedJobs);
+  useEffect(() => {
+    const newIds = new Set(rankedJobs.map(s => s.job.programmeTitle));
+    const prevIds = jobIdsRef.current;
+    if (newIds.size !== prevIds.size || [...newIds].some(id => !prevIds.has(id))) {
+      jobIdsRef.current = newIds;
+      setStableJobs(rankedJobs);
+    }
+  }, [rankedJobs]);
+
   const allRegions = useMemo(() => {
     const set = new Set<string>();
-    rankedJobs.forEach((s) => set.add(s.job.region));
+    stableJobs.forEach((s) => set.add(s.job.region));
     return Array.from(set).sort();
-  }, [rankedJobs]);
+  }, [stableJobs]);
 
   const allHospitals = useMemo(() => {
     const set = new Set<string>();
-    rankedJobs.forEach((s) => {
+    stableJobs.forEach((s) => {
       for (const p of s.job.placements) {
         if (p.site && p.site !== "None" && p.site.trim() !== "") set.add(p.site);
       }
     });
     return Array.from(set).sort();
-  }, [rankedJobs]);
+  }, [stableJobs]);
 
   const allSpecialties = useMemo(() => {
     const set = new Set<string>();
-    rankedJobs.forEach((s) => {
+    stableJobs.forEach((s) => {
       for (const p of s.job.placements) {
         if (p.specialty && p.specialty !== "None" && p.specialty.trim() !== "") set.add(p.specialty);
       }
     });
     return Array.from(set).sort();
-  }, [rankedJobs]);
+  }, [stableJobs]);
 
   // O(1) lookup: id → global index in rankedJobs
   const indexById = useMemo(() => {
@@ -1105,34 +974,15 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   }, [rankedJobs]);
 
   const filteredJobs = useMemo(() => {
+    const q = searchQuery.toLowerCase();
     return rankedJobs.filter((s) => {
       if (regionFilter !== "all" && s.job.region !== regionFilter) return false;
-
-      if (hospitalFilter !== "all") {
-        if (!s.job.placements.some((p) => p.site === hospitalFilter)) return false;
+      if (hospitalFilter !== "all" && !s.job.placements.some((p) => p.site === hospitalFilter)) return false;
+      if (specialtyFilter !== "all" && !s.job.placements.some((p) => p.specialty === specialtyFilter)) return false;
+      if (q) {
+        const haystack = [s.job.programmeTitle, s.job.region, ...s.job.placements.flatMap(p => [p.site, p.specialty])].join(" ").toLowerCase();
+        if (!haystack.includes(q)) return false;
       }
-
-      if (specialtyFilter !== "all") {
-        if (!s.job.placements.some((p) => p.specialty === specialtyFilter)) return false;
-      }
-
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        const title = s.job.programmeTitle.toLowerCase();
-        const region = s.job.region.toLowerCase();
-        let haystack = "";
-        for (const p of s.job.placements) {
-          haystack += " " + p.site.toLowerCase();
-          haystack += " " + p.specialty.toLowerCase();
-        }
-        if (
-          !title.includes(q) &&
-          !region.includes(q) &&
-          !haystack.includes(q)
-        )
-          return false;
-      }
-
       return true;
     });
   }, [rankedJobs, searchQuery, regionFilter, hospitalFilter, specialtyFilter]);
@@ -1140,7 +990,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const filteredJobsRef = useRef(filteredJobs);
   filteredJobsRef.current = filteredJobs;
 
-  // IDs for SortableContext
+  // All IDs (used by handleDragEnd for index lookups)
   const filteredIds = useMemo(
     () => filteredJobs.map((s) => s.job.programmeTitle),
     [filteredJobs]
@@ -1156,6 +1006,16 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   });
   const virtualizerRef = useRef(virtualizer);
   virtualizerRef.current = virtualizer;
+
+  // All IDs for SortableContext — dnd-kit needs the full ordered list to
+  // compute correct transforms during drag. Only rendered rows have useSortable
+  // hooks, so the perf cost is minimal. Collision detection already filters to
+  // visible droppables via customCollisionDetection.
+  const virtualItems = virtualizer.getVirtualItems();
+  const sortableIds = useMemo(
+    () => filteredJobs.map((sj) => sj.job.programmeTitle),
+    [filteredJobs]
+  );
 
   // Reset scroll on filter change or view mode switch
   useEffect(() => {
@@ -1209,13 +1069,16 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   }, [filteredJobs, pinnedJobIds]);
 
   /* ── Custom collision detection ──
-     Filter to only rendered (virtualized) items for performance. */
+     Filter to only rendered (virtualized) items for performance.
+     Uses refs to avoid recreating the function on every render. */
   const customCollisionDetection: CollisionDetection = useCallback(
     (args) => {
-      const virtualItems = virtualizer.getVirtualItems();
+      const virt = virtualizerRef.current;
+      const jobs = filteredJobsRef.current;
+      const virtualItems = virt.getVirtualItems();
       const visibleIds = new Set<string>();
       virtualItems.forEach((vRow) => {
-        visibleIds.add(filteredJobs[vRow.index]?.job.programmeTitle);
+        visibleIds.add(jobs[vRow.index]?.job.programmeTitle);
       });
 
       const filtered = args.droppableContainers.filter((dc) =>
@@ -1228,7 +1091,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
       return closestCenter({ ...args, droppableContainers: filtered });
     },
-    [virtualizer, filteredJobs]
+    [] // stable — reads from refs
   );
 
   /* ── Actions ── */
@@ -1492,15 +1355,8 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     [nudgeAmount, lockedJobIds, pushAndSetRanked, launchGhost, launchCascadeGhosts, applyPendingSort]
   );
 
-  const handleBoost = useCallback(
-    (jobId: string) => handleNudge(jobId, 'up'),
-    [handleNudge]
-  );
-
-  const handleBury = useCallback(
-    (jobId: string) => handleNudge(jobId, 'down'),
-    [handleNudge]
-  );
+  const handleBoost = useCallback((jobId: string) => handleNudge(jobId, 'up'), [handleNudge]);
+  const handleBury = useCallback((jobId: string) => handleNudge(jobId, 'down'), [handleNudge]);
 
   /* ── Move To ── */
   const handleMoveTo = useCallback((jobId: string, targetRank: number) => {
@@ -1517,37 +1373,12 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     });
   }, [lockedJobIds, pushAndSetRanked]);
 
-  const openMoveTo = useCallback(
-    (jobId: string, rank: number) => {
-      setMoveToState({ jobId, rank });
-    },
-    []
-  );
+  const openMoveTo = useCallback((jobId: string, rank: number) => setMoveToState({ jobId, rank }), []);
 
   /* ── Multiselect ── */
   const toggleSelect = useCallback((jobId: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(jobId)) next.delete(jobId);
-      else next.add(jobId);
-      return next;
-    });
+    setSelectedIds((prev) => toggleInSet(prev, jobId));
   }, []);
-
-  const selectRow = useCallback(
-    (rowIndex: number) => {
-      const sj = filteredJobs[rowIndex];
-      if (!sj) return;
-      const jobId = sj.job.programmeTitle;
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(jobId)) next.delete(jobId);
-        else next.add(jobId);
-        return next;
-      });
-    },
-    [filteredJobs]
-  );
 
   const clearSelection = useCallback(() => {
     setSelectedIds(new Set());
@@ -1602,42 +1433,32 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const handleBulkBoost = useCallback(() => handleBulkNudge('up'), [handleBulkNudge]);
   const handleBulkBury = useCallback(() => handleBulkNudge('down'), [handleBulkNudge]);
 
-  const handleBulkMoveTo = useCallback(
-    (targetRank: number) => {
-      pushAndSetRanked((prev) => {
-        const selectedJobs = prev.filter((sj) => selectedIds.has(sj.job.programmeTitle) && !lockedJobIds.has(sj.job.programmeTitle));
-        if (selectedJobs.length === 0) return prev;
-        const remaining = prev.filter((sj) => !(selectedIds.has(sj.job.programmeTitle) && !lockedJobIds.has(sj.job.programmeTitle)));
-        const insertIdx = Math.max(
-          0,
-          Math.min(targetRank - 1, remaining.length)
-        );
-        const result = [...remaining];
-        result.splice(insertIdx, 0, ...selectedJobs);
-        return result;
-      });
-    },
-    [selectedIds, lockedJobIds, pushAndSetRanked]
-  );
-
-  /* ── Pin row ── */
-  const togglePin = useCallback((jobId: string) => {
-    setPinnedJobIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(jobId)) next.delete(jobId);
-      else next.add(jobId);
-      return next;
-    });
+  /* ── Clear all filters ── */
+  const clearAllFilters = useCallback(() => {
+    setSearchQuery("");
+    setRegionFilter("all");
+    setHospitalFilter("all");
+    setSpecialtyFilter("all");
   }, []);
 
-  /* ── Lock row ── */
-  const toggleLock = useCallback((jobId: string) => {
-    setLockedJobIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(jobId)) next.delete(jobId);
-      else next.add(jobId);
-      return next;
+  const handleBulkMoveTo = useCallback((targetRank: number) => {
+    const isMovable = (sj: ScoredJob) => selectedIds.has(sj.job.programmeTitle) && !lockedJobIds.has(sj.job.programmeTitle);
+    pushAndSetRanked((prev) => {
+      const selected = prev.filter(isMovable);
+      if (selected.length === 0) return prev;
+      const remaining = prev.filter((sj) => !isMovable(sj));
+      const insertIdx = Math.max(0, Math.min(targetRank - 1, remaining.length));
+      remaining.splice(insertIdx, 0, ...selected);
+      return remaining;
     });
+  }, [selectedIds, lockedJobIds, pushAndSetRanked]);
+
+  const togglePin = useCallback((jobId: string) => {
+    setPinnedJobIds((prev) => toggleInSet(prev, jobId));
+  }, []);
+
+  const toggleLock = useCallback((jobId: string) => {
+    setLockedJobIds((prev) => toggleInSet(prev, jobId));
   }, []);
 
   /* ── Import handler ── */
@@ -1663,13 +1484,8 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
   /* ── DnD handlers ── */
 
-  function handleDragStart(event: DragStartEvent) {
-    setActiveId(event.active.id as string);
-  }
-
-  function handleDragEnd(event: DragEndEvent) {
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
-    setActiveId(null);
 
     if (!over || active.id === over.id) return;
 
@@ -1680,8 +1496,9 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     if (lockedJobIds.has(activeIdStr) || lockedJobIds.has(overIdStr)) return;
 
     pushAndSetRanked((prev) => {
-      const oldIndex = prev.findIndex((s) => s.job.programmeTitle === activeIdStr);
-      const newIndex = prev.findIndex((s) => s.job.programmeTitle === overIdStr);
+      const idxMap = new Map(prev.map((s, i) => [s.job.programmeTitle, i]));
+      const oldIndex = idxMap.get(activeIdStr) ?? -1;
+      const newIndex = idxMap.get(overIdStr) ?? -1;
       if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex)
         return prev;
       const reordered = arrayMove(prev, oldIndex, newIndex);
@@ -1698,11 +1515,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
       return reordered;
     });
-  }
-
-  function handleDragCancel() {
-    setActiveId(null);
-  }
+  }, [lockedJobIds, pushAndSetRanked]);
 
   /* ── Scroll direction tracking for pinned rows + auto-collapse mobile filters ── */
   const handleScroll = useCallback(() => {
@@ -1714,12 +1527,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     setMobileFiltersOpen(false);
   }, []);
 
-  /* ── Overlay data ── */
-  const activeScored = activeId
-    ? rankedJobs.find((s) => s.job.programmeTitle === activeId) ?? null
-    : null;
-  const activeScoredRank = activeId ? (indexById.get(activeId) ?? 0) + 1 : 0;
-
   const hasActiveFilters =
     searchQuery !== "" ||
     regionFilter !== "all" ||
@@ -1727,8 +1534,9 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     specialtyFilter !== "all";
 
   /* ── Helper: render a single list row ── */
-  function renderListRow(jobIndex: number) {
-    const s = filteredJobs[jobIndex];
+  const renderListRow = useCallback((jobIndex: number) => {
+    const jobs = filteredJobsRef.current;
+    const s = jobs[jobIndex];
     if (!s) return null;
     const globalIdx = indexById.get(s.job.programmeTitle) ?? 0;
     const isHidden = hiddenJobIds.has(s.job.programmeTitle);
@@ -1741,6 +1549,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
           isSelected={selectedIds.has(s.job.programmeTitle)}
           isPinned={pinnedJobIds.has(s.job.programmeTitle)}
           isLocked={lockedJobIds.has(s.job.programmeTitle)}
+          isEvenRow={jobIndex % 2 === 0}
           isMobile={isMobile}
           onSelectDetail={setSelectedDetail}
           onToggleSelect={toggleSelect}
@@ -1755,7 +1564,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         />
       </div>
     );
-  }
+  }, [filteredJobs, indexById, hiddenJobIds, selectedIds, pinnedJobIds, lockedJobIds, isMobile, flashMap, toggleSelect, togglePin, toggleLock, handleBoost, handleBury, openMoveTo]);
 
   /* ══════════════════════════════════════════
      Render
@@ -1827,12 +1636,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
           {hasActiveFilters && (
             <button
-              onClick={() => {
-                setSearchQuery("");
-                setRegionFilter("all");
-                setHospitalFilter("all");
-                setSpecialtyFilter("all");
-              }}
+              onClick={clearAllFilters}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
             >
               Clear filters
@@ -1933,7 +1737,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
             </div>
             <button
               onClick={() => { setMobileSearchOpen(false); setSearchQuery(""); }}
-              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+              className={MOBILE_ICON_BTN_DEFAULT}
               title="Close search"
             >
               <X className="h-4 w-4" />
@@ -1951,7 +1755,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
             <button
               onClick={() => setMobileFiltersOpen((o) => !o)}
               className={cn(
-                "relative p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md transition-colors shrink-0",
+                cn("relative", MOBILE_ICON_BTN),
                 mobileFiltersOpen
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -1966,7 +1770,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
             <button
               onClick={() => setMobileSearchOpen(true)}
-              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+              className={MOBILE_ICON_BTN_DEFAULT}
               title="Search"
             >
               <Search className="h-4 w-4" />
@@ -1974,7 +1778,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
             <button
               onClick={() => exportRankingsToXlsx(rankedJobs)}
-              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+              className={MOBILE_ICON_BTN_DEFAULT}
               title="Export"
             >
               <Download className="h-4 w-4" />
@@ -1982,7 +1786,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
             <button
               onClick={() => importFileRef.current?.click()}
-              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+              className={MOBILE_ICON_BTN_DEFAULT}
               title="Import"
             >
               <Upload className="h-4 w-4" />
@@ -1992,7 +1796,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
               onClick={handleUndo}
               disabled={history.length === 0}
               className={cn(
-                "p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md transition-colors shrink-0",
+                MOBILE_ICON_BTN,
                 history.length === 0
                   ? "text-muted-foreground/30"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -2006,7 +1810,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
               onClick={handleRedo}
               disabled={future.length === 0}
               className={cn(
-                "p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md transition-colors shrink-0",
+                MOBILE_ICON_BTN,
                 future.length === 0
                   ? "text-muted-foreground/30"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -2018,7 +1822,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
             <button
               onClick={() => setShowHelp(true)}
-              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0 ml-auto"
+              className={cn(MOBILE_ICON_BTN_DEFAULT, "ml-auto")}
               title="Help"
             >
               <HelpCircle className="h-4 w-4" />
@@ -2103,7 +1907,8 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
               >
                 {compareJobs.map((job) => {
                   const style = getRegionStyle(job.region);
-                  const { sites, specs } = getPlacementSummary(job);
+                  const sites = [...new Set(job.placements.filter(p => p.site && p.site !== "None" && p.site.trim() !== "").map(p => p.site))];
+                  const specs = [...new Set(job.placements.filter(p => p.specialty && p.specialty !== "None" && p.specialty.trim() !== "").map(p => p.specialty))];
                   return (
                     <div
                       key={job.programmeTitle}
@@ -2231,9 +2036,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       <DndContext
         sensors={sensors}
         collisionDetection={customCollisionDetection}
-        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
-        onDragCancel={handleDragCancel}
         autoScroll={{
           threshold: { x: 0, y: 0.2 },
           acceleration: 15,
@@ -2241,7 +2044,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       >
         <div className="flex-1 flex overflow-hidden">
           <SortableContext
-            items={filteredIds}
+            items={sortableIds}
             strategy={verticalListSortingStrategy}
           >
             <div ref={contentRef} className="flex-1 flex flex-col overflow-hidden relative">
@@ -2262,7 +2065,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                 scrollDir === "down" && (
                   <div className="shrink-0 z-10 shadow-md border-b max-h-[30vh] overflow-y-auto">
                     {pinnedRowIndices.map((jobIdx) => (
-                      <div key={`pin-${jobIdx}`} className={cn(!isMobile && (jobIdx % 2 === 0 ? "bg-row-even" : "bg-row-odd"))}>
+                      <div key={`pin-${jobIdx}`}>
                         {renderListRow(jobIdx)}
                       </div>
                     ))}
@@ -2280,43 +2083,31 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                   <div
                     className="hidden sm:grid items-center gap-x-0.5 h-[32px] border-b-2 border-border bg-secondary/30"
                     style={{
-                      gridTemplateColumns: "40px auto minmax(100px,auto) repeat(6, minmax(90px, 1fr)) 90px 140px",
+                      gridTemplateColumns: GRID_COLS,
                     }}
                   >
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-right pr-2">#</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-center">Region</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pr-16">Programme</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pr-1.5">P1 <span className="font-normal text-muted-foreground">(FY1)</span></span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pr-1.5">P2 <span className="font-normal text-muted-foreground">(FY1)</span></span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pr-1.5">P3 <span className="font-normal text-muted-foreground">(FY1)</span></span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pr-1.5">P4 <span className="font-normal text-muted-foreground">(FY2)</span></span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pr-1.5">P5 <span className="font-normal text-muted-foreground">(FY2)</span></span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground pr-1.5">P6 <span className="font-normal text-muted-foreground">(FY2)</span></span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-center">Score</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-center">Actions</span>
+                    {COLUMN_HEADERS.map((col) => (
+                      <span key={col.label} className={cn("text-[10px] font-bold uppercase tracking-wider text-muted-foreground", col.align ?? "pr-1.5")}>
+                        {col.label}{col.sub && <> <span className="font-normal text-muted-foreground">{col.sub}</span></>}
+                      </span>
+                    ))}
                   </div>
                   <div
                     className="relative"
                     style={{ height: `${virtualizer.getTotalSize()}px` }}
                   >
-                    {virtualizer.getVirtualItems().map((virtualRow) => {
-                      const isEvenRow = virtualRow.index % 2 === 0;
-                      return (
-                        <div
-                          key={virtualRow.index}
-                          className={cn(
-                            "absolute left-0 right-0",
-                            !isMobile && (isEvenRow ? "bg-row-even" : "bg-row-odd")
-                          )}
-                          style={{
-                            height: `${virtualRow.size}px`,
-                            transform: `translateY(${virtualRow.start}px)`,
-                          }}
-                        >
-                          {renderListRow(virtualRow.index)}
-                        </div>
-                      );
-                    })}
+                    {virtualizer.getVirtualItems().map((virtualRow) => (
+                      <div
+                        key={virtualRow.index}
+                        className="absolute left-0 right-0"
+                        style={{
+                          height: `${virtualRow.size}px`,
+                          transform: `translateY(${virtualRow.start}px)`,
+                        }}
+                      >
+                        {renderListRow(virtualRow.index)}
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -2345,7 +2136,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                 scrollDir === "up" && (
                   <div className="shrink-0 z-10 shadow-[0_-4px_6px_-1px_rgb(0_0_0/0.1)] border-t max-h-[30vh] overflow-y-auto">
                     {pinnedRowIndices.map((jobIdx) => (
-                      <div key={`pin-${jobIdx}`} className={cn(!isMobile && (jobIdx % 2 === 0 ? "bg-row-even" : "bg-row-odd"))}>
+                      <div key={`pin-${jobIdx}`}>
                         {renderListRow(jobIdx)}
                       </div>
                     ))}
@@ -2414,15 +2205,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
           )}
         </div>
 
-        <DragOverlay>
-          {activeScored ? (
-            <ListDragOverlayRow
-              scored={activeScored}
-              rank={activeScoredRank}
-              isMobile={isMobile}
-            />
-          ) : null}
-        </DragOverlay>
+        <SortableDragOverlay rankedJobs={rankedJobs} indexById={indexById} isMobile={isMobile} />
       </DndContext>
 
       {/* Flying ghost cards for boost/bury visual feedback */}
