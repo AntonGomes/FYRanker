@@ -46,13 +46,29 @@ const STEPS = [
   { title: "Global Hospital Ranking", icon: Globe, description: "Fine-tune the overall hospital order" },
   { title: "Rank Specialties", icon: Stethoscope, description: "Order specialties by preference" },
   { title: "Set Weights", icon: SlidersHorizontal, description: "Decide what matters most to you" },
-];
+] as const;
 
 const TOTAL_STEPS = STEPS.length;
+
+const WEIGHT_FIELDS = [
+  { key: "region" as const, label: "Region", icon: MapPin, color: "bg-blue-400" },
+  { key: "hospital" as const, label: "Hospital", icon: Building2, color: "bg-amber-400" },
+  { key: "specialty" as const, label: "Specialty", icon: Stethoscope, color: "bg-emerald-400" },
+] as const;
 
 function toItems(arr: string[]): SortableItem[] {
   return arr.map((s) => ({ id: s, label: s }));
 }
+
+function getRegionStyle(region: string) {
+  return REGION_COLORS[region] ?? {
+    bg: "bg-slate-950/40",
+    border: "border-slate-800",
+    text: "text-slate-300",
+  };
+}
+
+/* ── Step progress bar ── */
 
 function StepIndicator({
   currentStep,
@@ -76,6 +92,154 @@ function StepIndicator({
   );
 }
 
+/* ── Inline search bar + sort controls ── */
+
+function SearchToolbar({
+  searchOpen,
+  searchQuery,
+  onSearchOpenChange,
+  onSearchQueryChange,
+  sortDropdown,
+}: {
+  searchOpen: boolean;
+  searchQuery: string;
+  onSearchOpenChange: (open: boolean) => void;
+  onSearchQueryChange: (query: string) => void;
+  sortDropdown?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-1.5 shrink-0">
+      {searchOpen ? (
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => onSearchQueryChange(e.target.value)}
+            autoFocus
+            className="w-36 rounded-md border bg-background pl-7 pr-6 py-1 text-xs outline-none focus:ring-1 focus:ring-ring/50 placeholder:text-muted-foreground"
+          />
+          <button
+            onClick={() => { onSearchQueryChange(""); onSearchOpenChange(false); }}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => onSearchOpenChange(true)}
+          className="flex items-center justify-center h-7 w-7 rounded-md border bg-background text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+          title="Search"
+        >
+          <Search className="h-3.5 w-3.5" />
+        </button>
+      )}
+      {sortDropdown}
+    </div>
+  );
+}
+
+/* ── Confidence ring for ELO refinement ── */
+
+function ConfidenceRing({ percentage }: { percentage: number }) {
+  return (
+    <div className="ml-auto flex items-center gap-2">
+      <svg className="h-9 w-9" viewBox="0 0 36 36">
+        <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor"
+          className="text-muted" strokeWidth="3" />
+        <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor"
+          className="text-primary transition-all duration-500"
+          strokeWidth="3"
+          strokeDasharray={`${percentage * 94.25 / 100} 94.25`}
+          strokeLinecap="round"
+          transform="rotate(-90 18 18)" />
+      </svg>
+      <span className="text-xs font-medium text-foreground">{percentage}% ranked</span>
+    </div>
+  );
+}
+
+/* ── Weight slider row ── */
+
+function WeightSlider({
+  icon: Icon,
+  label,
+  value,
+  onChange,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between items-baseline">
+        <label className="text-sm font-medium flex items-center gap-2">
+          <Icon className="h-3.5 w-3.5 text-primary" />
+          {label}
+        </label>
+        <span className="text-xs font-mono text-muted-foreground tabular-nums">
+          {(value * 100).toFixed(0)}%
+        </span>
+      </div>
+      <Slider
+        value={[value]}
+        onValueChange={([v]) => onChange(v)}
+        max={1}
+        step={0.01}
+      />
+    </div>
+  );
+}
+
+/* ── Weight distribution visualization ── */
+
+function WeightDistribution({
+  weights,
+  lockRegions,
+}: {
+  weights: { region: number; hospital: number; specialty: number };
+  lockRegions: boolean;
+}) {
+  const visibleFields = lockRegions
+    ? WEIGHT_FIELDS.filter((f) => f.key !== "region")
+    : WEIGHT_FIELDS;
+
+  const total = visibleFields.reduce((sum, f) => sum + weights[f.key], 0);
+
+  function pct(key: "region" | "hospital" | "specialty"): string {
+    return ((weights[key] / total) * 100).toFixed(0);
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-muted-foreground">Effective distribution</p>
+      <div className="flex h-2 rounded-full overflow-hidden bg-muted">
+        {visibleFields.map((f) => (
+          <div
+            key={f.key}
+            className={cn(f.color, "transition-all")}
+            style={{ width: `${pct(f.key)}%` }}
+          />
+        ))}
+      </div>
+      <div className="flex justify-between text-[10px] text-muted-foreground">
+        {visibleFields.map((f) => (
+          <span key={f.key} className="flex items-center gap-1">
+            <span className={cn("h-2 w-2 rounded-full", f.color)} />
+            {f.label} {pct(f.key)}%
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Main wizard page ── */
+
 export default function WizardPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -93,9 +257,7 @@ export default function WizardPage() {
   const [globalHospitals, setGlobalHospitals] = useState<SortableItem[]>([]);
   const [lockRegions, setLockRegions] = useState(false);
   // Step 4: Rank Specialties (ELO duel)
-  const [rankedSpecialties, setRankedSpecialties] = useState<SortableItem[]>(
-    []
-  );
+  const [rankedSpecialties, setRankedSpecialties] = useState<SortableItem[]>([]);
   const [eloState, setEloState] = useState<EloState | null>(null);
   const [movedSpecialtyIds, setMovedSpecialtyIds] = useState<Set<string>>(
     new Set()
@@ -139,8 +301,8 @@ export default function WizardPage() {
   function deriveGlobalHospitals(): SortableItem[] {
     const result: SortableItem[] = [];
     for (const region of rankedRegions) {
-      const hospitals = hospitalsByRegion[region.id] || [];
-      for (const hospital of hospitals) {
+      const regionHospitals = hospitalsByRegion[region.id] || [];
+      for (const hospital of regionHospitals) {
         result.push({
           id: `${hospital.id}__${region.id}`,
           label: hospital.label,
@@ -151,75 +313,96 @@ export default function WizardPage() {
     return result;
   }
 
-  // Navigation
-  function handleNext() {
+  function resetSearch(): void {
     setSearchOpen(false);
     setSearchQuery("");
-    if (step === 1) {
-      setRegionSubStep(0);
-      setStep(2);
-    } else if (step === 2) {
-      if (regionSubStep < rankedRegions.length - 1) {
-        setSortMode("default");
-        setSearchOpen(false);
-        setSearchQuery("");
-        setRegionSubStep((s) => s + 1);
-      } else {
-        setGlobalHospitals(deriveGlobalHospitals());
-        setStep(3);
-      }
-    } else if (step === 3) {
-      setStep(4);
-    } else if (step === 4) {
-      if (specialtyPhase === "explainer") {
-        setSpecialtyPhase("ranking");
-      } else if (specialtyPhase === "ranking") {
-        // Seed ELO from DnD ranking and enter refinement
-        const seeded = initEloFromRanking(rankedSpecialties, movedSpecialtyIds);
-        setEloState(seeded);
-        setSpecialtyPhase("refining");
-      } else {
-        // refining → step 5
-        setStep(5);
-      }
-    } else if (step === 5) {
-      // Compute scores and navigate to results
-      if (jobs) {
-        const scored = scoreJobs(
-          jobs,
-          rankedRegions,
-          globalHospitals,
-          rankedSpecialties,
-          weights,
-          lockRegions
-        );
-        const json = JSON.stringify(scored);
-        sessionStorage.setItem("fy_scored_jobs", json);
-        localStorage.setItem("fy_scored_jobs", json);
-        router.push("/results");
-      }
+  }
+
+  // Navigation
+  function handleNext(): void {
+    resetSearch();
+
+    switch (step) {
+      case 1:
+        setRegionSubStep(0);
+        setStep(2);
+        break;
+
+      case 2:
+        if (regionSubStep < rankedRegions.length - 1) {
+          setSortMode("default");
+          setRegionSubStep((s) => s + 1);
+        } else {
+          setGlobalHospitals(deriveGlobalHospitals());
+          setStep(3);
+        }
+        break;
+
+      case 3:
+        setStep(4);
+        break;
+
+      case 4:
+        if (specialtyPhase === "explainer") {
+          setSpecialtyPhase("ranking");
+        } else if (specialtyPhase === "ranking") {
+          const seeded = initEloFromRanking(rankedSpecialties, movedSpecialtyIds);
+          setEloState(seeded);
+          setSpecialtyPhase("refining");
+        } else {
+          setStep(5);
+        }
+        break;
+
+      case 5:
+        if (jobs) {
+          const scored = scoreJobs(
+            jobs,
+            rankedRegions,
+            globalHospitals,
+            rankedSpecialties,
+            weights,
+            lockRegions
+          );
+          const json = JSON.stringify(scored);
+          sessionStorage.setItem("fy_scored_jobs", json);
+          localStorage.setItem("fy_scored_jobs", json);
+          router.push("/results");
+        }
+        break;
     }
   }
 
-  function handleBack() {
+  function handleBack(): void {
     if (step === 4 && specialtyPhase === "refining") {
-      // Back from ELO → return to DnD view, preserving state
       setSpecialtyPhase("ranking");
-    } else if (step === 4 && specialtyPhase === "ranking") {
-      setSpecialtyPhase("explainer");
-    } else if (step === 2 && regionSubStep > 0) {
-      setSortMode("default");
-      setSearchOpen(false);
-      setSearchQuery("");
-      setRegionSubStep((s) => s - 1);
-    } else if (step === 2) {
-      setStep(1);
-    } else {
-      setStep((s) => s - 1);
+      return;
     }
+    if (step === 4 && specialtyPhase === "ranking") {
+      setSpecialtyPhase("explainer");
+      return;
+    }
+    if (step === 2 && regionSubStep > 0) {
+      setSortMode("default");
+      resetSearch();
+      setRegionSubStep((s) => s - 1);
+      return;
+    }
+    if (step === 2) {
+      setStep(1);
+      return;
+    }
+    setStep((s) => s - 1);
   }
 
-  // Current region hospital count (for step 2 description)
+  function getNextButtonLabel(): string {
+    if (step === TOTAL_STEPS) return "Calculate & View Results";
+    if (step === 4 && specialtyPhase === "explainer") return "Start Ranking";
+    if (step === 4 && specialtyPhase === "ranking") return "Continue to Refinement";
+    return "Continue";
+  }
+
+  // Current region hospital context (for step 2)
   const currentRegion = rankedRegions[regionSubStep];
   const currentHospitals = currentRegion
     ? hospitalsByRegion[currentRegion.id] || []
@@ -236,10 +419,8 @@ export default function WizardPage() {
           ? "Regions locked — hospitals stay within their region."
           : `${globalHospitals.length} hospitals across all regions.`;
       case 4:
-        if (specialtyPhase === "refining")
-          return "Pick your preference to sharpen your ranking.";
-        if (specialtyPhase === "ranking")
-          return "Drag to reorder by preference.";
+        if (specialtyPhase === "refining") return "Pick your preference to sharpen your ranking.";
+        if (specialtyPhase === "ranking") return "Drag to reorder by preference.";
         return "How specialty ranking works.";
       case 5:
         return lockRegions
@@ -250,16 +431,8 @@ export default function WizardPage() {
     }
   }
 
-  const weightTotal = weights.region + weights.hospital + weights.specialty;
-
-  // Helper to get region color style
-  function getRegionStyle(region: string) {
-    return REGION_COLORS[region] ?? {
-      bg: "bg-slate-950/40",
-      border: "border-slate-800",
-      text: "text-slate-300",
-    };
-  }
+  const showSearchToolbar = step === 2 || step === 3 || (step === 4 && specialtyPhase === "ranking");
+  const showBackButton = step > 1 || (step === 4 && specialtyPhase !== "explainer");
 
   if (loading) {
     return (
@@ -279,7 +452,7 @@ export default function WizardPage() {
 
       <main className="flex-1 flex flex-col items-center min-h-0 px-2 py-2 sm:px-4 sm:py-3">
         <div className="w-full max-w-2xl flex flex-col min-h-0 flex-1 gap-2">
-          {/* Progress indicator — full width */}
+          {/* Progress indicator */}
           <div className="px-1 shrink-0">
             <StepIndicator currentStep={step} totalSteps={TOTAL_STEPS} />
           </div>
@@ -303,6 +476,8 @@ export default function WizardPage() {
                   {STEPS[step - 1]?.title}
                 </CardTitle>
               </div>
+
+              {/* Region badge for step 2 */}
               {step === 2 && currentRegion && (() => {
                 const style = getRegionStyle(currentRegion.id);
                 return (
@@ -315,62 +490,28 @@ export default function WizardPage() {
                   </div>
                 );
               })()}
-              {step === 4 && specialtyPhase === "refining" && eloState && (() => {
-                const pct = Math.round(getConfidence(eloState, movedSpecialtyIds?.size) * 100);
-                return (
-                  <div className="ml-auto flex items-center gap-2">
-                    <svg className="h-9 w-9" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor"
-                        className="text-muted" strokeWidth="3" />
-                      <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor"
-                        className="text-primary transition-all duration-500"
-                        strokeWidth="3"
-                        strokeDasharray={`${pct * 94.25 / 100} 94.25`}
-                        strokeLinecap="round"
-                        transform="rotate(-90 18 18)" />
-                    </svg>
-                    <span className="text-xs font-medium text-foreground">{pct}% ranked</span>
-                  </div>
-                );
-              })()}
+
+              {/* Confidence ring for ELO refinement */}
+              {step === 4 && specialtyPhase === "refining" && eloState && (
+                <ConfidenceRing
+                  percentage={Math.round(getConfidence(eloState, movedSpecialtyIds?.size) * 100)}
+                />
+              )}
             </div>
+
             {/* Description + inline toolbar */}
             <div className="mt-2 space-y-2">
               <div className="flex items-center gap-2">
                 <CardDescription className="flex-1">
                   {getDescription()}
                 </CardDescription>
-                {/* Search + sort controls for list steps */}
-                {(step === 2 || step === 3 || (step === 4 && specialtyPhase === "ranking")) && (
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {searchOpen ? (
-                      <div className="relative">
-                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                        <input
-                          type="text"
-                          placeholder="Search..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          autoFocus
-                          className="w-36 rounded-md border bg-background pl-7 pr-6 py-1 text-xs outline-none focus:ring-1 focus:ring-ring/50 placeholder:text-muted-foreground"
-                        />
-                        <button
-                          onClick={() => { setSearchQuery(""); setSearchOpen(false); }}
-                          className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setSearchOpen(true)}
-                        className="flex items-center justify-center h-7 w-7 rounded-md border bg-background text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
-                        title="Search"
-                      >
-                        <Search className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                    {step === 2 && (
+                {showSearchToolbar && (
+                  <SearchToolbar
+                    searchOpen={searchOpen}
+                    searchQuery={searchQuery}
+                    onSearchOpenChange={setSearchOpen}
+                    onSearchQueryChange={setSearchQuery}
+                    sortDropdown={step === 2 ? (
                       <HospitalSortDropdown
                         items={currentHospitals}
                         onSort={(sortedItems) => {
@@ -385,22 +526,22 @@ export default function WizardPage() {
                         sortMode={sortMode}
                         onSortModeChange={setSortMode}
                       />
-                    )}
-                  </div>
+                    ) : undefined}
+                  />
                 )}
               </div>
             </div>
           </CardHeader>
 
           <CardContent className={cn("flex-1 min-h-0 flex flex-col pb-0", step === 4 && specialtyPhase === "refining" ? "overflow-x-clip overflow-y-visible" : "overflow-hidden")}>
-            {/* Step 1: Rank Regions with region colors */}
+            {/* Step 1: Rank Regions */}
             {step === 1 && (
               <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
                 <SortableList
-                  items={rankedRegions.map((r) => {
-                    const style = getRegionStyle(r.id);
-                    return { ...r, regionStyle: style };
-                  })}
+                  items={rankedRegions.map((r) => ({
+                    ...r,
+                    regionStyle: getRegionStyle(r.id),
+                  }))}
                   onReorder={(items) =>
                     setRankedRegions(items.map(({ id, label }) => ({ id, label })))
                   }
@@ -408,7 +549,7 @@ export default function WizardPage() {
               </div>
             )}
 
-            {/* Step 2: Rank Hospitals per Region (can be large — use RankableList) */}
+            {/* Step 2: Rank Hospitals per Region */}
             {step === 2 && currentRegion && (
               <div className="flex flex-col flex-1 min-h-0">
                 <RankableList
@@ -424,7 +565,7 @@ export default function WizardPage() {
               </div>
             )}
 
-            {/* Step 3: Global Hospital Ranking (large — use RankableList) */}
+            {/* Step 3: Global Hospital Ranking */}
             {step === 3 && (
               <div className="flex flex-col flex-1 min-h-0 gap-3">
                 <div className="flex items-center gap-3 rounded-lg border px-4 py-3 shrink-0">
@@ -452,7 +593,7 @@ export default function WizardPage() {
               </div>
             )}
 
-            {/* Step 4: Rank Specialties — explainer / DnD / ELO refinement */}
+            {/* Step 4: Rank Specialties */}
             {step === 4 && specialtyPhase === "explainer" && (
               <SpecialtyExplainer specialtyCount={rankedSpecialties.length} />
             )}
@@ -482,133 +623,26 @@ export default function WizardPage() {
             {step === 5 && (
               <div className="space-y-6">
                 <div className="space-y-5">
-                  {/* Region weight — hidden when regions are locked */}
-                  {!lockRegions && (
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-baseline">
-                        <label className="text-sm font-medium flex items-center gap-2">
-                          <MapPin className="h-3.5 w-3.5 text-primary" />
-                          Region
-                        </label>
-                        <span className="text-xs font-mono text-muted-foreground tabular-nums">
-                          {(weights.region * 100).toFixed(0)}%
-                        </span>
-                      </div>
-                      <Slider
-                        value={[weights.region]}
-                        onValueChange={([v]) =>
-                          setWeights((w) => ({ ...w, region: v }))
-                        }
-                        max={1}
-                        step={0.01}
+                  {WEIGHT_FIELDS
+                    .filter((f) => !(lockRegions && f.key === "region"))
+                    .map((f) => (
+                      <WeightSlider
+                        key={f.key}
+                        icon={f.icon}
+                        label={f.label}
+                        value={weights[f.key]}
+                        onChange={(v) => setWeights((w) => ({ ...w, [f.key]: v }))}
                       />
-                    </div>
-                  )}
-
-                  {/* Hospital weight */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-baseline">
-                      <label className="text-sm font-medium flex items-center gap-2">
-                        <Building2 className="h-3.5 w-3.5 text-primary" />
-                        Hospital
-                      </label>
-                      <span className="text-xs font-mono text-muted-foreground tabular-nums">
-                        {(weights.hospital * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                    <Slider
-                      value={[weights.hospital]}
-                      onValueChange={([v]) =>
-                        setWeights((w) => ({ ...w, hospital: v }))
-                      }
-                      max={1}
-                      step={0.01}
-                    />
-                  </div>
-
-                  {/* Specialty weight */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-baseline">
-                      <label className="text-sm font-medium flex items-center gap-2">
-                        <Stethoscope className="h-3.5 w-3.5 text-primary" />
-                        Specialty
-                      </label>
-                      <span className="text-xs font-mono text-muted-foreground tabular-nums">
-                        {(weights.specialty * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                    <Slider
-                      value={[weights.specialty]}
-                      onValueChange={([v]) =>
-                        setWeights((w) => ({ ...w, specialty: v }))
-                      }
-                      max={1}
-                      step={0.01}
-                    />
-                  </div>
+                    ))}
                 </div>
-
-                {/* Weight distribution visual */}
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">
-                    Effective distribution
-                  </p>
-                  <div className="flex h-2 rounded-full overflow-hidden bg-muted">
-                    {!lockRegions && (
-                      <div
-                        className="bg-blue-400 transition-all"
-                        style={{
-                          width: `${(weights.region / weightTotal) * 100}%`,
-                        }}
-                      />
-                    )}
-                    <div
-                      className="bg-amber-400 transition-all"
-                      style={{
-                        width: lockRegions
-                          ? `${(weights.hospital / (weights.hospital + weights.specialty)) * 100}%`
-                          : `${(weights.hospital / weightTotal) * 100}%`,
-                      }}
-                    />
-                    <div
-                      className="bg-emerald-400 transition-all"
-                      style={{
-                        width: lockRegions
-                          ? `${(weights.specialty / (weights.hospital + weights.specialty)) * 100}%`
-                          : `${(weights.specialty / weightTotal) * 100}%`,
-                      }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-[10px] text-muted-foreground">
-                    {!lockRegions && (
-                      <span className="flex items-center gap-1">
-                        <span className="h-2 w-2 rounded-full bg-blue-400" />
-                        Region {((weights.region / weightTotal) * 100).toFixed(0)}%
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1">
-                      <span className="h-2 w-2 rounded-full bg-amber-400" />
-                      Hospital{" "}
-                      {lockRegions
-                        ? ((weights.hospital / (weights.hospital + weights.specialty)) * 100).toFixed(0)
-                        : ((weights.hospital / weightTotal) * 100).toFixed(0)}%
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                      Specialty{" "}
-                      {lockRegions
-                        ? ((weights.specialty / (weights.hospital + weights.specialty)) * 100).toFixed(0)
-                        : ((weights.specialty / weightTotal) * 100).toFixed(0)}%
-                    </span>
-                  </div>
-                </div>
+                <WeightDistribution weights={weights} lockRegions={lockRegions} />
               </div>
             )}
           </CardContent>
 
-          {/* Nav buttons inside card */}
+          {/* Nav buttons */}
           <div className="shrink-0 border-t px-4 py-2 sm:px-6 sm:py-3 flex items-center justify-between">
-            {step > 1 || (step === 4 && specialtyPhase !== "explainer") ? (
+            {showBackButton ? (
               <Button variant="outline" onClick={handleBack}>
                 Back
               </Button>
@@ -616,17 +650,8 @@ export default function WizardPage() {
               <div />
             )}
             <div className="flex items-center gap-3">
-              <Button
-                onClick={handleNext}
-                className="min-w-25"
-              >
-                {step === TOTAL_STEPS
-                  ? "Calculate & View Results"
-                  : step === 4 && specialtyPhase === "explainer"
-                    ? "Start Ranking"
-                    : step === 4 && specialtyPhase === "ranking"
-                      ? "Continue to Refinement"
-                      : "Continue"}
+              <Button onClick={handleNext} className="min-w-25">
+                {getNextButtonLabel()}
               </Button>
             </div>
           </div>
