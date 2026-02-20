@@ -26,17 +26,19 @@ import { Label } from "@/components/ui/label";
 import { HospitalSortDropdown, type SortMode } from "@/components/hospital-sort-dropdown";
 import type { Hospital, UserLocation } from "@/lib/proximity";
 import { SpecialtyDuel } from "@/components/specialty-duel";
-import { type EloState, initEloFromRanking } from "@/lib/elo";
+import { SpecialtyExplainer } from "@/components/specialty-explainer";
+import { type EloState, initEloFromRanking, getConfidence } from "@/lib/elo";
 import {
   MapPin,
   Building2,
   Globe,
   Stethoscope,
   SlidersHorizontal,
-  Sparkles,
   Search,
   X,
 } from "lucide-react";
+
+type SpecialtyPhase = "explainer" | "ranking" | "refining";
 
 const STEPS = [
   { title: "Rank Regions", icon: MapPin, description: "Order regions by preference" },
@@ -98,8 +100,7 @@ export default function WizardPage() {
   const [movedSpecialtyIds, setMovedSpecialtyIds] = useState<Set<string>>(
     new Set()
   );
-  const [showRefinePrompt, setShowRefinePrompt] = useState(false);
-  const [isRefining, setIsRefining] = useState(false);
+  const [specialtyPhase, setSpecialtyPhase] = useState<SpecialtyPhase>("explainer");
   // Proximity sorting
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
@@ -170,12 +171,16 @@ export default function WizardPage() {
     } else if (step === 3) {
       setStep(4);
     } else if (step === 4) {
-      if (isRefining) {
-        // In ELO mode — advance to Step 5
-        setStep(5);
+      if (specialtyPhase === "explainer") {
+        setSpecialtyPhase("ranking");
+      } else if (specialtyPhase === "ranking") {
+        // Seed ELO from DnD ranking and enter refinement
+        const seeded = initEloFromRanking(rankedSpecialties, movedSpecialtyIds);
+        setEloState(seeded);
+        setSpecialtyPhase("refining");
       } else {
-        // In DnD mode — show refine prompt
-        setShowRefinePrompt(true);
+        // refining → step 5
+        setStep(5);
       }
     } else if (step === 5) {
       // Compute scores and navigate to results
@@ -197,13 +202,11 @@ export default function WizardPage() {
   }
 
   function handleBack() {
-    if (step === 4 && isRefining) {
+    if (step === 4 && specialtyPhase === "refining") {
       // Back from ELO → return to DnD view, preserving state
-      setIsRefining(false);
-      setShowRefinePrompt(false);
-    } else if (step === 4 && showRefinePrompt) {
-      // Dismiss refine prompt
-      setShowRefinePrompt(false);
+      setSpecialtyPhase("ranking");
+    } else if (step === 4 && specialtyPhase === "ranking") {
+      setSpecialtyPhase("explainer");
     } else if (step === 2 && regionSubStep > 0) {
       setSortMode("default");
       setSearchOpen(false);
@@ -233,9 +236,11 @@ export default function WizardPage() {
           ? "Regions locked — hospitals stay within their region."
           : `${globalHospitals.length} hospitals across all regions.`;
       case 4:
-        return isRefining
-          ? "Compare specialties head-to-head to refine your ranking. More comparisons = more accurate results."
-          : "Drag to reorder by preference.";
+        if (specialtyPhase === "refining")
+          return "Pick your preference to sharpen your ranking.";
+        if (specialtyPhase === "ranking")
+          return "Drag to reorder by preference.";
+        return "How specialty ranking works.";
       case 5:
         return lockRegions
           ? "Region order fixed. Adjust hospital and specialty weight."
@@ -310,6 +315,24 @@ export default function WizardPage() {
                   </div>
                 );
               })()}
+              {step === 4 && specialtyPhase === "refining" && eloState && (() => {
+                const pct = Math.round(getConfidence(eloState, movedSpecialtyIds?.size) * 100);
+                return (
+                  <div className="ml-auto flex items-center gap-2">
+                    <svg className="h-9 w-9" viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor"
+                        className="text-muted" strokeWidth="3" />
+                      <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor"
+                        className="text-primary transition-all duration-500"
+                        strokeWidth="3"
+                        strokeDasharray={`${pct * 94.25 / 100} 94.25`}
+                        strokeLinecap="round"
+                        transform="rotate(-90 18 18)" />
+                    </svg>
+                    <span className="text-xs font-medium text-foreground">{pct}% ranked</span>
+                  </div>
+                );
+              })()}
             </div>
             {/* Description + inline toolbar */}
             <div className="mt-2 space-y-2">
@@ -318,7 +341,7 @@ export default function WizardPage() {
                   {getDescription()}
                 </CardDescription>
                 {/* Search + sort controls for list steps */}
-                {(step === 2 || step === 3 || (step === 4 && !isRefining)) && (
+                {(step === 2 || step === 3 || (step === 4 && specialtyPhase === "ranking")) && (
                   <div className="flex items-center gap-1.5 shrink-0">
                     {searchOpen ? (
                       <div className="relative">
@@ -369,7 +392,7 @@ export default function WizardPage() {
             </div>
           </CardHeader>
 
-          <CardContent className="flex-1 min-h-0 flex flex-col overflow-hidden pb-0">
+          <CardContent className={cn("flex-1 min-h-0 flex flex-col pb-0", step === 4 && specialtyPhase === "refining" ? "overflow-x-clip overflow-y-visible" : "overflow-hidden")}>
             {/* Step 1: Rank Regions with region colors */}
             {step === 1 && (
               <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
@@ -429,65 +452,23 @@ export default function WizardPage() {
               </div>
             )}
 
-            {/* Step 4: Rank Specialties — DnD or ELO refinement */}
-            {step === 4 && !isRefining && (
-              <div className="flex flex-col flex-1 min-h-0 gap-3">
-                <div className="flex flex-col flex-1 min-h-0">
-                  <RankableList
-                    items={rankedSpecialties}
-                    onReorder={setRankedSpecialties}
-                    onItemMoved={(id) =>
-                      setMovedSpecialtyIds((prev) => new Set(prev).add(id))
-                    }
-                    searchFilter={searchQuery}
-                  />
-                </div>
-
-                {/* Refine prompt */}
-                {showRefinePrompt && (
-                  <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-semibold text-foreground">
-                        Refine your rankings with quick comparisons?
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Answer a few head-to-head matchups to fine-tune your specialty
-                      order — especially the ones you didn&apos;t manually reorder.
-                    </p>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => {
-                          const seeded = initEloFromRanking(
-                            rankedSpecialties,
-                            movedSpecialtyIds
-                          );
-                          setEloState(seeded);
-                          setIsRefining(true);
-                          setShowRefinePrompt(false);
-                        }}
-                        size="sm"
-                      >
-                        <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-                        Refine
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setShowRefinePrompt(false);
-                          setStep(5);
-                        }}
-                      >
-                        Skip
-                      </Button>
-                    </div>
-                  </div>
-                )}
+            {/* Step 4: Rank Specialties — explainer / DnD / ELO refinement */}
+            {step === 4 && specialtyPhase === "explainer" && (
+              <SpecialtyExplainer specialtyCount={rankedSpecialties.length} />
+            )}
+            {step === 4 && specialtyPhase === "ranking" && (
+              <div className="flex flex-col flex-1 min-h-0">
+                <RankableList
+                  items={rankedSpecialties}
+                  onReorder={setRankedSpecialties}
+                  onItemMoved={(id) =>
+                    setMovedSpecialtyIds((prev) => new Set(prev).add(id))
+                  }
+                  searchFilter={searchQuery}
+                />
               </div>
             )}
-            {step === 4 && isRefining && (
+            {step === 4 && specialtyPhase === "refining" && (
               <SpecialtyDuel
                 specialties={rankedSpecialties.map((s) => s.label)}
                 eloState={eloState}
@@ -626,20 +607,28 @@ export default function WizardPage() {
           </CardContent>
 
           {/* Nav buttons inside card */}
-          <div className="shrink-0 border-t px-4 py-2 sm:px-6 sm:py-3 flex justify-between">
-            {step > 1 ? (
+          <div className="shrink-0 border-t px-4 py-2 sm:px-6 sm:py-3 flex items-center justify-between">
+            {step > 1 || (step === 4 && specialtyPhase !== "explainer") ? (
               <Button variant="outline" onClick={handleBack}>
                 Back
               </Button>
             ) : (
               <div />
             )}
-            <Button
-              onClick={handleNext}
-              className="min-w-25"
-            >
-              {step === TOTAL_STEPS ? "Calculate & View Results" : "Continue"}
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleNext}
+                className="min-w-25"
+              >
+                {step === TOTAL_STEPS
+                  ? "Calculate & View Results"
+                  : step === 4 && specialtyPhase === "explainer"
+                    ? "Start Ranking"
+                    : step === 4 && specialtyPhase === "ranking"
+                      ? "Continue to Refinement"
+                      : "Continue"}
+              </Button>
+            </div>
           </div>
 
         </Card>

@@ -223,6 +223,30 @@ export function toRankedList(state: EloState): SortableItem[] {
     .map(([name]) => ({ id: name, label: name }));
 }
 
+export function getFocusedNeighbourhood(
+  state: EloState,
+  focal: string,
+  windowSize = 7
+): RankingEntry[] {
+  const sorted = Array.from(state.ratings.entries())
+    .sort((x, y) => y[1] - x[1])
+    .map(([name, rating], i) => ({
+      id: name,
+      label: name,
+      rating: Math.round(rating),
+      rank: i + 1,
+    }));
+
+  const idx = sorted.findIndex((e) => e.id === focal);
+  if (idx === -1) return sorted.slice(0, windowSize);
+
+  const half = Math.floor(windowSize / 2);
+  const start = Math.max(0, Math.min(idx - half, sorted.length - windowSize));
+  const end = Math.min(sorted.length, start + windowSize);
+
+  return sorted.slice(start, end);
+}
+
 export function getRankingNeighbourhood(
   state: EloState,
   a: string,
@@ -243,10 +267,17 @@ export function getRankingNeighbourhood(
 
   if (idxA === -1 || idxB === -1) return sorted.slice(0, windowSize);
 
-  const midpoint = Math.floor((idxA + idxB) / 2);
-  const halfWindow = Math.floor(windowSize / 2);
-  const start = Math.max(0, Math.min(midpoint - halfWindow, sorted.length - windowSize));
-  const end = Math.min(sorted.length, start + windowSize);
+  // Ensure both matched items are always included in the window
+  const lo = Math.min(idxA, idxB);
+  const hi = Math.max(idxA, idxB);
+  const span = hi - lo + 1;
+
+  // If items are close, show a single window around both
+  const effectiveWindow = Math.max(windowSize, span + 2);
+  const midpoint = Math.floor((lo + hi) / 2);
+  const halfWindow = Math.floor(effectiveWindow / 2);
+  const start = Math.max(0, Math.min(midpoint - halfWindow, sorted.length - effectiveWindow));
+  const end = Math.min(sorted.length, start + effectiveWindow);
 
   return sorted.slice(start, end);
 }
