@@ -17,6 +17,7 @@ import {
   useSensor,
   useSensors,
   DragOverlay,
+  useDndContext,
   type DragStartEvent,
   type DragEndEvent,
   type CollisionDetection,
@@ -909,6 +910,37 @@ const ListDragOverlayRow = memo(function ListDragOverlayRow({
   );
 });
 
+/* ── Isolated DragOverlay: reads active item via dnd context
+      so the parent doesn't re-render on drag start ── */
+const SortableDragOverlay = memo(function SortableDragOverlay({
+  rankedJobs,
+  indexById,
+  isMobile,
+}: {
+  rankedJobs: ScoredJob[];
+  indexById: Map<string, number>;
+  isMobile: boolean;
+}) {
+  const { active } = useDndContext();
+  const activeId = active?.id as string | undefined;
+  const activeScored = activeId
+    ? rankedJobs[indexById.get(activeId) ?? -1] ?? null
+    : null;
+  const activeScoredRank = activeId ? (indexById.get(activeId) ?? 0) + 1 : 0;
+
+  return (
+    <DragOverlay>
+      {activeScored ? (
+        <ListDragOverlayRow
+          scored={activeScored}
+          rank={activeScoredRank}
+          isMobile={isMobile}
+        />
+      ) : null}
+    </DragOverlay>
+  );
+});
+
 /* ════════════════════════════════════════════════════════════
    Main results view
    ════════════════════════════════════════════════════════════ */
@@ -922,8 +954,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const [selectedDetail, setSelectedDetail] = useState<Job | null>(null);
   const [compareJobs, setCompareJobs] = useState<Job[]>([]);
   const [showCompare, setShowCompare] = useState(false);
-  const [activeId, setActiveId] = useState<string | null>(null);
-
   // Boost/Bury flash tracking
   const rankDeltaRef = useRef<Map<string, number>>(new Map());
   const [flashMap, setFlashMap] = useState<
@@ -1063,39 +1093,54 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     })
   );
 
-  /* ── Nudge amount ── */
-  const nudgeAmount = useMemo(
-    () => computeNudgeAmount(rankedJobs),
-    [rankedJobs]
-  );
+  /* ── Nudge amount (stable — score distribution doesn't change on reorder) ── */
+  const nudgeAmountRef = useRef<number | null>(null);
+  if (nudgeAmountRef.current === null) {
+    nudgeAmountRef.current = computeNudgeAmount(rankedJobs);
+  }
+  const nudgeAmount = nudgeAmountRef.current;
 
   /* ── Derived data ── */
 
+  // Stable job set ref — only updates when the set of jobs changes (not on reorder/score tweaks)
+  const jobIdsRef = useRef<Set<string>>(new Set(rankedJobs.map(s => s.job.programmeTitle)));
+  const stableJobsRef = useRef(rankedJobs);
+  const [stableJobs, setStableJobs] = useState(rankedJobs);
+  useEffect(() => {
+    const newIds = new Set(rankedJobs.map(s => s.job.programmeTitle));
+    const prevIds = jobIdsRef.current;
+    if (newIds.size !== prevIds.size || [...newIds].some(id => !prevIds.has(id))) {
+      jobIdsRef.current = newIds;
+      stableJobsRef.current = rankedJobs;
+      setStableJobs(rankedJobs);
+    }
+  }, [rankedJobs]);
+
   const allRegions = useMemo(() => {
     const set = new Set<string>();
-    rankedJobs.forEach((s) => set.add(s.job.region));
+    stableJobs.forEach((s) => set.add(s.job.region));
     return Array.from(set).sort();
-  }, [rankedJobs]);
+  }, [stableJobs]);
 
   const allHospitals = useMemo(() => {
     const set = new Set<string>();
-    rankedJobs.forEach((s) => {
+    stableJobs.forEach((s) => {
       for (const p of s.job.placements) {
         if (p.site && p.site !== "None" && p.site.trim() !== "") set.add(p.site);
       }
     });
     return Array.from(set).sort();
-  }, [rankedJobs]);
+  }, [stableJobs]);
 
   const allSpecialties = useMemo(() => {
     const set = new Set<string>();
-    rankedJobs.forEach((s) => {
+    stableJobs.forEach((s) => {
       for (const p of s.job.placements) {
         if (p.specialty && p.specialty !== "None" && p.specialty.trim() !== "") set.add(p.specialty);
       }
     });
     return Array.from(set).sort();
-  }, [rankedJobs]);
+  }, [stableJobs]);
 
   // O(1) lookup: id → global index in rankedJobs
   const indexById = useMemo(() => {
@@ -1140,7 +1185,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const filteredJobsRef = useRef(filteredJobs);
   filteredJobsRef.current = filteredJobs;
 
-  // IDs for SortableContext
+  // All IDs (used by handleDragEnd for index lookups)
   const filteredIds = useMemo(
     () => filteredJobs.map((s) => s.job.programmeTitle),
     [filteredJobs]
@@ -1156,6 +1201,29 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   });
   const virtualizerRef = useRef(virtualizer);
   virtualizerRef.current = virtualizer;
+
+  // Visible IDs for SortableContext — only virtualized + pinned items.
+  // This avoids dnd-kit processing 800 items when only ~24 are in the DOM.
+  const virtualItems = virtualizer.getVirtualItems();
+  const visibleIds = useMemo(() => {
+    const ids: string[] = [];
+    const seen = new Set<string>();
+    for (const vRow of virtualItems) {
+      const id = filteredJobs[vRow.index]?.job.programmeTitle;
+      if (id && !seen.has(id)) {
+        ids.push(id);
+        seen.add(id);
+      }
+    }
+    // Include pinned rows that may be rendered outside the virtualizer
+    for (const sj of filteredJobs) {
+      if (pinnedJobIds.has(sj.job.programmeTitle) && !seen.has(sj.job.programmeTitle)) {
+        ids.push(sj.job.programmeTitle);
+        seen.add(sj.job.programmeTitle);
+      }
+    }
+    return ids;
+  }, [virtualItems, filteredJobs, pinnedJobIds]);
 
   // Reset scroll on filter change or view mode switch
   useEffect(() => {
@@ -1209,13 +1277,16 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   }, [filteredJobs, pinnedJobIds]);
 
   /* ── Custom collision detection ──
-     Filter to only rendered (virtualized) items for performance. */
+     Filter to only rendered (virtualized) items for performance.
+     Uses refs to avoid recreating the function on every render. */
   const customCollisionDetection: CollisionDetection = useCallback(
     (args) => {
-      const virtualItems = virtualizer.getVirtualItems();
+      const virt = virtualizerRef.current;
+      const jobs = filteredJobsRef.current;
+      const virtualItems = virt.getVirtualItems();
       const visibleIds = new Set<string>();
       virtualItems.forEach((vRow) => {
-        visibleIds.add(filteredJobs[vRow.index]?.job.programmeTitle);
+        visibleIds.add(jobs[vRow.index]?.job.programmeTitle);
       });
 
       const filtered = args.droppableContainers.filter((dc) =>
@@ -1228,7 +1299,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
       return closestCenter({ ...args, droppableContainers: filtered });
     },
-    [virtualizer, filteredJobs]
+    [] // stable — reads from refs
   );
 
   /* ── Actions ── */
@@ -1663,13 +1734,10 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
   /* ── DnD handlers ── */
 
-  function handleDragStart(event: DragStartEvent) {
-    setActiveId(event.active.id as string);
-  }
+  const handleDragStart = useCallback((_event: DragStartEvent) => {}, []);
 
-  function handleDragEnd(event: DragEndEvent) {
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
-    setActiveId(null);
 
     if (!over || active.id === over.id) return;
 
@@ -1680,8 +1748,9 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     if (lockedJobIds.has(activeIdStr) || lockedJobIds.has(overIdStr)) return;
 
     pushAndSetRanked((prev) => {
-      const oldIndex = prev.findIndex((s) => s.job.programmeTitle === activeIdStr);
-      const newIndex = prev.findIndex((s) => s.job.programmeTitle === overIdStr);
+      const idxMap = new Map(prev.map((s, i) => [s.job.programmeTitle, i]));
+      const oldIndex = idxMap.get(activeIdStr) ?? -1;
+      const newIndex = idxMap.get(overIdStr) ?? -1;
       if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex)
         return prev;
       const reordered = arrayMove(prev, oldIndex, newIndex);
@@ -1698,11 +1767,9 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
       return reordered;
     });
-  }
+  }, [lockedJobIds, pushAndSetRanked]);
 
-  function handleDragCancel() {
-    setActiveId(null);
-  }
+  const handleDragCancel = useCallback(() => {}, []);
 
   /* ── Scroll direction tracking for pinned rows + auto-collapse mobile filters ── */
   const handleScroll = useCallback(() => {
@@ -1714,12 +1781,6 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     setMobileFiltersOpen(false);
   }, []);
 
-  /* ── Overlay data ── */
-  const activeScored = activeId
-    ? rankedJobs.find((s) => s.job.programmeTitle === activeId) ?? null
-    : null;
-  const activeScoredRank = activeId ? (indexById.get(activeId) ?? 0) + 1 : 0;
-
   const hasActiveFilters =
     searchQuery !== "" ||
     regionFilter !== "all" ||
@@ -1727,8 +1788,9 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     specialtyFilter !== "all";
 
   /* ── Helper: render a single list row ── */
-  function renderListRow(jobIndex: number) {
-    const s = filteredJobs[jobIndex];
+  const renderListRow = useCallback((jobIndex: number) => {
+    const jobs = filteredJobsRef.current;
+    const s = jobs[jobIndex];
     if (!s) return null;
     const globalIdx = indexById.get(s.job.programmeTitle) ?? 0;
     const isHidden = hiddenJobIds.has(s.job.programmeTitle);
@@ -1755,7 +1817,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         />
       </div>
     );
-  }
+  }, [filteredJobs, indexById, hiddenJobIds, selectedIds, pinnedJobIds, lockedJobIds, isMobile, flashMap, toggleSelect, togglePin, toggleLock, handleBoost, handleBury, openMoveTo]);
 
   /* ══════════════════════════════════════════
      Render
@@ -2241,7 +2303,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       >
         <div className="flex-1 flex overflow-hidden">
           <SortableContext
-            items={filteredIds}
+            items={visibleIds}
             strategy={verticalListSortingStrategy}
           >
             <div ref={contentRef} className="flex-1 flex flex-col overflow-hidden relative">
@@ -2414,15 +2476,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
           )}
         </div>
 
-        <DragOverlay>
-          {activeScored ? (
-            <ListDragOverlayRow
-              scored={activeScored}
-              rank={activeScoredRank}
-              isMobile={isMobile}
-            />
-          ) : null}
-        </DragOverlay>
+        <SortableDragOverlay rankedJobs={rankedJobs} indexById={indexById} isMobile={isMobile} />
       </DndContext>
 
       {/* Flying ghost cards for boost/bury visual feedback */}
