@@ -277,6 +277,74 @@
   background: oklch(0.60 0.20 25);
 }
 
+/* ── Fast wash variants (1s duration for duel transition cycle) ── */
+@keyframes wash-up-fast {
+  0%   { background-color: oklch(0.88 0.12 155 / 0.5); }
+  15%  { background-color: oklch(0.88 0.12 155 / 0.5); }
+  100% { background-color: transparent; }
+}
+@keyframes wash-down-fast {
+  0%   { background-color: oklch(0.88 0.10 25 / 0.45); }
+  15%  { background-color: oklch(0.88 0.10 25 / 0.45); }
+  100% { background-color: transparent; }
+}
+@keyframes wash-up-fast-dark {
+  0%   { background-color: oklch(0.30 0.08 155 / 0.5); }
+  15%  { background-color: oklch(0.30 0.08 155 / 0.5); }
+  100% { background-color: transparent; }
+}
+@keyframes wash-down-fast-dark {
+  0%   { background-color: oklch(0.30 0.07 25 / 0.45); }
+  15%  { background-color: oklch(0.30 0.07 25 / 0.45); }
+  100% { background-color: transparent; }
+}
+.animate-wash-up-fast {
+  animation: wash-up-fast 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.animate-wash-down-fast {
+  animation: wash-down-fast 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.dark .animate-wash-up-fast {
+  animation: wash-up-fast-dark 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.dark .animate-wash-down-fast {
+  animation: wash-down-fast-dark 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ── Fast wash stripe rules ── */
+@keyframes stripe-fade-fast {
+  0%   { opacity: 1; }
+  15%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+.animate-wash-up-fast::before,
+.animate-wash-down-fast::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 12px 0 0 12px;
+  z-index: 10;
+  animation: stripe-fade-fast 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.animate-wash-up-fast::before {
+  background: oklch(0.65 0.22 155);
+}
+.animate-wash-down-fast::before {
+  background: oklch(0.60 0.20 25);
+}
+
+/* ── Scrollbar hide utility ── */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* ── Edge glow: directional indicator when item moves off-screen ── */
 @keyframes edge-glow {
   0%   { opacity: 0.9; }

@@ -13,7 +13,7 @@ import {
   selectNextMatchup,
   getConfidence,
   toRankedList,
-  getFocusedNeighbourhood,
+  getFullRanking,
 } from "@/lib/elo";
 import type { SortableItem } from "@/components/sortable-list";
 
@@ -40,6 +40,25 @@ const CONFETTI_COLORS = [
   "#a855f7", "#ec4899", "#f59e0b", "#22c55e", "#3b82f6", "#ef4444",
   "#facc15", "#f472b6", "#818cf8",
 ];
+
+const ROW_HEIGHT = 32; // approx px per ranking row
+
+function useDuelWindowSize() {
+  const [windowSize, setWindowSize] = useState(7);
+  useEffect(() => {
+    function calc() {
+      const h = window.innerHeight;
+      if (h >= 900) return 11;
+      if (h >= 700) return 9;
+      return 7;
+    }
+    setWindowSize(calc());
+    function onResize() { setWindowSize(calc()); }
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return windowSize;
+}
 
 function randomPick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -185,11 +204,13 @@ export function SpecialtyDuel({
   const [currentMatchup, setCurrentMatchup] = useState<[string, string]>(() =>
     selectNextMatchup(state, movedIds)
   );
-  const [neighbourhood, setNeighbourhood] = useState<RankingEntry[]>(() =>
-    getFocusedNeighbourhood(state, currentMatchup[0], 7)
+  const [ranking, setRanking] = useState<RankingEntry[]>(() =>
+    getFullRanking(state)
   );
   const [trackedItem, setTrackedItem] = useState<{ id: string; delta: number } | null>(null);
   const [loserAnnotation, setLoserAnnotation] = useState<{ id: string; delta: number } | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [rankDeltas, setRankDeltas] = useState<Map<string, number>>(new Map());
   const [sliderValue, setSliderValue] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -203,6 +224,37 @@ export function SpecialtyDuel({
   // Glow animation tracking (same pattern as results-view.tsx)
   const glowKeyRef = useRef<Map<string, number>>(new Map());
   const [flashMap, setFlashMap] = useState<Map<string, "up" | "down">>(new Map());
+
+  // Smooth scroll to center a specific item in the ranking list
+  const smoothScrollToItem = useCallback((itemId: string) => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const row = container.querySelector(`[data-rank-id="${CSS.escape(itemId)}"]`) as HTMLElement | null;
+    if (!row) return;
+    const containerRect = container.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+    const targetScroll = container.scrollTop + (rowRect.top - containerRect.top) - containerRect.height / 2 + rowRect.height / 2;
+    const startScroll = container.scrollTop;
+    const distance = targetScroll - startScroll;
+    if (Math.abs(distance) < 2) return;
+    const duration = 600;
+    const startTime = performance.now();
+    function easeOutCubic(t: number) { return 1 - Math.pow(1 - t, 3); }
+    function step(now: number) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      container!.scrollTop = startScroll + distance * easeOutCubic(progress);
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }, []);
+
+  // Scroll to left specialty on initial render
+  useEffect(() => {
+    const timer = setTimeout(() => smoothScrollToItem(currentMatchup[0]), 100);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const confidence = useMemo(
     () => getConfidence(state, movedIds?.size),
@@ -238,8 +290,10 @@ export function SpecialtyDuel({
         matchupKeyRef.current += 1;
         const next = selectNextMatchup(newState, movedIds);
         setCurrentMatchup(next);
-        setNeighbourhood(getFocusedNeighbourhood(newState, next[0], 7));
+        setRanking(getFullRanking(newState));
         setSliderValue(0);
+        // Scroll to the left specialty of next matchup
+        requestAnimationFrame(() => smoothScrollToItem(next[0]));
         return;
       }
 
@@ -271,9 +325,19 @@ export function SpecialtyDuel({
       setLoserEmoji(randomPick(LOSER_EMOJIS));
       setLoserFlyOff(false);
 
+      // Compute per-item rank deltas for fly animation
+      const newDeltas = new Map<string, number>();
+      for (const [name] of newState.ratings) {
+        const before = ranksBefore.get(name) ?? 0;
+        const after = ranksAfter.get(name) ?? 0;
+        const d = before - after; // positive = moved up
+        if (d !== 0) newDeltas.set(name, d);
+      }
+      setRankDeltas(newDeltas);
+
       setTrackedItem({ id: winner, delta: winnerDelta });
       setLoserAnnotation({ id: loser, delta: loserDelta });
-      setNeighbourhood(getFocusedNeighbourhood(newState, winner, 7));
+      setRanking(getFullRanking(newState));
       setIsTransitioning(true);
 
       // Phase 2: After emoji has shown, fly the loser off
@@ -286,18 +350,21 @@ export function SpecialtyDuel({
         setTrackedItem(null);
         setLoserAnnotation(null);
         setFlashMap(new Map());
+        setRankDeltas(new Map());
         setWinSide(null);
         setLoserEmoji(null);
         setLoserFlyOff(false);
         matchupKeyRef.current += 1;
         const next = selectNextMatchup(newState, movedIds);
         setCurrentMatchup(next);
-        setNeighbourhood(getFocusedNeighbourhood(newState, next[0], 7));
+        setRanking(getFullRanking(newState));
         setSliderValue(0);
         setIsTransitioning(false);
+        // Scroll to the left specialty of next matchup
+        requestAnimationFrame(() => smoothScrollToItem(next[0]));
       }, 1400);
     },
-    [currentMatchup, state, onStateChange, onRankingChange, movedIds, isTransitioning]
+    [currentMatchup, state, onStateChange, onRankingChange, movedIds, isTransitioning, smoothScrollToItem]
   );
 
   const [leftSpec, rightSpec] = currentMatchup;
@@ -313,39 +380,57 @@ export function SpecialtyDuel({
   const rightIsLoser = winSide === "left";
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 justify-evenly gap-2">
-      {/* Ranking neighbourhood — recessed viewport */}
-      <div className="shrink-0 max-h-[160px] sm:max-h-[180px] overflow-hidden px-1">
-        <div className="bg-muted/40 dark:bg-black/20 shadow-[inset_0_2px_8px_rgba(0,0,0,0.25)] border border-border/30 rounded-xl pointer-events-none p-2">
+    <div className="flex flex-col flex-1 min-h-0 gap-3 sm:gap-5">
+      {/* Ranking list — recessed scrollable viewport */}
+      <div
+        className="flex-1 min-h-0 sm:max-h-[40%] relative bg-muted/40 dark:bg-black/20 shadow-[inset_0_2px_8px_rgba(0,0,0,0.25)] border border-border/30 rounded-xl pointer-events-none mx-1"
+        style={{
+          maskImage: "linear-gradient(to bottom, transparent 0%, black 6%, black 94%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 6%, black 94%, transparent 100%)",
+        }}
+      >
+        <motion.div
+          ref={scrollContainerRef}
+          className="absolute inset-0 overflow-y-auto scrollbar-hide p-2"
+          layoutScroll
+        >
           <LayoutGroup>
-            <div className="space-y-0.5">
+            <div>
               <AnimatePresence mode="popLayout">
-                {neighbourhood.map((entry) => {
+                {ranking.map((entry, index) => {
                   const isWinner = trackedItem?.id === entry.id;
                   const isLoser = loserAnnotation?.id === entry.id;
                   const flashDir = flashMap.get(entry.id);
                   const glowKey = glowKeyRef.current.get(entry.id) ?? 0;
                   const isInMatchup = entry.id === leftSpec || entry.id === rightSpec;
+                  const rankDelta = rankDeltas.get(entry.id) ?? 0;
+                  const staggerDelay = index * 0.03;
 
                   return (
                     <motion.div
                       key={entry.id}
+                      data-rank-id={entry.id}
                       layoutId={`duel-rank-${entry.id}`}
                       layout="position"
-                      transition={SPRING}
+                      initial={rankDelta !== 0 ? { y: -rankDelta * ROW_HEIGHT, opacity: 0.7 } : false}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{
+                        ...SPRING,
+                        delay: staggerDelay,
+                      }}
                     >
                       <div
                         key={glowKey}
                         className={cn(
-                          "flex items-center gap-2 rounded px-2 py-1",
-                          flashDir === "up" && "animate-card-glow-up-fast",
-                          flashDir === "down" && "animate-card-glow-down-fast",
-                          !flashDir && isInMatchup && "bg-primary/10 dark:bg-primary/15",
-                          !flashDir && !isInMatchup && "bg-muted/30"
+                          "relative overflow-hidden flex items-center gap-2 rounded-md px-2 py-1.5",
+                          flashDir === "up" && "animate-wash-up-fast",
+                          flashDir === "down" && "animate-wash-down-fast",
+                          !flashDir && isInMatchup && "bg-primary/12 dark:bg-primary/15 ring-1 ring-primary/20",
+                          !flashDir && !isInMatchup && (index % 2 === 0 ? "bg-transparent" : "bg-muted/20"),
                         )}
                       >
-                        <span className="text-xs font-mono font-bold text-muted-foreground w-5 text-right tabular-nums">
-                          #{entry.rank}
+                        <span className="inline-flex items-center justify-center text-[10px] font-mono font-bold text-muted-foreground bg-muted/50 dark:bg-muted/30 rounded px-1 py-0.5 min-w-[24px] text-center tabular-nums">
+                          {entry.rank}
                         </span>
                         <span className={cn(
                           "flex-1 text-xs sm:text-sm text-foreground truncate",
@@ -371,14 +456,13 @@ export function SpecialtyDuel({
               </AnimatePresence>
             </div>
           </LayoutGroup>
-        </div>
+        </motion.div>
       </div>
 
-      {/* Matchup + slider — boxed section */}
-      <div className="shrink-0 border-2 border-border rounded-xl bg-muted/20 dark:bg-muted/10 px-3 sm:px-5 pt-4 sm:pt-5 pb-3 overflow-visible">
-        <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground text-center mb-4 uppercase tracking-wide">Choose your preference</p>
-        <div className="border-b border-border/50 -mx-3 sm:-mx-5 mb-4" />
-        <div className="flex items-stretch gap-2 sm:gap-3 px-1 sm:px-2">
+      {/* Matchup + slider */}
+      <div className="shrink-0 px-1 sm:px-3 pt-1 sm:pt-3 pb-2 overflow-visible mx-1">
+        <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground text-center mb-3 sm:mb-4 uppercase tracking-wide">Choose your preference</p>
+        <div className="flex items-stretch gap-2 sm:gap-3">
           {/* Left card */}
           <motion.div
             key={`left-${matchupKeyRef.current}`}
@@ -461,10 +545,8 @@ export function SpecialtyDuel({
           </motion.div>
         </div>
 
-        <div className="border-b border-border/50 -mx-3 sm:-mx-5 mt-4" />
-
         {/* Slider section */}
-        <div className="pt-4 pb-1 px-1 touch-none">
+        <div className="pt-3 sm:pt-5 pb-1 px-1 touch-none">
         <div className="relative">
           <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-[4px] bg-border rounded-full" />
           {[0, 25, 50, 75, 100].map((pct) => (

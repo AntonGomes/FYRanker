@@ -223,6 +223,17 @@ export function toRankedList(state: EloState): SortableItem[] {
     .map(([name]) => ({ id: name, label: name }));
 }
 
+export function getFullRanking(state: EloState): RankingEntry[] {
+  return Array.from(state.ratings.entries())
+    .sort((x, y) => y[1] - x[1])
+    .map(([name, rating], i) => ({
+      id: name,
+      label: name,
+      rating: Math.round(rating),
+      rank: i + 1,
+    }));
+}
+
 export function getFocusedNeighbourhood(
   state: EloState,
   focal: string,
