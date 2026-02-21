@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { getRegionStyle } from "@/lib/region-colors";
 import type { ScoredJob } from "@/lib/scoring";
 import { effectiveScore } from "@/lib/scoring";
+import { SCORE_DISPLAY_DECIMALS } from "@/lib/constants";
 import {
   Columns2,
   ArrowUpDown,
@@ -110,7 +111,7 @@ export function SelectionToolbar({
                 </span>
               </div>
               <div className="text-[10px] text-muted-foreground font-mono">
-                Score: {score.toFixed(3)}
+                Score: {score.toFixed(SCORE_DISPLAY_DECIMALS)}
               </div>
             </div>
           );

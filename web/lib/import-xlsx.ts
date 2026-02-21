@@ -74,7 +74,7 @@ export async function importRankingsFromXlsx(
 
     return {
       job,
-      score: score - scoreAdjustment, // base score = effective - adjustment
+      score: score - scoreAdjustment, 
       scoreAdjustment,
       regionScore,
       hospitalScore,

@@ -21,8 +21,22 @@ import {
   Pin,
   Lock,
 } from "lucide-react";
+import { PLACEMENTS_PER_FY, SCORE_DISPLAY_DECIMALS } from "@/lib/constants";
 
-/* ── Animated score display ── */
+/* ── Animated score constants ── */
+const SCORE_DIFF_THRESHOLD = 0.0001;
+const SCORE_ANIM_DURATION_MS = 700;
+const EASING_EXPONENT = 3;
+const FLASH_RESET_MS = 600;
+
+/* ── Swipe constants ── */
+const SWIPE_ABORT_RATIO = 1.5;
+const SWIPE_MIN_DX = 10;
+const SWIPE_BOOST_THRESHOLD = 15;
+const SWIPE_BURY_THRESHOLD = -15;
+const SWIPE_COMMITTED_RESET_MS = 400;
+
+
 function AnimatedScore({
   value,
   flashDirection,
@@ -39,9 +53,9 @@ function AnimatedScore({
   useEffect(() => {
     const start = displayRef.current;
     const end = value;
-    if (Math.abs(start - end) < 0.0001) return;
+    if (Math.abs(start - end) < SCORE_DIFF_THRESHOLD) return;
 
-    const duration = 700;
+    const duration = SCORE_ANIM_DURATION_MS;
     const startTime = performance.now();
 
     if (animRef.current) cancelAnimationFrame(animRef.current);
@@ -49,7 +63,7 @@ function AnimatedScore({
     function tick(now: number) {
       const elapsed = now - startTime;
       const t = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - t, 3);
+      const eased = 1 - Math.pow(1 - t, EASING_EXPONENT);
       const next = start + (end - start) * eased;
       displayRef.current = next;
       setDisplayValue(next);
@@ -70,7 +84,7 @@ function AnimatedScore({
     setFlashClass(
       flashDirection === "up" ? "animate-score-up" : "animate-score-down"
     );
-    const timeout = setTimeout(() => setFlashClass(""), 600);
+    const timeout = setTimeout(() => setFlashClass(""), FLASH_RESET_MS);
     return () => clearTimeout(timeout);
   }, [flashDirection]);
 
@@ -82,12 +96,12 @@ function AnimatedScore({
         flashClass
       )}
     >
-      {displayValue.toFixed(3)}
+      {displayValue.toFixed(SCORE_DISPLAY_DECIMALS)}
     </span>
   );
 }
 
-/* ── Rank change badge ── */
+
 function RankChangeBadge({ delta, direction }: { delta: number | null; direction: "up" | "down" | null }) {
   return (
     <AnimatePresence>
@@ -112,7 +126,7 @@ function RankChangeBadge({ delta, direction }: { delta: number | null; direction
   );
 }
 
-/* ── Arrow icons for boost/bury ── */
+
 function ArrowUp() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -130,7 +144,7 @@ function ArrowDown() {
   );
 }
 
-/* ── Placement row: two-line layout (hospital + specialty) ── */
+
 
 const PlacementRow = memo(function PlacementRow({
   entry,
@@ -154,7 +168,7 @@ const PlacementRow = memo(function PlacementRow({
   );
 });
 
-/* ── Single FY group: bracket on left, rows on right ── */
+
 const FYGroup = memo(function FYGroup({
   label,
   entries,
@@ -206,7 +220,7 @@ const FYGroup = memo(function FYGroup({
   );
 });
 
-/* ── Placement list (FY1 + FY2 groups) ── */
+
 const PlacementList = memo(function PlacementList({
   fy1,
   fy2,
@@ -222,7 +236,7 @@ const PlacementList = memo(function PlacementList({
   );
 });
 
-/* ── Swipe-to-boost/bury hook (mobile) ── */
+
 const SWIPE_THRESHOLD = 60;
 
 function useSwipeBoostBury({
@@ -256,13 +270,13 @@ function useSwipeBoostBury({
     const touch = e.touches[0];
     const dx = touch.clientX - ref.x;
     const dy = touch.clientY - ref.y;
-    if (Math.abs(dy) > Math.abs(dx) * 1.5 && Math.abs(dy) > 10) {
+    if (Math.abs(dy) > Math.abs(dx) * SWIPE_ABORT_RATIO && Math.abs(dy) > SWIPE_MIN_DX) {
       ref.aborted = true;
       setSwipeX(0);
       setPendingAction(null);
       return;
     }
-    if (Math.abs(dx) > 10) {
+    if (Math.abs(dx) > SWIPE_MIN_DX) {
       setSwipeX(dx);
       if (dx >= SWIPE_THRESHOLD) setPendingAction("boost");
       else if (dx <= -SWIPE_THRESHOLD) setPendingAction("bury");
@@ -289,13 +303,13 @@ function useSwipeBoostBury({
 
     setSwipeX(0);
     setPendingAction(null);
-    setTimeout(() => setSwipeCommitted(null), 400);
+    setTimeout(() => setSwipeCommitted(null), SWIPE_COMMITTED_RESET_MS);
   }, [pendingAction, onBoost, onBury]);
 
   return { swipeX, swipeCommitted, pendingAction, onTouchStart, onTouchMove, onTouchEnd };
 }
 
-/* ── Sortable list row ── */
+
 const ListRow = memo(function ListRow({
   scored,
   rank,
@@ -359,8 +373,8 @@ const ListRow = memo(function ListRow({
         : "";
 
   const allPlacements: (PlacementEntry | null)[] = [];
-  for (let i = 0; i < 3; i++) allPlacements.push(fy1[i] ?? null);
-  for (let i = 0; i < 3; i++) allPlacements.push(fy2[i] ?? null);
+  for (let i = 0; i < PLACEMENTS_PER_FY; i++) allPlacements.push(fy1[i] ?? null);
+  for (let i = 0; i < PLACEMENTS_PER_FY; i++) allPlacements.push(fy2[i] ?? null);
 
   const handleSwipeBoost = useCallback(() => onBoost(scored.job.programmeTitle), [onBoost, scored.job.programmeTitle]);
   const handleSwipeBury = useCallback(() => onBury(scored.job.programmeTitle), [onBury, scored.job.programmeTitle]);
@@ -404,7 +418,7 @@ const ListRow = memo(function ListRow({
             "absolute inset-0 flex items-center justify-start pl-4 rounded-xl transition-colors duration-150",
             pendingAction === "boost" ? "bg-emerald-500" : "bg-emerald-500/20"
           )}>
-            {swipeX > 15 && (
+            {swipeX > SWIPE_BOOST_THRESHOLD && (
               <div className="flex items-center gap-2">
                 <ArrowUp />
                 <span className={cn(
@@ -420,7 +434,7 @@ const ListRow = memo(function ListRow({
             "absolute inset-0 flex items-center justify-end pr-4 rounded-xl transition-colors duration-150",
             pendingAction === "bury" ? "bg-red-500" : "bg-red-500/20"
           )}>
-            {swipeX < -15 && (
+            {swipeX < SWIPE_BURY_THRESHOLD && (
               <div className="flex items-center gap-2">
                 <span className={cn(
                   "text-sm font-bold transition-opacity",
@@ -467,7 +481,7 @@ const ListRow = memo(function ListRow({
           </div>
 
           <div className="grid grid-cols-2 gap-x-3 mt-1.5">
-            {([["FY1", fy1, 0], ["FY2", fy2, 3]] as const).map(([label, entries, offset]) => (
+            {([["FY1", fy1, 0], ["FY2", fy2, PLACEMENTS_PER_FY]] as const).map(([label, entries, offset]) => (
               <div key={label}>
                 <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">
                   {label}
@@ -693,7 +707,7 @@ const ListRow = memo(function ListRow({
   );
 });
 
-/* ── List drag overlay row ── */
+
 const ListDragOverlayRow = memo(function ListDragOverlayRow({
   scored,
   rank,
@@ -708,8 +722,8 @@ const ListDragOverlayRow = memo(function ListDragOverlayRow({
   const score = effectiveScore(scored);
 
   const allPlacements: (PlacementEntry | null)[] = [];
-  for (let i = 0; i < 3; i++) allPlacements.push(fy1[i] ?? null);
-  for (let i = 0; i < 3; i++) allPlacements.push(fy2[i] ?? null);
+  for (let i = 0; i < PLACEMENTS_PER_FY; i++) allPlacements.push(fy1[i] ?? null);
+  for (let i = 0; i < PLACEMENTS_PER_FY; i++) allPlacements.push(fy2[i] ?? null);
 
   if (isMobile) {
     return (
@@ -727,7 +741,7 @@ const ListDragOverlayRow = memo(function ListDragOverlayRow({
           </span>
           <div className="rounded-md bg-secondary/50 px-2 py-0.5 flex items-center gap-1 shrink-0">
             <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">Score</span>
-            <span className="font-mono tabular-nums text-xs font-semibold text-foreground">{score.toFixed(3)}</span>
+            <span className="font-mono tabular-nums text-xs font-semibold text-foreground">{score.toFixed(SCORE_DISPLAY_DECIMALS)}</span>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-x-3 gap-y-0 mt-1.5">
@@ -810,7 +824,7 @@ const ListDragOverlayRow = memo(function ListDragOverlayRow({
             Score
           </span>
           <span className="font-mono tabular-nums text-xs font-semibold text-foreground">
-            {score.toFixed(3)}
+            {score.toFixed(SCORE_DISPLAY_DECIMALS)}
           </span>
         </div>
       </div>

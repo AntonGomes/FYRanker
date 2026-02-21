@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 const STORAGE_KEY = "fyrranker-welcome-seen";
+const MOBILE_BREAKPOINT = 640;
 
 interface WelcomeModalProps {
   externalOpen?: boolean;
@@ -25,7 +26,7 @@ export function WelcomeModal({ externalOpen, onExternalClose }: WelcomeModalProp
     if (!localStorage.getItem(STORAGE_KEY)) {
       setAutoOpen(true);
     }
-    setIsMobile(window.innerWidth < 640);
+    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
   }, []);
 
   const open = autoOpen || (externalOpen ?? false);
@@ -54,7 +55,7 @@ export function WelcomeModal({ externalOpen, onExternalClose }: WelcomeModalProp
           </p>
 
           {isMobile ? (
-            /* ── Mobile help content ── */
+            
             <div className="space-y-2.5">
               <p className="font-semibold text-foreground">
                 3 ways to manage your ranking:
@@ -84,7 +85,7 @@ export function WelcomeModal({ externalOpen, onExternalClose }: WelcomeModalProp
               </p>
             </div>
           ) : (
-            /* ── Desktop help content ── */
+            
             <div className="space-y-2.5">
               <p className="font-semibold text-foreground">
                 6 ways to manage your ranking:

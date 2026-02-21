@@ -16,7 +16,7 @@ export default function ResultsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Try sessionStorage first, then localStorage
+    
     const raw =
       sessionStorage.getItem("fy_scored_jobs") ??
       localStorage.getItem("fy_scored_jobs");
@@ -50,7 +50,7 @@ export default function ResultsPage() {
       }
     } finally {
       setImporting(false);
-      // Reset the input so the same file can be re-selected
+      
       if (fileRef.current) fileRef.current.value = "";
     }
   }

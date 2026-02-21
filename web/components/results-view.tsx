@@ -48,14 +48,43 @@ import { WelcomeModal } from "@/components/welcome-modal";
 import { exportRankingsToXlsx } from "@/lib/export-xlsx";
 import { importRankingsFromXlsx, ImportError } from "@/lib/import-xlsx";
 import { useListDragSensors } from "@/hooks/use-list-drag-sensors";
+import {
+  MOBILE_BREAKPOINT,
+  COMPARE_MAX_JOBS,
+  UNDO_HISTORY_LIMIT,
+  PLACEMENTS_PER_FY,
+} from "@/lib/constants";
 
-/* ── Types ── */
+/* ── Results view layout constants ── */
+const ROW_HEIGHT_DESKTOP = 56;
+const ROW_HEIGHT_MOBILE = 172;
+const VIRTUALIZER_OVERSCAN = 5;
+const SAVE_DEBOUNCE_MS = 500;
+const EDGE_GLOW_DURATION_MS = 2000;
+const FLASH_DURATION_MS = 2500;
+const SAFETY_TIMEOUT_MS = 900;
+const CASCADE_STAGGER_FAST = 0.08;
+const CASCADE_STAGGER_SLOW = 0.05;
+const CASCADE_THRESHOLD = 3;
+
+/* ── Animation easing ── */
+const EASE_P1 = 0.25;
+const EASE_P2 = 0.1;
+const EASE_BEZIER: [number, number, number, number] = [EASE_P1, EASE_P2, EASE_P1, 1];
+const CASCADE_DURATION = 0.35;
+
+/* ── Ghost animation ── */
+const GHOST_DURATION = 0.5;
+const GHOST_SCALE_PEAK = 1.05;
+const GHOST_OPACITY_END = 0.7;
+
+
 
 interface ResultsViewProps {
   scoredJobs: ScoredJob[];
 }
 
-/* ── Helpers ── */
+
 
 function getPlacementSummary(job: Job) {
   const sites: string[] = [];
@@ -70,9 +99,7 @@ function getPlacementSummary(job: Job) {
   return { sites, specs: Array.from(specs) };
 }
 
-/* ════════════════════════════════════════════════════════════
-   Main results view
-   ════════════════════════════════════════════════════════════ */
+
 export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const [rankedJobs, setRankedJobs] = useState<ScoredJob[]>(() =>
     scoredJobs.map((sj) => ({
@@ -85,42 +112,42 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const [showCompare, setShowCompare] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  // Boost/Bury flash tracking
+  
   const rankDeltaRef = useRef<Map<string, number>>(new Map());
   const [flashMap, setFlashMap] = useState<
     Map<string, "up" | "down">
   >(new Map());
 
-  // Move To dialog
+  
   const [moveToState, setMoveToState] = useState<{
     jobId: string;
     rank: number;
   } | null>(null);
 
-  // Multiselect
+  
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Move To for bulk (from toolbar)
+  
   const [bulkMoveToOpen, setBulkMoveToOpen] = useState(false);
 
-  // Pin
+  
   const [pinnedJobIds, setPinnedJobIds] = useState<Set<string>>(new Set());
   const [scrollDir, setScrollDir] = useState<"down" | "up">("down");
   const lastScrollTop = useRef(0);
 
-  // Lock
+  
   const [lockedJobIds, setLockedJobIds] = useState<Set<string>>(new Set());
 
-  // Help modal
+  
   const [showHelp, setShowHelp] = useState(false);
 
-  // Undo/Redo
+  
   const [history, setHistory] = useState<ScoredJob[][]>([]);
   const [future, setFuture] = useState<ScoredJob[][]>([]);
 
   const pushAndSetRanked = useCallback((updater: (prev: ScoredJob[]) => ScoredJob[]) => {
     setRankedJobs(prev => {
-      setHistory(h => [...h.slice(-50), prev]);
+      setHistory(h => [...h.slice(-UNDO_HISTORY_LIMIT), prev]);
       setFuture([]);
       return updater(prev);
     });
@@ -141,30 +168,30 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     setFuture(f => f.slice(1));
   }, [future, rankedJobs]);
 
-  // Mobile search expanded state
+  
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
-  // Mobile filters
+  
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
 
-  // Import
+  
   const importFileRef = useRef<HTMLInputElement>(null);
 
-  // Filters
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [regionFilter, setRegionFilter] = useState<string>("all");
   const [hospitalFilter, setHospitalFilter] = useState<string>("all");
   const [specialtyFilter, setSpecialtyFilter] = useState<string>("all");
 
-  // Scroll ref
+  
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Scroll-to-card after boost/bury/move
+  
   const scrollToJobIdRef = useRef<string | null>(null);
 
-  // Flying ghost card state (boost/bury visual feedback) — queue-based for concurrent ghosts
+  
   type GhostData = {
     scored: ScoredJob;
     rank: number;
@@ -176,7 +203,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const [ghosts, setGhosts] = useState<Map<string, GhostData>>(new Map());
   const ghostIdCounter = useRef(0);
 
-  // Cascade animation state
+  
   type CascadeGhostData = {
     scored: ScoredJob;
     rank: number;
@@ -196,16 +223,16 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     timeoutId: ReturnType<typeof setTimeout>;
   } | null>(null);
 
-  // Edge glow state
+  
   const [edgeGlow, setEdgeGlow] = useState<{ side: 'top' | 'bottom'; color: 'green' | 'red' } | null>(null);
 
-  // Ref for fresh state in DnD callbacks
+  
   const rankedJobsRef = useRef(rankedJobs);
   rankedJobsRef.current = rankedJobs;
 
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
-    function update() { setIsMobile(window.innerWidth < 640); }
+    function update() { setIsMobile(window.innerWidth < MOBILE_BREAKPOINT); }
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
@@ -215,13 +242,13 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
   const sensors = useListDragSensors();
 
-  /* ── Nudge amount ── */
+  
   const nudgeAmount = useMemo(
     () => computeNudgeAmount(rankedJobs),
     [rankedJobs]
   );
 
-  /* ── Derived data ── */
+  
 
   const allRegions = useMemo(() => {
     const set = new Set<string>();
@@ -249,7 +276,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     return Array.from(set).sort();
   }, [rankedJobs]);
 
-  // O(1) lookup: id → global index in rankedJobs
+  
   const indexById = useMemo(() => {
     const map = new Map<string, number>();
     rankedJobs.forEach((s, i) => map.set(s.job.programmeTitle, i));
@@ -292,30 +319,30 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const filteredJobsRef = useRef(filteredJobs);
   filteredJobsRef.current = filteredJobs;
 
-  // IDs for SortableContext
+  
   const filteredIds = useMemo(
     () => filteredJobs.map((s) => s.job.programmeTitle),
     [filteredJobs]
   );
 
-  // Row-based virtualization
+  
   const rowCount = filteredJobs.length;
   const virtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => isMobile ? 172 : 56,
-    overscan: 5,
+    estimateSize: () => isMobile ? ROW_HEIGHT_MOBILE : ROW_HEIGHT_DESKTOP,
+    overscan: VIRTUALIZER_OVERSCAN,
   });
   const virtualizerRef = useRef(virtualizer);
   virtualizerRef.current = virtualizer;
 
-  // Reset scroll on filter change or view mode switch
+  
   useEffect(() => {
     scrollRef.current?.scrollTo(0, 0);
     virtualizerRef.current.measure();
   }, [searchQuery, regionFilter, hospitalFilter, specialtyFilter, isMobile]);
 
-  // Scroll to card after boost/bury/move
+  
   useEffect(() => {
     const targetId = scrollToJobIdRef.current;
     if (!targetId) return;
@@ -324,13 +351,13 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     const idx = filteredJobs.findIndex((sj) => sj.job.programmeTitle === targetId);
     if (idx === -1) return;
 
-    // Small delay to let framer-motion layout animation start
+    
     requestAnimationFrame(() => {
       virtualizer.scrollToIndex(idx, { align: "center", behavior: "smooth" });
     });
   }, [filteredJobs, virtualizer]);
 
-  /* ── Debounced localStorage persistence ── */
+  
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
@@ -338,20 +365,20 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         localStorage.setItem("fy_scored_jobs", json);
         sessionStorage.setItem("fy_scored_jobs", json);
       } catch {
-        // storage full — silently ignore
+        
       }
-    }, 500);
+    }, SAVE_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [rankedJobs]);
 
-  /* ── Edge glow auto-clear ── */
+
   useEffect(() => {
     if (!edgeGlow) return;
-    const timer = setTimeout(() => setEdgeGlow(null), 2000);
+    const timer = setTimeout(() => setEdgeGlow(null), EDGE_GLOW_DURATION_MS);
     return () => clearTimeout(timer);
   }, [edgeGlow]);
 
-  /* ── Pinned rows ── */
+  
   const pinnedRowIndices = useMemo(() => {
     const rows: number[] = [];
     filteredJobs.forEach((sj, i) => {
@@ -360,8 +387,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     return rows;
   }, [filteredJobs, pinnedJobIds]);
 
-  /* ── Custom collision detection ──
-     Filter to only rendered (virtualized) items for performance. */
+  
   const customCollisionDetection: CollisionDetection = useCallback(
     (args) => {
       const virtualItems = virtualizer.getVirtualItems();
@@ -383,9 +409,9 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     [virtualizer, filteredJobs]
   );
 
-  /* ── Actions ── */
+  
 
-  /* ── Ghost card helper: captures card position from DOM and launches flying ghost ── */
+  
   const launchGhost = useCallback((
     jobId: string,
     direction: 'up' | 'down',
@@ -399,8 +425,8 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
     const scrollRect = scrollEl.getBoundingClientRect();
 
-    // Estimate where the item lands after sort
-    const estRowH = isMobileRef.current ? 172 : 56;
+    
+    const estRowH = isMobileRef.current ? ROW_HEIGHT_MOBILE : ROW_HEIGHT_DESKTOP;
     const newOffset = newIdx * estRowH;
     const viewTop = scrollEl.scrollTop;
     const viewBottom = viewTop + scrollEl.clientHeight;
@@ -415,7 +441,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       targetY = scrollRect.top + newOffset - viewTop;
     }
 
-    // Fire edge glow immediately for off-screen destinations
+    
     if (offScreen) {
       setEdgeGlow({
         side: direction === 'up' ? 'top' : 'bottom',
@@ -443,7 +469,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     });
   }, []);
 
-  /* ── Cascade animation helpers ── */
+  
 
   const applyPendingSort = useCallback(() => {
     const pending = pendingSortRef.current;
@@ -469,7 +495,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
     const contentRect = contentEl.getBoundingClientRect();
 
-    // Build a rect cache for all displaced items + the gap position
+    
     const rectCache = new Map<number, DOMRect>();
     for (let i = lo; i <= hi; i++) {
       const sj = prevJobs[i];
@@ -477,7 +503,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       const el = scrollEl.querySelector(`[data-job-id="${sj.job.programmeTitle}"]`);
       if (el) rectCache.set(i, el.getBoundingClientRect());
     }
-    // Also cache the gap slot (the nudged card, still in DOM at opacity:0 or about to be hidden)
+    
     const gapSj = prevJobs[gapIdx];
     if (gapSj) {
       const gapEl = scrollEl.querySelector(`[data-job-id="${gapSj.job.programmeTitle}"]`);
@@ -487,33 +513,33 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     const newCascades = new Map<string, CascadeGhostData>();
     let count = 0;
 
-    // Iterate from closest-to-gap toward destination
+    
     const indices: number[] = [];
     if (direction === 'up') {
-      // Boost: gap at oldIdx, items lo..hi shift down (+1). Closest to gap = hi
+      
       for (let i = hi; i >= lo; i--) indices.push(i);
     } else {
-      // Bury: gap at oldIdx, items lo..hi shift up (-1). Closest to gap = lo
+      
       for (let i = lo; i <= hi; i++) indices.push(i);
     }
 
     const totalDisplaced = hi - lo + 1;
-    const staggerSec = totalDisplaced <= 3 ? 0.08 : 0.05;
+    const staggerSec = totalDisplaced <= CASCADE_THRESHOLD ? CASCADE_STAGGER_FAST : CASCADE_STAGGER_SLOW;
 
     for (const idx of indices) {
       const sj = prevJobs[idx];
       if (!sj) continue;
 
       const fromRect = rectCache.get(idx);
-      if (!fromRect) continue; // not in DOM (virtualized away)
+      if (!fromRect) continue; 
 
-      // Each displaced card moves to the position of its neighbor toward the gap
-      // Boost (direction=up): card at idx moves to idx+1's position
-      // Bury (direction=down): card at idx moves to idx-1's position
+      
+      
+      
       const targetIdx = direction === 'up' ? idx + 1 : idx - 1;
       const targetRect = rectCache.get(targetIdx);
 
-      // Compute pixel delta — use exact DOM rects when available, fall back to zero shift
+      
       let deltaX = 0;
       let deltaY = 0;
       if (targetRect) {
@@ -521,7 +547,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         deltaY = targetRect.top - fromRect.top;
       }
 
-      // Skip if no movement (both rects identical or target not found)
+      
       if (deltaX === 0 && deltaY === 0 && !targetRect) continue;
 
       const delay = count * staggerSec;
@@ -560,12 +586,12 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     return count;
   }, []);
 
-  /* ── Boost / Bury (unified) ── */
+  
   const handleNudge = useCallback(
     (jobId: string, direction: 'up' | 'down') => {
       if (lockedJobIds.has(jobId)) return;
 
-      // Cancel any in-progress animation
+      
       if (pendingSortRef.current) {
         clearTimeout(pendingSortRef.current.timeoutId);
         pushAndSetRanked(() => pendingSortRef.current!.sorted);
@@ -577,11 +603,11 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
       const sign = direction === 'up' ? 1 : -1;
 
-      // Capture bounding rect from DOM BEFORE React re-sorts
+      
       const el = scrollRef.current?.querySelector(`[data-job-id="${jobId}"]`);
       const fromRect = el?.getBoundingClientRect();
 
-      // Compute sort synchronously from ref
+      
       const prev = rankedJobsRef.current;
       const oldIdx = prev.findIndex((sj) => sj.job.programmeTitle === jobId);
       if (oldIdx === -1) return;
@@ -597,13 +623,13 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
       );
       const newIdx = sorted.findIndex((sj) => sj.job.programmeTitle === jobId);
 
-      // No movement → just apply score change
+      
       if (oldIdx === newIdx) {
         pushAndSetRanked(() => sorted);
         return;
       }
 
-      // Record rank delta + flash
+      
       rankDeltaRef.current.set(jobId, oldIdx - newIdx);
       setFlashMap((prev) => {
         const next = new Map(prev);
@@ -617,24 +643,24 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
           return next;
         });
         rankDeltaRef.current.delete(jobId);
-      }, 2500);
+      }, FLASH_DURATION_MS);
 
-      // DON'T apply sort yet — defer until animations complete
+      
       setHiddenJobIds(new Set([jobId]));
 
-      // Launch main ghost
+      
       if (fromRect) {
         launchGhost(jobId, direction, scored, oldIdx + 1, fromRect, newIdx);
       }
 
-      // Launch cascade ghosts for displaced items
+      
       const [lo, hi] = direction === 'up'
-        ? [newIdx, oldIdx - 1]   // boost: items at newIdx..oldIdx-1 shift down
-        : [oldIdx + 1, newIdx];  // bury: items at oldIdx+1..newIdx shift up
+        ? [newIdx, oldIdx - 1]   
+        : [oldIdx + 1, newIdx];  
       launchCascadeGhosts(prev, lo, hi, direction, oldIdx);
 
-      // Track pending sort — main ghost completion or safety timeout triggers it
-      const safetyTimeout = setTimeout(() => applyPendingSort(), 900);
+      
+      const safetyTimeout = setTimeout(() => applyPendingSort(), SAFETY_TIMEOUT_MS);
       pendingSortRef.current = {
         sorted,
         nudgedJobId: jobId,
@@ -654,7 +680,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     [handleNudge]
   );
 
-  /* ── Move To ── */
+  
   const handleMoveTo = useCallback((jobId: string, targetRank: number) => {
     if (lockedJobIds.has(jobId)) return;
     scrollToJobIdRef.current = jobId;
@@ -676,7 +702,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     []
   );
 
-  /* ── Multiselect ── */
+  
   const toggleSelect = useCallback((jobId: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -705,11 +731,11 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     setSelectedIds(new Set());
   }, []);
 
-  /* ── Bulk actions from toolbar ── */
+  
   const handleBulkCompare = useCallback(() => {
     const jobs = rankedJobs
       .filter((sj) => selectedIds.has(sj.job.programmeTitle))
-      .slice(0, 3)
+      .slice(0, COMPARE_MAX_JOBS)
       .map((sj) => sj.job);
     setCompareJobs(jobs);
     setShowCompare(true);
@@ -720,7 +746,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     const ids = new Set([...selectedIds].filter((id) => !lockedJobIds.has(id)));
     if (ids.size === 0) return;
 
-    // Compute sort synchronously from ref
+    
     const prev = rankedJobsRef.current;
     const oldIndices = new Map<string, number>();
     prev.forEach((sj, i) => { if (ids.has(sj.job.programmeTitle)) oldIndices.set(sj.job.programmeTitle, i); });
@@ -746,7 +772,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     setTimeout(() => {
       setFlashMap(new Map());
       ids.forEach((id) => rankDeltaRef.current.delete(id));
-    }, 2500);
+    }, FLASH_DURATION_MS);
 
     pushAndSetRanked(() => sorted);
   }, [selectedIds, nudgeAmount, lockedJobIds, pushAndSetRanked]);
@@ -772,7 +798,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     [selectedIds, lockedJobIds, pushAndSetRanked]
   );
 
-  /* ── Pin row ── */
+  
   const togglePin = useCallback((jobId: string) => {
     setPinnedJobIds((prev) => {
       const next = new Set(prev);
@@ -782,7 +808,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     });
   }, []);
 
-  /* ── Lock row ── */
+  
   const toggleLock = useCallback((jobId: string) => {
     setLockedJobIds((prev) => {
       const next = new Set(prev);
@@ -792,7 +818,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     });
   }, []);
 
-  /* ── Import handler ── */
+  
   const handleImportFile = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -813,7 +839,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     []
   );
 
-  /* ── DnD handlers ── */
+  
 
   function handleDragStart(event: DragStartEvent) {
     setActiveId(event.active.id as string);
@@ -828,7 +854,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     const activeIdStr = active.id as string;
     const overIdStr = over.id as string;
 
-    // Locked items cannot be dragged or displaced
+    
     if (lockedJobIds.has(activeIdStr) || lockedJobIds.has(overIdStr)) return;
 
     pushAndSetRanked((prev) => {
@@ -856,7 +882,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     setActiveId(null);
   }
 
-  /* ── Scroll direction tracking for pinned rows + auto-collapse mobile filters ── */
+  
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -866,7 +892,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     setMobileFiltersOpen(false);
   }, []);
 
-  /* ── Overlay data ── */
+  
   const activeScored = activeId
     ? rankedJobs.find((s) => s.job.programmeTitle === activeId) ?? null
     : null;
@@ -878,7 +904,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     hospitalFilter !== "all" ||
     specialtyFilter !== "all";
 
-  /* ── Helper: render a single list row ── */
+  
   function renderListRow(jobIndex: number) {
     const s = filteredJobs[jobIndex];
     if (!s) return null;
@@ -910,16 +936,14 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     );
   }
 
-  /* ══════════════════════════════════════════
-     Render
-     ══════════════════════════════════════════ */
+  
 
   return (
     <div className="h-screen flex flex-col bg-background">
       <WelcomeModal externalOpen={showHelp} onExternalClose={() => setShowHelp(false)} />
       <SiteHeader />
 
-      {/* Filter bar — desktop */}
+      {}
       <div className="shrink-0 border-b bg-gradient-to-r from-secondary/20 via-accent/10 to-secondary/20 px-4 py-3 hidden sm:block">
         <div className="max-w-[1800px] mx-auto flex items-center gap-3 flex-wrap">
           <p className="text-sm text-muted-foreground shrink-0">
@@ -1004,7 +1028,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
             </Button>
           )}
 
-          {/* Export / Import */}
+          {}
           <div className="flex items-center gap-1 shrink-0">
             <Button
               size="sm"
@@ -1034,7 +1058,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
             </Button>
           </div>
 
-          {/* Undo / Redo */}
+          {}
           <div className="flex items-center gap-0.5 shrink-0">
             <Button
               size="sm"
@@ -1068,10 +1092,10 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         </div>
       </div>
 
-      {/* Filter bar — mobile */}
+      {}
       <div className="shrink-0 border-b bg-gradient-to-r from-secondary/20 via-accent/10 to-secondary/20 px-2 py-1.5 sm:hidden">
         {mobileSearchOpen ? (
-          /* Expanded search: full-width input with close button */
+          
           <div className="flex items-center gap-1.5">
             <div className="relative flex-1 min-w-0">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -1093,7 +1117,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
             </button>
           </div>
         ) : (
-          /* Compact icon row */
+          
           <div className="flex items-center gap-0.5">
             <p className="text-xs font-medium text-muted-foreground shrink-0 px-1">
               {filteredJobs.length === rankedJobs.length
@@ -1179,7 +1203,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
           </div>
         )}
 
-        {/* Expanded filter dropdowns */}
+        {}
         {mobileFiltersOpen && !mobileSearchOpen && (
           <div className="mt-2 space-y-2">
             <select
@@ -1232,7 +1256,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         )}
       </div>
 
-      {/* Compare overlay */}
+      {}
       {showCompare && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-6">
           <div className="bg-card border rounded-xl shadow-xl w-full max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
@@ -1355,7 +1379,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         </div>
       )}
 
-      {/* Move To dialog (single card) */}
+      {}
       <MoveToDialog
         open={moveToState !== null}
         onOpenChange={(open) => {
@@ -1368,7 +1392,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         }}
       />
 
-      {/* Move To dialog (bulk) */}
+      {}
       <MoveToDialog
         open={bulkMoveToOpen}
         onOpenChange={setBulkMoveToOpen}
@@ -1380,7 +1404,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         }}
       />
 
-      {/* ── Main content ── */}
+      {}
       <DndContext
         sensors={sensors}
         collisionDetection={customCollisionDetection}
@@ -1398,7 +1422,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
             strategy={verticalListSortingStrategy}
           >
             <div ref={contentRef} className="flex-1 flex flex-col overflow-hidden relative">
-              {/* Edge glow overlay */}
+              {}
               {edgeGlow && (
                 <div
                   className={cn(
@@ -1410,7 +1434,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                 />
               )}
 
-              {/* Pinned rows at top */}
+              {}
               {pinnedRowIndices.length > 0 &&
                 scrollDir === "down" && (
                   <div className="shrink-0 z-10 shadow-md border-b max-h-[30vh] overflow-y-auto">
@@ -1422,14 +1446,14 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                   </div>
                 )}
 
-              {/* Scrollable area */}
+              {}
               <div
                 ref={scrollRef}
                 className="flex-1 overflow-y-auto"
                 onScroll={handleScroll}
               >
                 <div>
-                  {/* Column headers */}
+                  {}
                   <div
                     className="hidden sm:grid items-center gap-x-0.5 h-[32px] border-b-2 border-border bg-secondary/30"
                     style={{
@@ -1493,7 +1517,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                 )}
               </div>
 
-              {/* Pinned rows at bottom */}
+              {}
               {pinnedRowIndices.length > 0 &&
                 scrollDir === "up" && (
                   <div className="shrink-0 z-10 shadow-[0_-4px_6px_-1px_rgb(0_0_0/0.1)] border-t max-h-[30vh] overflow-y-auto">
@@ -1505,7 +1529,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                   </div>
                 )}
 
-              {/* Cascade ghosts — absolutely positioned, clipped by overflow-hidden */}
+              {}
               <AnimatePresence>
                 {[...cascadeGhosts.entries()].map(([id, g]) => (
                   <motion.div
@@ -1525,9 +1549,9 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
                     }}
                     exit={{ opacity: 0 }}
                     transition={{
-                      duration: 0.35,
+                      duration: CASCADE_DURATION,
                       delay: g.delay,
-                      ease: [0.25, 0.1, 0.25, 1],
+                      ease: EASE_BEZIER,
                     }}
                   >
                     <ListDragOverlayRow
@@ -1541,7 +1565,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
             </div>
           </SortableContext>
 
-          {/* Selection toolbar */}
+          {}
           {selectedIds.size >= 1 && (
             <SelectionToolbar
               count={selectedIds.size}
@@ -1569,7 +1593,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         </DragOverlay>
       </DndContext>
 
-      {/* Flying ghost cards for boost/bury visual feedback */}
+      {}
       <AnimatePresence>
         {[...ghosts.entries()].map(([id, g]) => (
           <motion.div
@@ -1584,11 +1608,11 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
             initial={{ y: 0, scale: 1, opacity: 1 }}
             animate={{
               y: g.targetY - g.fromRect.top,
-              scale: [1, 1.05, 1],
-              opacity: [1, 1, 0.7, 0],
+              scale: [1, GHOST_SCALE_PEAK, 1],
+              opacity: [1, 1, GHOST_OPACITY_END, 0],
             }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+            transition={{ duration: GHOST_DURATION, ease: EASE_BEZIER }}
             onAnimationComplete={() => {
               setGhosts(prev => {
                 const next = new Map(prev);
@@ -1607,9 +1631,9 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
         ))}
       </AnimatePresence>
 
-      {/* Cascade ghosts are rendered inside contentRef container */}
+      {}
 
-      {/* Job detail overlay panel */}
+      {}
       <AnimatePresence>
         {selectedDetail && (
           <JobDetailPanel

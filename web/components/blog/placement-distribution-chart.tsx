@@ -15,12 +15,12 @@ import { useRegionFilter } from "./region-filter-context";
 import type { PlacementDistData } from "@/lib/blog-data";
 
 const SEGMENT_COLORS = [
-  "#3b82f6", // 1 placement - blue
-  "#22c55e", // 2 placements - green
-  "#f59e0b", // 3 placements - amber
-  "#ef4444", // 4 placements - red
-  "#a855f7", // 5 placements - purple
-  "#ec4899", // 6 placements - pink
+  "#3b82f6", 
+  "#22c55e", 
+  "#f59e0b", 
+  "#ef4444", 
+  "#a855f7", 
+  "#ec4899", 
 ];
 
 const chartConfig: ChartConfig = {
@@ -31,6 +31,12 @@ const chartConfig: ChartConfig = {
   p5: { label: "5 placements", color: SEGMENT_COLORS[4] },
   p6: { label: "6 placements", color: SEGMENT_COLORS[5] },
 };
+
+const NAME_MAX_LENGTH = 25;
+const NAME_TRUNCATE_AT = 23;
+const MAX_PLACEMENT_SLOTS = 6;
+const PERCENTAGE = 100;
+const BAR_RADIUS = 4;
 
 interface PlacementDistributionChartProps {
   data: PlacementDistData;
@@ -49,21 +55,21 @@ export function PlacementDistributionChart({
       ? spec.byRegion[activeRegion]?.totalJobs ?? 1
       : data.totalJobs;
 
-    // Convert counts to percentages of total jobs
+    
     const row: Record<string, string | number> = {
       name:
-        spec.name.length > 25 ? spec.name.slice(0, 23) + "…" : spec.name,
+        spec.name.length > NAME_MAX_LENGTH ? spec.name.slice(0, NAME_TRUNCATE_AT) + "…" : spec.name,
       fullName: spec.name,
     };
-    for (let i = 1; i <= 6; i++) {
+    for (let i = 1; i <= MAX_PLACEMENT_SLOTS; i++) {
       const count = dist[String(i)] ?? 0;
-      row[`p${i}`] = Math.round((count / totalJobs) * 100);
+      row[`p${i}`] = Math.round((count / totalJobs) * PERCENTAGE);
     }
     return row;
   });
 
-  // Only show segments that have data
-  const activeKeys = Array.from({ length: 6 }, (_, i) => `p${i + 1}`).filter(
+  
+  const activeKeys = Array.from({ length: MAX_PLACEMENT_SLOTS }, (_, i) => `p${i + 1}`).filter(
     (key) => chartData.some((d) => (d[key] as number) > 0)
   );
 
@@ -121,7 +127,7 @@ export function PlacementDistributionChart({
               stackId="stack"
               fill={SEGMENT_COLORS[i]}
               radius={
-                i === activeKeys.length - 1 ? [0, 4, 4, 0] : [0, 0, 0, 0]
+                i === activeKeys.length - 1 ? [0, BAR_RADIUS, BAR_RADIUS, 0] : [0, 0, 0, 0]
               }
               name={key}
             />

@@ -11,13 +11,15 @@ export interface Job {
   placements: Placement[];
 }
 
-/* ── Shared placement helpers ── */
+
 
 export type PlacementEntry = { site: string; spec: string; description?: string; num: number };
 
 export function isValidPlacement(p: Placement) {
   return p.site && p.site !== "None" && p.site.trim() !== "";
 }
+
+const FY1_PLACEMENT_COUNT = 3;
 
 export function getJobPlacements(job: Job): {
   fy1: PlacementEntry[];
@@ -34,7 +36,7 @@ export function getJobPlacements(job: Job): {
         description: p.description && p.description !== "None" ? p.description : undefined,
         num: i + 1,
       };
-      if (i < 3) fy1.push(entry);
+      if (i < FY1_PLACEMENT_COUNT) fy1.push(entry);
       else fy2.push(entry);
     }
   }

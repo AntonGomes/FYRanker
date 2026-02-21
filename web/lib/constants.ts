@@ -1,7 +1,8 @@
 export const PLACEMENTS_PER_JOB = 6;
 export const EARTH_RADIUS_KM = 6371;
 export const PERCENTAGE = 100;
-export const DEG_TO_RAD = Math.PI / 180;
+const DEGREES_IN_HALF_CIRCLE = 180;
+export const DEG_TO_RAD = Math.PI / DEGREES_IN_HALF_CIRCLE;
 
 export const INITIAL_RATING = 1500;
 export const K_FACTOR = 32;
@@ -57,3 +58,35 @@ export const DRAG_TOUCH_TOLERANCE = 8;
 
 export const GEOLOCATION_TIMEOUT = 10000;
 export const COORD_DECIMAL_PLACES = 3;
+
+export const FY1_PLACEMENT_COUNT = 3;
+export const PLACEMENTS_PER_FY = 3;
+export const STAR_RATING_MAX = 5;
+
+export const ISO_DATE_SLICE_END = 10;
+
+export const MOBILE_BREAKPOINT = 640;
+
+export const SCORE_DISPLAY_DECIMALS = 3;
+
+export const COPY_FEEDBACK_DURATION_MS = 1500;
+
+export const MAP_DEFAULT_ZOOM = 14;
+export const MAP_FALLBACK_ZOOM = 6;
+export const SCOTLAND_CENTER_LAT = 56.49;
+export const SCOTLAND_CENTER_LNG = -4.2;
+
+export const CHART_BAR_RADIUS = 4;
+export const CHART_NAME_MAX_LENGTH = 22;
+export const CHART_NAME_TRUNCATE_AT = 20;
+
+const TICK_0 = 0;
+const TICK_25 = 25;
+const TICK_50 = 50;
+const TICK_75 = 75;
+const TICK_100 = 100;
+export const SLIDER_TICK_POSITIONS = [TICK_0, TICK_25, TICK_50, TICK_75, TICK_100] as const;
+
+export const COMPARE_MAX_JOBS = 3;
+
+export const UNDO_HISTORY_LIMIT = 50;

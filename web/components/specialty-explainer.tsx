@@ -24,13 +24,15 @@ const PHASES = [
   },
 ] as const;
 
+const PHASE_STAGGER_DELAY = 0.15;
+
 export function SpecialtyExplainer({ specialtyCount }: SpecialtyExplainerProps) {
   return (
     <div className="flex flex-col flex-1 items-center justify-center px-2 py-4">
       <div className="w-full max-w-sm space-y-6">
-        {/* Phase cards with connecting line */}
+        {}
         <div className="relative">
-          {/* Connecting line */}
+          {}
           <div className="absolute left-5 top-12 bottom-12 w-px bg-border" />
 
           <div className="space-y-4">
@@ -39,15 +41,15 @@ export function SpecialtyExplainer({ specialtyCount }: SpecialtyExplainerProps) 
                 key={phase.step}
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.15, duration: 0.4, ease: "easeOut" }}
+                transition={{ delay: i * PHASE_STAGGER_DELAY, duration: 0.4, ease: "easeOut" }}
                 className="relative flex gap-4"
               >
-                {/* Step number circle */}
+                {}
                 <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 border border-primary/20">
                   <phase.icon className="h-4.5 w-4.5 text-primary" />
                 </div>
 
-                {/* Content */}
+                {}
                 <div className="pt-1.5 space-y-1">
                   <h3 className="text-sm font-semibold text-foreground leading-tight">
                     {phase.title}
@@ -61,7 +63,7 @@ export function SpecialtyExplainer({ specialtyCount }: SpecialtyExplainerProps) 
           </div>
         </div>
 
-        {/* Info note */}
+        {}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

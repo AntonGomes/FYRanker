@@ -25,6 +25,9 @@ const chartConfig = {
   specialties: { label: "Specialties", color: "var(--chart-3)" },
 } satisfies ChartConfig;
 
+const INACTIVE_OPACITY = 0.2;
+const BAR_RADIUS = 4;
+
 interface RegionBreakdownChartProps {
   data: RegionsData;
 }
@@ -40,7 +43,7 @@ export function RegionBreakdownChart({ data }: RegionBreakdownChartProps) {
     sites: data[region].sites,
     specialties: data[region].specialties,
     fill: REGION_HEX[region],
-    opacity: activeRegion === null || activeRegion === region ? 1 : 0.2,
+    opacity: activeRegion === null || activeRegion === region ? 1 : INACTIVE_OPACITY,
   }));
 
   return (
@@ -55,7 +58,7 @@ export function RegionBreakdownChart({ data }: RegionBreakdownChartProps) {
 
       <RegionFilterBar className="mb-8" />
 
-      {/* Mobile: stat cards */}
+      {}
       <div className="grid grid-cols-2 gap-3 sm:hidden">
         {chartData.map((d) => (
           <div
@@ -102,7 +105,7 @@ export function RegionBreakdownChart({ data }: RegionBreakdownChartProps) {
         ))}
       </div>
 
-      {/* Desktop: grouped bar chart */}
+      {}
       <div className="hidden sm:block">
         <ChartContainer config={chartConfig} className="h-[400px] w-full">
           <BarChart data={chartData} barCategoryGap="20%">
@@ -118,19 +121,19 @@ export function RegionBreakdownChart({ data }: RegionBreakdownChartProps) {
             <Bar
               dataKey="rotations"
               fill="var(--chart-1)"
-              radius={[4, 4, 0, 0]}
+              radius={[BAR_RADIUS, BAR_RADIUS, 0, 0]}
               name="Rotations"
             />
             <Bar
               dataKey="sites"
               fill="var(--chart-2)"
-              radius={[4, 4, 0, 0]}
+              radius={[BAR_RADIUS, BAR_RADIUS, 0, 0]}
               name="Sites"
             />
             <Bar
               dataKey="specialties"
               fill="var(--chart-3)"
-              radius={[4, 4, 0, 0]}
+              radius={[BAR_RADIUS, BAR_RADIUS, 0, 0]}
               name="Specialties"
             />
           </BarChart>

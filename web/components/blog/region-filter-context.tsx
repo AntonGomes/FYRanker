@@ -9,11 +9,11 @@ import {
 import type { Region } from "@/lib/region-colors";
 
 interface RegionFilterContextType {
-  /** Currently active region filter, or null for "all regions" */
+  
   activeRegion: Region | null;
-  /** Set a specific region or null to clear */
+  
   setActiveRegion: (region: Region | null) => void;
-  /** Toggle a region on/off (clicking the same region again clears it) */
+  
   toggleRegion: (region: Region) => void;
 }
 

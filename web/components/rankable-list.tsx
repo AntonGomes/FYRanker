@@ -24,6 +24,8 @@ import {
 import { REGION_COLORS } from "@/lib/region-colors";
 import { useListDragSensors } from "@/hooks/use-list-drag-sensors";
 
+const ESTIMATED_ROW_HEIGHT = 46;
+
 export interface RankableItem {
   id: string;
   label: string;
@@ -153,7 +155,7 @@ export function RankableList({
     return map;
   }, [items]);
 
-  // When searching, show filtered results but maintain original indices
+  
   const isSearching = searchFilter.length > 0;
   const filteredItems = isSearching
     ? items.filter(
@@ -194,11 +196,11 @@ export function RankableList({
   const activeItem = activeId ? items.find((i) => i.id === activeId) : null;
   const activeIndex = activeId ? (indexById.get(activeId) ?? -1) : -1;
 
-  // Virtualize the scrollable section
+  
   const virtualizer = useVirtualizer({
     count: scrollableItems.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 46,
+    estimateSize: () => ESTIMATED_ROW_HEIGHT,
     overscan: 10,
   });
 

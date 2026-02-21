@@ -2,14 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
-/**
- * Animates a number from 0 to `target` using requestAnimationFrame.
- * Returns the current interpolated value (integer).
- *
- * @param target   - The number to count up to
- * @param duration - Animation duration in ms (default 2000)
- * @param trigger  - Only starts animating when this becomes true
- */
+const EASING_EXPONENT = 3;
+
 export function useAnimatedCounter(
   target: number,
   duration = 2000,
@@ -29,8 +23,8 @@ export function useAnimatedCounter(
       const elapsed = timestamp - startTime.current;
       const progress = Math.min(elapsed / duration, 1);
 
-      // Ease-out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
+      
+      const eased = 1 - Math.pow(1 - progress, EASING_EXPONENT);
       setValue(Math.round(eased * target));
 
       if (progress < 1) {

@@ -19,7 +19,7 @@ import {
 
 export interface PlacementReview {
   author: string;
-  rating: number; // 1-5
+  rating: number; 
   text: string;
   date: string;
 }
@@ -31,7 +31,7 @@ const AUTHORS = [
 ];
 
 const REVIEW_SNIPPETS = [
-  // positive (0-9)
+  
   "Excellent teaching and very supportive consultants. Highly recommend.",
   "Great variety of cases. You get a lot of hands-on experience here.",
   "Friendly team, good work-life balance. Rota was fair and well-organised.",
@@ -42,7 +42,7 @@ const REVIEW_SNIPPETS = [
   "Well-staffed department so workload is manageable. Good morale overall.",
   "Fantastic placement — the best of my foundation year by far.",
   "Lots of clinic exposure and procedural skills opportunities. Very educational.",
-  // neutral (10-17)
+  
   "Decent placement overall. Teaching was hit-or-miss depending on the week.",
   "Average experience. Some weeks were very busy, others quieter. Rota could be better.",
   "Fine placement. Nothing exceptional but solid clinical exposure.",
@@ -51,7 +51,7 @@ const REVIEW_SNIPPETS = [
   "Okay overall. IT systems were frustrating but the team was supportive.",
   "Standard placement. Got good experience but didn't feel stretched.",
   "Adequate supervision. Would have liked more structured teaching.",
-  // negative (18-24)
+  
   "Very busy department. Often felt stretched thin, especially on nights.",
   "Understaffed at times which put pressure on juniors. Teaching was sparse.",
   "Challenging rota with frequent weekend shifts. Limited teaching time.",

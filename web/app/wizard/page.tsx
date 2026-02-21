@@ -50,6 +50,17 @@ const STEPS = [
 
 const TOTAL_STEPS = STEPS.length;
 
+/* ── Step indices (1-based) ── */
+const STEP_REGIONS = 1;
+const STEP_HOSPITALS = 2;
+const STEP_GLOBAL_HOSPITALS = 3;
+const STEP_SPECIALTIES = 4;
+const STEP_WEIGHTS = 5;
+
+/* ── Ring / percentage constants ── */
+const RING_CIRCUMFERENCE = 94.25;
+const PERCENTAGE = 100;
+
 const WEIGHT_FIELDS = [
   { key: "region" as const, label: "Region", icon: MapPin, color: "bg-blue-400" },
   { key: "hospital" as const, label: "Hospital", icon: Building2, color: "bg-amber-400" },
@@ -135,7 +146,7 @@ function ConfidenceRing({ percentage }: { percentage: number }) {
         <circle cx="18" cy="18" r="15" fill="none" stroke="currentColor"
           className="text-primary transition-all duration-500"
           strokeWidth="3"
-          strokeDasharray={`${percentage * 94.25 / 100} 94.25`}
+          strokeDasharray={`${percentage * RING_CIRCUMFERENCE / PERCENTAGE} ${RING_CIRCUMFERENCE}`}
           strokeLinecap="round"
           transform="rotate(-90 18 18)" />
       </svg>
@@ -162,7 +173,7 @@ function WeightSlider({
           {label}
         </label>
         <span className="text-xs font-mono text-muted-foreground tabular-nums">
-          {(value * 100).toFixed(0)}%
+          {(value * PERCENTAGE).toFixed(0)}%
         </span>
       </div>
       <Slider
@@ -188,7 +199,7 @@ function WeightDistribution({
   const total = visibleFields.reduce((sum, f) => sum + weights[f.key], 0);
 
   function pct(key: "region" | "hospital" | "specialty"): string {
-    return ((weights[key] / total) * 100).toFixed(0);
+    return ((weights[key] / total) * PERCENTAGE).toFixed(0);
   }
 
   return (
@@ -288,26 +299,26 @@ export default function WizardPage() {
     resetSearch();
 
     switch (step) {
-      case 1:
+      case STEP_REGIONS:
         setRegionSubStep(0);
-        setStep(2);
+        setStep(STEP_HOSPITALS);
         break;
 
-      case 2:
+      case STEP_HOSPITALS:
         if (regionSubStep < rankedRegions.length - 1) {
           setSortMode("default");
           setRegionSubStep((s) => s + 1);
         } else {
           setGlobalHospitals(deriveGlobalHospitals());
-          setStep(3);
+          setStep(STEP_GLOBAL_HOSPITALS);
         }
         break;
 
-      case 3:
-        setStep(4);
+      case STEP_GLOBAL_HOSPITALS:
+        setStep(STEP_SPECIALTIES);
         break;
 
-      case 4:
+      case STEP_SPECIALTIES:
         if (specialtyPhase === "explainer") {
           setSpecialtyPhase("ranking");
         } else if (specialtyPhase === "ranking") {
@@ -315,11 +326,11 @@ export default function WizardPage() {
           setEloState(seeded);
           setSpecialtyPhase("refining");
         } else {
-          setStep(5);
+          setStep(STEP_WEIGHTS);
         }
         break;
 
-      case 5:
+      case STEP_WEIGHTS:
         if (jobs) {
           const scored = scoreJobs({
             jobs,
@@ -339,22 +350,22 @@ export default function WizardPage() {
   }
 
   function handleBack(): void {
-    if (step === 4 && specialtyPhase === "refining") {
+    if (step === STEP_SPECIALTIES && specialtyPhase === "refining") {
       setSpecialtyPhase("ranking");
       return;
     }
-    if (step === 4 && specialtyPhase === "ranking") {
+    if (step === STEP_SPECIALTIES && specialtyPhase === "ranking") {
       setSpecialtyPhase("explainer");
       return;
     }
-    if (step === 2 && regionSubStep > 0) {
+    if (step === STEP_HOSPITALS && regionSubStep > 0) {
       setSortMode("default");
       resetSearch();
       setRegionSubStep((s) => s - 1);
       return;
     }
-    if (step === 2) {
-      setStep(1);
+    if (step === STEP_HOSPITALS) {
+      setStep(STEP_REGIONS);
       return;
     }
     setStep((s) => s - 1);
@@ -362,8 +373,8 @@ export default function WizardPage() {
 
   function getNextButtonLabel(): string {
     if (step === TOTAL_STEPS) return "Calculate & View Results";
-    if (step === 4 && specialtyPhase === "explainer") return "Start Ranking";
-    if (step === 4 && specialtyPhase === "ranking") return "Continue to Refinement";
+    if (step === STEP_SPECIALTIES && specialtyPhase === "explainer") return "Start Ranking";
+    if (step === STEP_SPECIALTIES && specialtyPhase === "ranking") return "Continue to Refinement";
     return "Continue";
   }
 
@@ -374,19 +385,19 @@ export default function WizardPage() {
 
   function getDescription(): string {
     switch (step) {
-      case 1:
+      case STEP_REGIONS:
         return "Drag to reorder by preference.";
-      case 2:
+      case STEP_HOSPITALS:
         return `${regionSubStep + 1}/${rankedRegions.length} · ${currentHospitals.length} hospital${currentHospitals.length !== 1 ? "s" : ""}`;
-      case 3:
+      case STEP_GLOBAL_HOSPITALS:
         return lockRegions
           ? "Regions locked — hospitals stay within their region."
           : `${globalHospitals.length} hospitals across all regions.`;
-      case 4:
+      case STEP_SPECIALTIES:
         if (specialtyPhase === "refining") return "Pick your preference to sharpen your ranking.";
         if (specialtyPhase === "ranking") return "Drag to reorder by preference.";
         return "How specialty ranking works.";
-      case 5:
+      case STEP_WEIGHTS:
         return lockRegions
           ? "Region order fixed. Adjust hospital and specialty weight."
           : "Adjust how much each factor matters.";
@@ -395,8 +406,8 @@ export default function WizardPage() {
     }
   }
 
-  const showSearchToolbar = step === 2 || step === 3 || (step === 4 && specialtyPhase === "ranking");
-  const showBackButton = step > 1 || (step === 4 && specialtyPhase !== "explainer");
+  const showSearchToolbar = step === STEP_HOSPITALS || step === STEP_GLOBAL_HOSPITALS || (step === STEP_SPECIALTIES && specialtyPhase === "ranking");
+  const showBackButton = step > STEP_REGIONS || (step === STEP_SPECIALTIES && specialtyPhase !== "explainer");
 
   if (loading) {
     return (
@@ -440,7 +451,7 @@ export default function WizardPage() {
                 </CardTitle>
               </div>
 
-              {step === 2 && currentRegion && (() => {
+              {step === STEP_HOSPITALS && currentRegion && (() => {
                 const style = getRegionStyle(currentRegion.id);
                 return (
                   <div className={cn(
@@ -453,9 +464,9 @@ export default function WizardPage() {
                 );
               })()}
 
-              {step === 4 && specialtyPhase === "refining" && eloState && (
+              {step === STEP_SPECIALTIES && specialtyPhase === "refining" && eloState && (
                 <ConfidenceRing
-                  percentage={Math.round(getConfidence(eloState, movedSpecialtyIds?.size) * 100)}
+                  percentage={Math.round(getConfidence(eloState, movedSpecialtyIds?.size) * PERCENTAGE)}
                 />
               )}
             </div>
@@ -471,7 +482,7 @@ export default function WizardPage() {
                     searchQuery={searchQuery}
                     onSearchOpenChange={setSearchOpen}
                     onSearchQueryChange={setSearchQuery}
-                    sortDropdown={step === 2 ? (
+                    sortDropdown={step === STEP_HOSPITALS ? (
                       <HospitalSortDropdown
                         items={currentHospitals}
                         onSort={(sortedItems) => {
@@ -493,8 +504,8 @@ export default function WizardPage() {
             </div>
           </CardHeader>
 
-          <CardContent className={cn("flex-1 min-h-0 flex flex-col pb-0", step === 4 && specialtyPhase === "refining" ? "overflow-x-clip overflow-y-visible" : "overflow-hidden")}>
-            {step === 1 && (
+          <CardContent className={cn("flex-1 min-h-0 flex flex-col pb-0", step === STEP_SPECIALTIES && specialtyPhase === "refining" ? "overflow-x-clip overflow-y-visible" : "overflow-hidden")}>
+            {step === STEP_REGIONS && (
               <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
                 <SortableList
                   items={rankedRegions.map((r) => ({
@@ -508,7 +519,7 @@ export default function WizardPage() {
               </div>
             )}
 
-            {step === 2 && currentRegion && (
+            {step === STEP_HOSPITALS && currentRegion && (
               <div className="flex flex-col flex-1 min-h-0">
                 <RankableList
                   items={currentHospitals}
@@ -523,7 +534,7 @@ export default function WizardPage() {
               </div>
             )}
 
-            {step === 3 && (
+            {step === STEP_GLOBAL_HOSPITALS && (
               <div className="flex flex-col flex-1 min-h-0 gap-3">
                 <div className="flex items-center gap-3 rounded-lg border px-4 py-3 shrink-0">
                   <Switch
@@ -550,10 +561,10 @@ export default function WizardPage() {
               </div>
             )}
 
-            {step === 4 && specialtyPhase === "explainer" && (
+            {step === STEP_SPECIALTIES && specialtyPhase === "explainer" && (
               <SpecialtyExplainer specialtyCount={rankedSpecialties.length} />
             )}
-            {step === 4 && specialtyPhase === "ranking" && (
+            {step === STEP_SPECIALTIES && specialtyPhase === "ranking" && (
               <div className="flex flex-col flex-1 min-h-0">
                 <RankableList
                   items={rankedSpecialties}
@@ -565,7 +576,7 @@ export default function WizardPage() {
                 />
               </div>
             )}
-            {step === 4 && specialtyPhase === "refining" && (
+            {step === STEP_SPECIALTIES && specialtyPhase === "refining" && (
               <SpecialtyDuel
                 specialties={rankedSpecialties.map((s) => s.label)}
                 eloState={eloState}
@@ -575,7 +586,7 @@ export default function WizardPage() {
               />
             )}
 
-            {step === 5 && (
+            {step === STEP_WEIGHTS && (
               <div className="space-y-6">
                 <div className="space-y-5">
                   {WEIGHT_FIELDS

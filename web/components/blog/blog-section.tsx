@@ -8,7 +8,7 @@ interface BlogSectionProps {
   id: string;
   children: ReactNode;
   className?: string;
-  /** Whether the section takes at least full viewport height (default: true) */
+  
   fullHeight?: boolean;
 }
 

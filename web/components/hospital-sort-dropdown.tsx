@@ -9,6 +9,7 @@ import {
   sortHospitalsByProximity,
 } from "@/lib/proximity";
 import type { RankableItem } from "@/components/rankable-list";
+import { COORD_DECIMAL_PLACES, GEOLOCATION_TIMEOUT } from "@/lib/constants";
 
 export type SortMode = "default" | "z-a" | "proximity";
 
@@ -64,7 +65,7 @@ export function HospitalSortDropdown({
         onLocationChange({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-          displayName: `${position.coords.latitude.toFixed(3)}, ${position.coords.longitude.toFixed(3)}`,
+          displayName: `${position.coords.latitude.toFixed(COORD_DECIMAL_PLACES)}, ${position.coords.longitude.toFixed(COORD_DECIMAL_PLACES)}`,
         });
         setLoading(false);
       },
@@ -76,7 +77,7 @@ export function HospitalSortDropdown({
         );
         setLoading(false);
       },
-      { enableHighAccuracy: false, timeout: 10000 }
+      { enableHighAccuracy: false, timeout: GEOLOCATION_TIMEOUT }
     );
   }, [onLocationChange]);
 
@@ -99,7 +100,7 @@ export function HospitalSortDropdown({
     }
   }, [locationInput, onLocationChange]);
 
-  // Auto-sort when location changes in proximity mode
+  
   useEffect(() => {
     if (sortMode === "proximity" && userLocation && hospitals.length > 0) {
       onSort(sortHospitalsByProximity(items, userLocation, hospitals));

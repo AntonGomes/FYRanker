@@ -16,6 +16,7 @@ import {
 } from "@/lib/elo";
 import type { SortableItem } from "@/components/sortable-list";
 import { SPRING, ENTER_SPRING, EXIT_SPRING } from "@/lib/animation-presets";
+import { SLIDER_TICK_POSITIONS } from "@/lib/constants";
 
 interface SpecialtyDuelProps {
   specialties: string[];
@@ -39,6 +40,82 @@ const CONFETTI_COLORS = [
   "#facc15", "#f472b6", "#818cf8",
 ];
 
+/* ── Confetti / particle constants ── */
+const CONFETTI_ANGLE_MIN = -140;
+const CONFETTI_ANGLE_RANGE = 140;
+const CONFETTI_DIST_BASE = 50;
+const CONFETTI_DIST_RANGE = 70;
+const CONFETTI_SIZE_BASE = 4;
+const CONFETTI_SIZE_RANGE = 5;
+const CONFETTI_DELAY_SCALE = 0.12;
+const CONFETTI_ROTATE_RANGE = 540;
+const CONFETTI_ROTATE_OFFSET = 270;
+const CONFETTI_RECT_THRESHOLD = 0.4;
+const CONFETTI_SCALE_END = 0.2;
+const HALF = 0.5;
+
+/* ── Degree / radians ── */
+const DEG_HALF_CIRCLE = 180;
+
+/* ── Card glow / visual intensity constants ── */
+const GLOW_SCALE_FACTOR = 0.06;
+const GLOW_RADIUS_BASE = 15;
+const GLOW_RADIUS_SCALE = 50;
+const GLOW_SPREAD_SCALE = 20;
+const PRIMARY_L_DARK = 0.72;
+const PRIMARY_L_LIGHT = 0.52;
+const PRIMARY_CHROMA = 0.26;
+const HUE = 300;
+const L_DARK_BASE = 0.3;
+const L_LIGHT_BASE = 0.92;
+const BORDER_L_DARK_BASE = 0.5;
+const BORDER_L_DARK_RANGE = 0.3;
+const BORDER_L_LIGHT_BASE = 0.55;
+const BORDER_CHROMA_BOOST = 0.05;
+const GLOW_L_DARK_BASE = 0.6;
+const GLOW_L_DARK_RANGE = 0.2;
+const GLOW_L_LIGHT_BASE = 0.6;
+const GLOW_L_LIGHT_RANGE = 0.1;
+const TEXT_L_THRESHOLD = 0.6;
+const TEXT_L_DARK = 0.12;
+const TEXT_L_LIGHT = 0.95;
+const TEXT_C_DARK = 0.02;
+const TEXT_C_LIGHT = 0.01;
+const PULSE_DURATION_BASE = 2;
+const PULSE_DURATION_SCALE = 1.6;
+const CARD_SHADOW_OPACITY_BASE = 0.2;
+const CARD_SHADOW_OPACITY_SCALE = 0.5;
+const INSET_SHADOW_SCALE = 35;
+const CARD_SHADOW_INNER_SCALE = 0.6;
+const CARD_SHADOW_OUTER_SCALE = 0.8;
+const CARD_INNER_SHADOW_OPACITY_SCALE = 0.2;
+const GRADIENT_L_OFFSET = 0.03;
+const GRADIENT_C_OFFSET = 0.02;
+const GRADIENT_H_OFFSET = 10;
+
+/* ── Duel card enter/exit ── */
+const FLY_DIR_LEFT = -180;
+const FLY_DIR_RIGHT = 180;
+const ENTER_DIR_LEFT = -30;
+const ENTER_DIR_RIGHT = 30;
+const FLY_ROTATE_LEFT = -15;
+const FLY_ROTATE_RIGHT = 15;
+
+/* ── Neighbourhood ── */
+const NEIGHBOURHOOD_SIZE = 7;
+
+/* ── Timings ── */
+const LOSER_FLY_DELAY_MS = 600;
+const NEXT_MATCHUP_DELAY_MS = 1400;
+
+/* ── Slider progress bar ── */
+const SLIDER_RANGE = 4;
+const SLIDER_HALF = 2;
+const PERCENTAGE = 100;
+
+/* ── Confidence ring ── */
+const RING_CIRCUMFERENCE = 94.25;
+
 function randomPick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -56,13 +133,13 @@ function ConfettiBurst({ count = 18 }: { count?: number }) {
     () =>
       Array.from({ length: count }, (_, i) => ({
         id: i,
-        angle: -140 + Math.random() * 140,
-        distance: 50 + Math.random() * 70,
-        size: 4 + Math.random() * 5,
+        angle: CONFETTI_ANGLE_MIN + Math.random() * CONFETTI_ANGLE_RANGE,
+        distance: CONFETTI_DIST_BASE + Math.random() * CONFETTI_DIST_RANGE,
+        size: CONFETTI_SIZE_BASE + Math.random() * CONFETTI_SIZE_RANGE,
         color: randomPick(CONFETTI_COLORS),
-        delay: Math.random() * 0.12,
-        rotate: Math.random() * 540 - 270,
-        shape: Math.random() > 0.4 ? "rect" : "circle",
+        delay: Math.random() * CONFETTI_DELAY_SCALE,
+        rotate: Math.random() * CONFETTI_ROTATE_RANGE - CONFETTI_ROTATE_OFFSET,
+        shape: Math.random() > CONFETTI_RECT_THRESHOLD ? "rect" : "circle",
       })),
     [count]
   );
@@ -75,16 +152,16 @@ function ConfettiBurst({ count = 18 }: { count?: number }) {
           initial={{ opacity: 1, x: 0, y: 0, scale: 1, rotate: 0 }}
           animate={{
             opacity: 0,
-            x: Math.cos((p.angle * Math.PI) / 180) * p.distance,
-            y: Math.sin((p.angle * Math.PI) / 180) * p.distance,
-            scale: 0.2,
+            x: Math.cos((p.angle * Math.PI) / DEG_HALF_CIRCLE) * p.distance,
+            y: Math.sin((p.angle * Math.PI) / DEG_HALF_CIRCLE) * p.distance,
+            scale: CONFETTI_SCALE_END,
             rotate: p.rotate,
           }}
           transition={{ duration: 0.9, delay: p.delay, ease: "easeOut" }}
           style={{
             position: "absolute",
             width: p.size,
-            height: p.shape === "rect" ? p.size * 0.5 : p.size,
+            height: p.shape === "rect" ? p.size * HALF : p.size,
             backgroundColor: p.color,
             borderRadius: p.shape === "circle" ? "50%" : "2px",
           }}
@@ -117,36 +194,36 @@ function getCardStyle(intensity: number, isDark: boolean) {
   if (intensity <= 0) return {};
 
   const t = intensity * intensity;
-  const scale = 1 + t * 0.06;
-  const glowRadius = 15 + t * 50;
-  const glowSpread = t * 20;
+  const scale = 1 + t * GLOW_SCALE_FACTOR;
+  const glowRadius = GLOW_RADIUS_BASE + t * GLOW_RADIUS_SCALE;
+  const glowSpread = t * GLOW_SPREAD_SCALE;
 
-  const primaryL = isDark ? 0.72 : 0.52;
-  const primaryC = 0.26;
-  const H = 300;
+  const primaryL = isDark ? PRIMARY_L_DARK : PRIMARY_L_LIGHT;
+  const primaryC = PRIMARY_CHROMA;
+  const H = HUE;
 
   const L = isDark
-    ? 0.3 + t * (primaryL - 0.3)
-    : 0.92 + t * (primaryL - 0.92);
+    ? L_DARK_BASE + t * (primaryL - L_DARK_BASE)
+    : L_LIGHT_BASE + t * (primaryL - L_LIGHT_BASE);
   const C = t * primaryC;
 
-  const borderL = isDark ? 0.5 + t * 0.3 : 0.55 + t * (primaryL - 0.55);
-  const borderC = t * (primaryC + 0.05);
-  const glowL = isDark ? 0.6 + t * 0.2 : 0.6 + t * 0.1;
+  const borderL = isDark ? BORDER_L_DARK_BASE + t * BORDER_L_DARK_RANGE : BORDER_L_LIGHT_BASE + t * (primaryL - BORDER_L_LIGHT_BASE);
+  const borderC = t * (primaryC + BORDER_CHROMA_BOOST);
+  const glowL = isDark ? GLOW_L_DARK_BASE + t * GLOW_L_DARK_RANGE : GLOW_L_LIGHT_BASE + t * GLOW_L_LIGHT_RANGE;
 
-  const textL = L > 0.6 ? 0.12 : 0.95;
-  const textC = L > 0.6 ? 0.02 : 0.01;
+  const textL = L > TEXT_L_THRESHOLD ? TEXT_L_DARK : TEXT_L_LIGHT;
+  const textC = L > TEXT_L_THRESHOLD ? TEXT_C_DARK : TEXT_C_LIGHT;
 
-  const pulseDuration = 2 - t * 1.6;
+  const pulseDuration = PULSE_DURATION_BASE - t * PULSE_DURATION_SCALE;
 
   return {
     card: {
       boxShadow: [
-        `0 0 ${glowRadius}px ${glowSpread}px oklch(${glowL} ${C * 0.8} ${H} / ${0.2 + t * 0.5})`,
-        `inset 0 0 ${t * 35}px oklch(${glowL} ${C * 0.6} ${H} / ${t * 0.2})`,
+        `0 0 ${glowRadius}px ${glowSpread}px oklch(${glowL} ${C * CARD_SHADOW_OUTER_SCALE} ${H} / ${CARD_SHADOW_OPACITY_BASE + t * CARD_SHADOW_OPACITY_SCALE})`,
+        `inset 0 0 ${t * INSET_SHADOW_SCALE}px oklch(${glowL} ${C * CARD_SHADOW_INNER_SCALE} ${H} / ${t * CARD_INNER_SHADOW_OPACITY_SCALE})`,
       ].join(", "),
       borderColor: `oklch(${borderL} ${borderC} ${H})`,
-      background: `linear-gradient(135deg, oklch(${L} ${C} ${H}) 0%, oklch(${L + 0.03} ${Math.max(0, C - 0.02)} ${H + 10}) 100%)`,
+      background: `linear-gradient(135deg, oklch(${L} ${C} ${H}) 0%, oklch(${L + GRADIENT_L_OFFSET} ${Math.max(0, C - GRADIENT_C_OFFSET)} ${H + GRADIENT_H_OFFSET}) 100%)`,
       transform: `scale(${scale})`,
       animation: `card-pulse ${pulseDuration}s ease-in-out infinite`,
     },
@@ -176,9 +253,9 @@ function DuelCard({
   glowIntensity: number;
   side: "left" | "right";
 }) {
-  const flyDir = side === "left" ? -180 : 180;
-  const enterDir = side === "left" ? -30 : 30;
-  const flyRotate = side === "left" ? -15 : 15;
+  const flyDir = side === "left" ? FLY_DIR_LEFT : FLY_DIR_RIGHT;
+  const enterDir = side === "left" ? ENTER_DIR_LEFT : ENTER_DIR_RIGHT;
+  const flyRotate = side === "left" ? FLY_ROTATE_LEFT : FLY_ROTATE_RIGHT;
 
   return (
     <motion.div
@@ -293,7 +370,7 @@ export function SpecialtyDuel({
     selectNextMatchup(state, movedIds)
   );
   const [neighbourhood, setNeighbourhood] = useState<RankingEntry[]>(() =>
-    getFocusedNeighbourhood(state, currentMatchup[0], 7)
+    getFocusedNeighbourhood(state, currentMatchup[0], NEIGHBOURHOOD_SIZE)
   );
   const [trackedItem, setTrackedItem] = useState<{ id: string; delta: number } | null>(null);
   const [loserAnnotation, setLoserAnnotation] = useState<{ id: string; delta: number } | null>(null);
@@ -312,7 +389,7 @@ export function SpecialtyDuel({
     matchupKeyRef.current += 1;
     const next = selectNextMatchup(newState, movedIds);
     setCurrentMatchup(next);
-    setNeighbourhood(getFocusedNeighbourhood(newState, next[0], 7));
+    setNeighbourhood(getFocusedNeighbourhood(newState, next[0], NEIGHBOURHOOD_SIZE));
     setSliderValue(0);
   }
 
@@ -363,15 +440,15 @@ export function SpecialtyDuel({
       setLoserFlyOff(false);
       setTrackedItem({ id: winner, delta: winnerDelta });
       setLoserAnnotation({ id: loser, delta: loserDelta });
-      setNeighbourhood(getFocusedNeighbourhood(newState, winner, 7));
+      setNeighbourhood(getFocusedNeighbourhood(newState, winner, NEIGHBOURHOOD_SIZE));
       setIsTransitioning(true);
 
-      setTimeout(() => setLoserFlyOff(true), 600);
+      setTimeout(() => setLoserFlyOff(true), LOSER_FLY_DELAY_MS);
 
       setTimeout(() => {
         resetTransitionState();
         advanceToNextMatchup(newState);
-      }, 1400);
+      }, NEXT_MATCHUP_DELAY_MS);
     },
     [currentMatchup, state, onStateChange, onRankingChange, movedIds, isTransitioning]
   );
@@ -451,7 +528,7 @@ export function SpecialtyDuel({
         <div className="pt-4 pb-1 px-1 touch-none">
         <div className="relative">
           <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-[4px] bg-border rounded-full" />
-          {[0, 25, 50, 75, 100].map((pct) => (
+          {SLIDER_TICK_POSITIONS.map((pct) => (
             <div
               key={pct}
               className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 size-2 rounded-full bg-border z-[5]"
@@ -463,8 +540,8 @@ export function SpecialtyDuel({
               className="absolute top-1/2 -translate-y-1/2 h-[4px] bg-primary rounded-full pointer-events-none z-10"
               style={
                 sliderValue < 0
-                  ? { left: `${((sliderValue + 2) / 4) * 100}%`, right: "50%" }
-                  : { left: "50%", right: `${((2 - sliderValue) / 4) * 100}%` }
+                  ? { left: `${((sliderValue + SLIDER_HALF) / SLIDER_RANGE) * PERCENTAGE}%`, right: "50%" }
+                  : { left: "50%", right: `${((SLIDER_HALF - sliderValue) / SLIDER_RANGE) * PERCENTAGE}%` }
               }
             />
           )}

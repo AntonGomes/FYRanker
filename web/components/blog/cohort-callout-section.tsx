@@ -14,7 +14,7 @@ interface CohortCalloutSectionProps {
 export function CohortCalloutSection({ data }: CohortCalloutSectionProps) {
   const { activeRegion } = useRegionFilter();
 
-  // Find the single largest and smallest across all regions, or within active region
+  
   const regions = activeRegion
     ? [activeRegion]
     : (Object.keys(data) as (keyof CohortsData)[]);

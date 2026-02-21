@@ -104,7 +104,8 @@ export function updateElo(
   const rA = state.ratings.get(a) ?? INITIAL_RATING;
   const rB = state.ratings.get(b) ?? INITIAL_RATING;
 
-  const eA = 1 / (1 + Math.pow(10, (rB - rA) / ELO_DIVISOR));
+  const ELO_BASE = 10;
+  const eA = 1 / (1 + Math.pow(ELO_BASE, (rB - rA) / ELO_DIVISOR));
   const eB = 1 - eA;
 
   const sA = HALF_SCORE - weight * WEIGHT_SCALE;

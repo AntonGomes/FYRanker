@@ -7,6 +7,9 @@ import Link from "next/link";
 import { useAnimatedCounter } from "@/hooks/use-animated-counter";
 import type { OverviewData } from "@/lib/blog-data";
 
+const COUNTER_DURATION_MS = 2000;
+const BOUNCE_Y_OFFSET = 10;
+
 interface HeroSectionProps {
   data: OverviewData;
 }
@@ -22,7 +25,7 @@ function AnimatedStat({
   trigger: boolean;
   delay: number;
 }) {
-  const count = useAnimatedCounter(value, 2000, trigger);
+  const count = useAnimatedCounter(value, COUNTER_DURATION_MS, trigger);
 
   return (
     <motion.div
@@ -112,7 +115,7 @@ export function HeroSection({ data }: HeroSectionProps) {
 
       <motion.div
         className="absolute bottom-8 left-1/2 -translate-x-1/2"
-        animate={{ y: [0, 10, 0] }}
+        animate={{ y: [0, BOUNCE_Y_OFFSET, 0] }}
         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
       >
         <ChevronDown className="w-8 h-8 text-foreground" />

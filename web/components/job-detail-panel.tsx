@@ -12,12 +12,20 @@ import { X, ChevronRight, ArrowLeft, Star, ExternalLink, Copy, Check, MapPin, Pe
 import { cn } from "@/lib/utils";
 import { RegionBadge } from "@/components/ui/region-badge";
 import { SectionLabel } from "@/components/ui/section-label";
+import {
+  STAR_RATING_MAX,
+  COPY_FEEDBACK_DURATION_MS,
+  MAP_DEFAULT_ZOOM,
+  MAP_FALLBACK_ZOOM,
+  SCOTLAND_CENTER_LAT,
+  SCOTLAND_CENTER_LNG,
+} from "@/lib/constants";
 
 const MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
 
 export { getRegionStyle, REGION_COLORS };
 
-/* ── Props ── */
+
 
 interface JobDetailPanelProps {
   job: Job;
@@ -25,12 +33,12 @@ interface JobDetailPanelProps {
   isMobile: boolean;
 }
 
-/* ── Star rating display ── */
+
 
 function StarRating({ rating, size = 14 }: { rating: number; size?: number }) {
   return (
     <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((star) => (
+      {Array.from({ length: STAR_RATING_MAX }, (_, i) => i + 1).map((star) => (
         <Star
           key={star}
           className={cn(
@@ -45,7 +53,7 @@ function StarRating({ rating, size = 14 }: { rating: number; size?: number }) {
   );
 }
 
-/* ── Placement card (clickable row in FY section) ── */
+
 
 function PlacementCard({
   entry,
@@ -78,7 +86,7 @@ function PlacementCard({
   );
 }
 
-/* ── FY Section ── */
+
 
 function FYSection({
   label,
@@ -106,7 +114,7 @@ function FYSection({
   );
 }
 
-/* ── Review card ── */
+
 
 function ReviewCard({ review }: { review: PlacementReview }) {
   return (
@@ -121,7 +129,7 @@ function ReviewCard({ review }: { review: PlacementReview }) {
   );
 }
 
-/* ── Copy button ── */
+
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -129,7 +137,7 @@ function CopyButton({ text }: { text: string }) {
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(text);
     setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    setTimeout(() => setCopied(false), COPY_FEEDBACK_DURATION_MS);
   }, [text]);
 
   return (
@@ -143,7 +151,7 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-/* ── Nested Placement Detail Card ── */
+
 
 function PlacementDetailCard({
   entry,
@@ -158,7 +166,7 @@ function PlacementDetailCard({
   const avgRating = getAverageRating(reviews);
   const hospital = findHospital(entry.site);
   const mapCenter = useMemo(
-    () => hospital ? { lat: hospital.lat, lng: hospital.lng } : { lat: 56.49, lng: -4.2 },
+    () => hospital ? { lat: hospital.lat, lng: hospital.lng } : { lat: SCOTLAND_CENTER_LAT, lng: SCOTLAND_CENTER_LNG },
     [hospital]
   );
 
@@ -175,14 +183,14 @@ function PlacementDetailCard({
       exit={isMobile ? { y: "100%" } : { x: "100%" }}
       transition={{ type: "spring", damping: 30, stiffness: 300 }}
     >
-      {/* Drag handle (mobile) */}
+      {}
       {isMobile && (
         <div className="flex justify-center pt-2 pb-1 shrink-0">
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
         </div>
       )}
 
-      {/* Header */}
+      {}
       <div className="px-4 py-3 border-b flex items-center gap-3 shrink-0">
         <button
           onClick={onBack}
@@ -196,16 +204,16 @@ function PlacementDetailCard({
         </div>
       </div>
 
-      {/* Scrollable content */}
+      {}
       <div className="flex-1 overflow-y-auto scrollbar-none">
-        {/* Map */}
+        {}
         <div className="p-4 pb-2">
           <div className="rounded-lg overflow-hidden border bg-muted h-[200px]">
             {MAPS_API_KEY ? (
               <APIProvider apiKey={MAPS_API_KEY}>
                 <Map
                   defaultCenter={mapCenter}
-                  defaultZoom={hospital ? 14 : 6}
+                  defaultZoom={hospital ? MAP_DEFAULT_ZOOM : MAP_FALLBACK_ZOOM}
                   gestureHandling="greedy"
                   disableDefaultUI
                   mapId="placement-map"
@@ -225,7 +233,7 @@ function PlacementDetailCard({
           </div>
         </div>
 
-        {/* Hospital info */}
+        {}
         {hospital && (
           <div className="px-4 pb-3">
             <div className="flex items-center gap-2 group/addr">
@@ -247,7 +255,7 @@ function PlacementDetailCard({
           </div>
         )}
 
-        {/* Average rating */}
+        {}
         <div className="px-4 pb-3">
           <div className="flex items-center gap-3">
             <StarRating rating={avgRating} size={22} />
@@ -256,7 +264,7 @@ function PlacementDetailCard({
           </div>
         </div>
 
-        {/* Leave a review CTA */}
+        {}
         <div className="px-4 pb-3">
           <div className="rounded-lg border p-5 flex flex-col items-center justify-center text-center gap-3">
             <p className="text-sm font-medium leading-snug">
@@ -269,7 +277,7 @@ function PlacementDetailCard({
           </div>
         </div>
 
-        {/* Description */}
+        {}
         {entry.description && (
           <div className="px-4 pb-3">
             <SectionLabel as="h4" className="mb-1">Description</SectionLabel>
@@ -277,7 +285,7 @@ function PlacementDetailCard({
           </div>
         )}
 
-        {/* Reviews */}
+        {}
         <div className="px-4 py-2 pb-4 space-y-2">
           {reviews.map((review, i) => (
             <ReviewCard key={i} review={review} />
@@ -288,7 +296,7 @@ function PlacementDetailCard({
   );
 }
 
-/* ── Main Panel ── */
+
 
 export function JobDetailPanel({ job, onClose, isMobile }: JobDetailPanelProps) {
   const style = getRegionStyle(job.region);
@@ -297,7 +305,7 @@ export function JobDetailPanel({ job, onClose, isMobile }: JobDetailPanelProps) 
 
   return (
     <>
-      {/* Backdrop */}
+      {}
       <motion.div
         className="fixed inset-0 z-40 bg-background/50"
         initial={{ opacity: 0 }}
@@ -307,7 +315,7 @@ export function JobDetailPanel({ job, onClose, isMobile }: JobDetailPanelProps) 
         onClick={onClose}
       />
 
-      {/* Main panel */}
+      {}
       <motion.div
         className={cn(
           "fixed z-50 flex flex-col bg-card shadow-2xl",
@@ -320,14 +328,14 @@ export function JobDetailPanel({ job, onClose, isMobile }: JobDetailPanelProps) 
         exit={isMobile ? { y: "100%" } : { x: "100%", right: 0 }}
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
       >
-        {/* Drag handle (mobile) */}
+        {}
         {isMobile && (
           <div className="flex justify-center pt-2 pb-1 shrink-0">
             <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
           </div>
         )}
 
-        {/* Header */}
+        {}
         <div className={cn("px-5 py-4 border-b shrink-0", style.bg)}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
@@ -345,7 +353,7 @@ export function JobDetailPanel({ job, onClose, isMobile }: JobDetailPanelProps) 
           </div>
         </div>
 
-        {/* Placements */}
+        {}
         <div className="flex-1 overflow-y-auto scrollbar-none px-5 py-4 space-y-5">
           <FYSection
             label="FY1"
@@ -365,7 +373,7 @@ export function JobDetailPanel({ job, onClose, isMobile }: JobDetailPanelProps) 
         </div>
       </motion.div>
 
-      {/* Persistent backdrop behind nested panel to prevent flash on switch */}
+      {}
       {selectedPlacement && (
         <div className={cn(
           "fixed z-50 bg-card shadow-2xl pointer-events-none",
@@ -375,7 +383,7 @@ export function JobDetailPanel({ job, onClose, isMobile }: JobDetailPanelProps) 
         )} />
       )}
 
-      {/* Nested placement detail (stacks on top) */}
+      {}
       <AnimatePresence mode="wait">
         {selectedPlacement && (
           <PlacementDetailCard

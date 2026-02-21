@@ -21,6 +21,10 @@ import { REGION_HEX } from "@/lib/region-colors";
 import type { FYComparisonData, FYSpecialtyEntry } from "@/lib/blog-data";
 
 const TOP_N = 10;
+const NAME_MAX_LENGTH = 22;
+const NAME_TRUNCATE_AT = 20;
+const BAR_RADIUS = 4;
+const OPACITY_STEP = 0.06;
 
 const fy1Config = {
   pct: { label: "% of jobs", color: "var(--chart-1)" },
@@ -46,7 +50,7 @@ function FYBarChart({
   color: string;
 }) {
   const chartData = entries.slice(0, TOP_N).map((e) => ({
-    name: e.name.length > 22 ? e.name.slice(0, 20) + "…" : e.name,
+    name: e.name.length > NAME_MAX_LENGTH ? e.name.slice(0, NAME_TRUNCATE_AT) + "…" : e.name,
     fullName: e.name,
     pct: e.pct,
     count: e.count,
@@ -86,9 +90,9 @@ function FYBarChart({
               />
             }
           />
-          <Bar dataKey="pct" radius={[0, 4, 4, 0]} name="% of jobs">
+          <Bar dataKey="pct" radius={[0, BAR_RADIUS, BAR_RADIUS, 0]} name="% of jobs">
             {chartData.map((_, i) => (
-              <Cell key={i} fill={color} fillOpacity={1 - i * 0.06} />
+              <Cell key={i} fill={color} fillOpacity={1 - i * OPACITY_STEP} />
             ))}
           </Bar>
         </BarChart>

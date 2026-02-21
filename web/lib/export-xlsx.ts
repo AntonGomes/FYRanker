@@ -1,7 +1,7 @@
 import * as XLSX from "xlsx";
 import type { ScoredJob } from "./scoring";
 import { effectiveScore } from "./scoring";
-import { PLACEMENTS_PER_JOB, SCORE_DECIMAL_PLACES } from "@/lib/constants";
+import { PLACEMENTS_PER_JOB, SCORE_DECIMAL_PLACES, ISO_DATE_SLICE_END } from "@/lib/constants";
 
 const REGIONS = ["East", "West", "North", "South and SE"] as const;
 
@@ -49,6 +49,6 @@ export function exportRankingsToXlsx(rankedJobs: ScoredJob[]): void {
     }
   }
 
-  const date = new Date().toISOString().slice(0, 10);
+  const date = new Date().toISOString().slice(0, ISO_DATE_SLICE_END);
   XLSX.writeFile(wb, `fy-rankings-${date}.xlsx`);
 }

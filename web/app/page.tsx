@@ -13,12 +13,7 @@ import { CohortCalloutSection } from "@/components/blog/cohort-callout-section";
 import { CTASection } from "@/components/blog/cta-section";
 import type { BlogData } from "@/lib/blog-data";
 
-/**
- * Landing page: pudding.cool-style interactive data blog.
- *
- * Loads pre-computed JSON data from /data/ and renders scroll-driven
- * sections with interactive charts, all filterable by region.
- */
+
 export default function Home() {
   const [data, setData] = useState<BlogData | null>(null);
 

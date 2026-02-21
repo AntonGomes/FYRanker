@@ -27,6 +27,22 @@ interface BubbleNode {
   r: number;
 }
 
+const BUBBLE_PADDING = 3;
+const DEFAULT_CHART_SIZE = 600;
+const MAX_CHART_SIZE = 800;
+const SMALL_SCREEN_LABEL_THRESHOLD = 25;
+const LARGE_SCREEN_LABEL_THRESHOLD = 18;
+const SMALL_SCREEN_SIZE = 500;
+const LABEL_FONT_SIZE_MIN = 8;
+const LABEL_FONT_SIZE_MAX = 14;
+const LABEL_FONT_SCALE = 0.3;
+const SUBLABEL_FONT_SIZE_MIN = 7;
+const SUBLABEL_FONT_SIZE_MAX = 11;
+const SUBLABEL_FONT_SCALE = 0.25;
+const NAME_TRUNCATE_AT = 18;
+const NAME_SLICE_AT = 16;
+const TOOLTIP_OFFSET = 10;
+
 function computeLayout(
   entries: SpecialtyTierEntry[],
   size: number
@@ -41,7 +57,7 @@ function computeLayout(
 
   const packer = pack<{ children?: SpecialtyTierEntry[] }>()
     .size([size, size])
-    .padding(3);
+    .padding(BUBBLE_PADDING);
 
   const packed = packer(root);
 
@@ -73,17 +89,17 @@ interface SpecialtyBubbleChartProps {
 export function SpecialtyBubbleChart({ data }: SpecialtyBubbleChartProps) {
   const { activeRegion } = useRegionFilter();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState(600);
+  const [size, setSize] = useState(DEFAULT_CHART_SIZE);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
-  // Responsive sizing
+  
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
     const observer = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width ?? 600;
-      setSize(Math.min(width, 800));
+      const width = entries[0]?.contentRect.width ?? DEFAULT_CHART_SIZE;
+      setSize(Math.min(width, MAX_CHART_SIZE));
     });
 
     observer.observe(el);
@@ -97,8 +113,8 @@ export function SpecialtyBubbleChart({ data }: SpecialtyBubbleChartProps) {
     [entries, size]
   );
 
-  // Minimum radius for showing labels
-  const labelThreshold = size < 500 ? 25 : 18;
+  
+  const labelThreshold = size < SMALL_SCREEN_SIZE ? SMALL_SCREEN_LABEL_THRESHOLD : LARGE_SCREEN_LABEL_THRESHOLD;
 
   return (
     <BlogSection id="bubble-chart">
@@ -139,7 +155,7 @@ export function SpecialtyBubbleChart({ data }: SpecialtyBubbleChartProps) {
                   const scaleY = rect.height / size;
                   setTooltip({
                     x: node.x * scaleX + rect.left,
-                    y: node.y * scaleY + rect.top - node.r * scaleY - 10,
+                    y: node.y * scaleY + rect.top - node.r * scaleY - TOOLTIP_OFFSET,
                     node,
                   });
                 }}
@@ -163,12 +179,12 @@ export function SpecialtyBubbleChart({ data }: SpecialtyBubbleChartProps) {
                       textAnchor="middle"
                       dy="-0.1em"
                       fill={node.tierColor}
-                      fontSize={Math.max(8, Math.min(14, node.r * 0.3))}
+                      fontSize={Math.max(LABEL_FONT_SIZE_MIN, Math.min(LABEL_FONT_SIZE_MAX, node.r * LABEL_FONT_SCALE))}
                       fontWeight={600}
                       className="pointer-events-none select-none"
                     >
-                      {node.name.length > 18
-                        ? node.name.slice(0, 16) + "…"
+                      {node.name.length > NAME_TRUNCATE_AT
+                        ? node.name.slice(0, NAME_SLICE_AT) + "…"
                         : node.name}
                     </text>
                     <text
@@ -176,7 +192,7 @@ export function SpecialtyBubbleChart({ data }: SpecialtyBubbleChartProps) {
                       dy="1.2em"
                       fill={node.tierColor}
                       fillOpacity={0.7}
-                      fontSize={Math.max(7, Math.min(11, node.r * 0.25))}
+                      fontSize={Math.max(SUBLABEL_FONT_SIZE_MIN, Math.min(SUBLABEL_FONT_SIZE_MAX, node.r * SUBLABEL_FONT_SCALE))}
                       className="pointer-events-none select-none"
                     >
                       {node.count} ({node.pct}%)
