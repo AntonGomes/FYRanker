@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { ResultsView } from "@/components/results-view";
 import type { ScoredJob } from "@/lib/scoring";
 import { SiteHeader } from "@/components/site-header";
@@ -9,33 +9,123 @@ import { importRankingsFromXlsx, ImportError } from "@/lib/import-xlsx";
 import Link from "next/link";
 import { Upload } from "lucide-react";
 
-export default function ResultsPage() {
-  const [scoredJobs, setScoredJobs] = useState<ScoredJob[] | null>(null);
+function ImportSection({
+  fileRef,
+  importing,
+  importError,
+  onImport,
+}: {
+  fileRef: React.RefObject<HTMLInputElement | null>;
+  importing: boolean;
+  importError: string | null;
+  onImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <div>
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".xlsx"
+        onChange={onImport}
+        className="hidden"
+        id="import-xlsx"
+      />
+      <label
+        htmlFor="import-xlsx"
+        className="inline-flex items-center gap-2 cursor-pointer rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+      >
+        <Upload className="h-4 w-4" />
+        {importing ? "Importing..." : "Load a saved ranking (.xlsx)"}
+      </label>
+      {importError && (
+        <p className="mt-2 text-sm text-red-500 font-medium">
+          {importError}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function EmptyState({
+  fileRef,
+  importing,
+  importError,
+  onImport,
+}: {
+  fileRef: React.RefObject<HTMLInputElement | null>;
+  importing: boolean;
+  importError: string | null;
+  onImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <SiteHeader />
+      <main className="flex-1 flex items-center justify-center">
+        <div className="text-center space-y-4 max-w-md">
+          <h1 className="text-2xl font-bold">No ranking data found</h1>
+          <p className="text-muted-foreground">
+            Complete the wizard first to generate your ranking.
+          </p>
+          <Link
+            href="/wizard"
+            className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground font-medium px-6 py-2.5 hover:bg-primary/90 transition-colors"
+          >
+            Go to wizard
+          </Link>
+          <OrDivider />
+          <ImportSection
+            fileRef={fileRef}
+            importing={importing}
+            importError={importError}
+            onImport={onImport}
+          />
+        </div>
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
+
+function loadScoredJobs(): ScoredJob[] | null {
+  if (typeof window === "undefined") return null;
+  const raw =
+    sessionStorage.getItem("fy_scored_jobs") ??
+    localStorage.getItem("fy_scored_jobs");
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function OrDivider() {
+  return (
+    <div className="relative pt-4">
+      <div className="absolute inset-x-0 top-4 flex items-center">
+        <div className="w-full border-t border-border" />
+      </div>
+      <div className="relative flex justify-center">
+        <span className="bg-background px-3 text-xs text-muted-foreground">
+          or
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function useImportHandler(
+  setScoredJobs: (jobs: ScoredJob[]) => void,
+  fileRef: React.RefObject<HTMLInputElement | null>
+) {
   const [importError, setImportError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    
-    const raw =
-      sessionStorage.getItem("fy_scored_jobs") ??
-      localStorage.getItem("fy_scored_jobs");
-    if (raw) {
-      try {
-        setScoredJobs(JSON.parse(raw));
-      } catch {
-        setScoredJobs(null);
-      }
-    }
-  }, []);
 
   async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setImporting(true);
     setImportError(null);
-
     try {
       const jobs = await importRankingsFromXlsx(file);
       const json = JSON.stringify(jobs);
@@ -50,67 +140,27 @@ export default function ResultsPage() {
       }
     } finally {
       setImporting(false);
-      
       if (fileRef.current) fileRef.current.value = "";
     }
   }
 
+  return { importError, importing, handleImport };
+}
+
+export default function ResultsPage() {
+  const [scoredJobs, setScoredJobs] = useState<ScoredJob[] | null>(loadScoredJobs);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const { importError, importing, handleImport } = useImportHandler(setScoredJobs, fileRef);
+
   if (!scoredJobs) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
-        <SiteHeader />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center space-y-4 max-w-md">
-            <h1 className="text-2xl font-bold">No ranking data found</h1>
-            <p className="text-muted-foreground">
-              Complete the wizard first to generate your ranking.
-            </p>
-            <Link
-              href="/wizard"
-              className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground font-medium px-6 py-2.5 hover:bg-primary/90 transition-colors"
-            >
-              Go to wizard
-            </Link>
-
-            <div className="relative pt-4">
-              <div className="absolute inset-x-0 top-4 flex items-center">
-                <div className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center">
-                <span className="bg-background px-3 text-xs text-muted-foreground">
-                  or
-                </span>
-              </div>
-            </div>
-
-            <div>
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".xlsx"
-                onChange={handleImport}
-                className="hidden"
-                id="import-xlsx"
-              />
-              <label
-                htmlFor="import-xlsx"
-                className="inline-flex items-center gap-2 cursor-pointer rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-              >
-                <Upload className="h-4 w-4" />
-                {importing ? "Importing..." : "Load a saved ranking (.xlsx)"}
-              </label>
-              {importError && (
-                <p className="mt-2 text-sm text-red-500 font-medium">
-                  {importError}
-                </p>
-              )}
-            </div>
-          </div>
-        </main>
-        <SiteFooter />
-      </div>
+      <EmptyState
+        fileRef={fileRef}
+        importing={importing}
+        importError={importError}
+        onImport={handleImport}
+      />
     );
   }
-
   return <ResultsView scoredJobs={scoredJobs} />;
 }

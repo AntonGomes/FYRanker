@@ -13,14 +13,15 @@ import { BlogSection } from "./blog-section";
 import { RegionFilterBar } from "./region-filter-bar";
 import { useRegionFilter } from "./region-filter-context";
 import type { PlacementDistData } from "@/lib/blog-data";
+import type { Region } from "@/lib/region-colors";
 
 const SEGMENT_COLORS = [
-  "#3b82f6", 
-  "#22c55e", 
-  "#f59e0b", 
-  "#ef4444", 
-  "#a855f7", 
-  "#ec4899", 
+  "#3b82f6",
+  "#22c55e",
+  "#f59e0b",
+  "#ef4444",
+  "#a855f7",
+  "#ec4899",
 ];
 
 const chartConfig: ChartConfig = {
@@ -42,23 +43,16 @@ interface PlacementDistributionChartProps {
   data: PlacementDistData;
 }
 
-export function PlacementDistributionChart({
-  data,
-}: PlacementDistributionChartProps) {
-  const { activeRegion } = useRegionFilter();
-
-  const chartData = data.specialties.map((spec) => {
+function buildChartRows(data: PlacementDistData, activeRegion: Region | null) {
+  return data.specialties.map((spec) => {
     const dist = activeRegion
       ? spec.byRegion[activeRegion]?.distribution ?? {}
       : spec.distribution;
     const totalJobs = activeRegion
       ? spec.byRegion[activeRegion]?.totalJobs ?? 1
       : data.totalJobs;
-
-    
     const row: Record<string, string | number> = {
-      name:
-        spec.name.length > NAME_MAX_LENGTH ? spec.name.slice(0, NAME_TRUNCATE_AT) + "…" : spec.name,
+      name: spec.name.length > NAME_MAX_LENGTH ? spec.name.slice(0, NAME_TRUNCATE_AT) + "…" : spec.name,
       fullName: spec.name,
     };
     for (let i = 1; i <= MAX_PLACEMENT_SLOTS; i++) {
@@ -67,11 +61,18 @@ export function PlacementDistributionChart({
     }
     return row;
   });
+}
 
-  
-  const activeKeys = Array.from({ length: MAX_PLACEMENT_SLOTS }, (_, i) => `p${i + 1}`).filter(
+function getActiveKeys(chartData: Record<string, string | number>[]) {
+  return Array.from({ length: MAX_PLACEMENT_SLOTS }, (_, i) => `p${i + 1}`).filter(
     (key) => chartData.some((d) => (d[key] as number) > 0)
   );
+}
+
+export function PlacementDistributionChart({ data }: PlacementDistributionChartProps) {
+  const { activeRegion } = useRegionFilter();
+  const chartData = buildChartRows(data, activeRegion);
+  const activeKeys = getActiveKeys(chartData);
 
   return (
     <BlogSection id="placement-dist">
@@ -83,58 +84,59 @@ export function PlacementDistributionChart({
       <p className="text-lg sm:text-xl text-foreground text-center mb-8 max-w-2xl mx-auto">
         How many of your 6 placements will be the same specialty?
       </p>
-
       <RegionFilterBar className="mb-8" />
-
-      <ChartContainer config={chartConfig} className="h-[350px] sm:h-[400px] w-full">
-        <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 20 }}>
-          <CartesianGrid horizontal={false} strokeDasharray="3 3" />
-          <XAxis
-            type="number"
-            tickLine={false}
-            axisLine={false}
-            tickFormatter={(v) => `${v}%`}
-          />
-          <YAxis
-            type="category"
-            dataKey="name"
-            tickLine={false}
-            axisLine={false}
-            width={150}
-            tick={{ fontSize: 11, fontWeight: 600 }}
-          />
-          <ChartTooltip
-            content={
-              <ChartTooltipContent
-                formatter={(...args) => {
-                  const [value, name, item] = args;
-                  const label =
-                    chartConfig[name as keyof typeof chartConfig]?.label ??
-                    name;
-                  return (
-                    <span className="font-semibold">
-                      {item.payload.fullName}: {value}% with {label}
-                    </span>
-                  );
-                }}
-              />
-            }
-          />
-          <ChartLegend content={<ChartLegendContent />} />
-          {activeKeys.map((key, i) => (
-            <Bar
-              key={key}
-              dataKey={key}
-              stackId="stack"
-              fill={SEGMENT_COLORS[i]}
-              radius={
-                i === activeKeys.length - 1 ? [0, BAR_RADIUS, BAR_RADIUS, 0] : [0, 0, 0, 0]
-              }
-              name={key}
-            />
-          ))}
-        </BarChart>
-      </ChartContainer>
+      <PlacementDistChart chartData={chartData} activeKeys={activeKeys} />
     </BlogSection>
+  );
+}
+
+function PlacementDistChart({
+  chartData,
+  activeKeys,
+}: {
+  chartData: Record<string, string | number>[];
+  activeKeys: string[];
+}) {
+  return (
+    <ChartContainer config={chartConfig} className="h-[350px] sm:h-[400px] w-full">
+      <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 20 }}>
+        <CartesianGrid horizontal={false} strokeDasharray="3 3" />
+        <XAxis type="number" tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} />
+        <YAxis
+          type="category"
+          dataKey="name"
+          tickLine={false}
+          axisLine={false}
+          width={150}
+          tick={{ fontSize: 11, fontWeight: 600 }}
+        />
+        <ChartTooltip
+          content={
+            <ChartTooltipContent
+              formatter={(...args) => {
+                const [value, name, item] = args;
+                const label = chartConfig[name as keyof typeof chartConfig]?.label ?? name;
+                return (
+                  <span className="font-semibold">
+                    {item.payload.fullName}: {value}% with {label}
+                  </span>
+                );
+              }}
+            />
+          }
+        />
+        <ChartLegend content={<ChartLegendContent />} />
+        {activeKeys.map((key, i) => (
+          <Bar
+            key={key}
+            dataKey={key}
+            stackId="stack"
+            fill={SEGMENT_COLORS[i]}
+            radius={i === activeKeys.length - 1 ? [0, BAR_RADIUS, BAR_RADIUS, 0] : [0, 0, 0, 0]}
+            name={key}
+          />
+        ))}
+      </BarChart>
+    </ChartContainer>
   );
 }

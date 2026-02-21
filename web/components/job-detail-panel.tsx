@@ -1,59 +1,23 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState } from "react";
 import type { Job } from "@/lib/parse-xlsx";
 import { getJobPlacements, type PlacementEntry } from "@/lib/parse-xlsx";
-import { getPlacementReviews, getAverageRating, type PlacementReview } from "@/lib/placement-reviews";
-import { findHospital } from "@/lib/hospitals";
 import { getRegionStyle, REGION_COLORS } from "@/lib/region-colors";
-import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronRight, ArrowLeft, Star, ExternalLink, Copy, Check, MapPin, PenLine } from "lucide-react";
+import { X, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RegionBadge } from "@/components/ui/region-badge";
 import { SectionLabel } from "@/components/ui/section-label";
-import {
-  STAR_RATING_MAX,
-  COPY_FEEDBACK_DURATION_MS,
-  MAP_DEFAULT_ZOOM,
-  MAP_FALLBACK_ZOOM,
-  SCOTLAND_CENTER_LAT,
-  SCOTLAND_CENTER_LNG,
-} from "@/lib/constants";
-
-const MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
+import { PlacementDetailCard } from "@/components/placement-detail-card";
 
 export { getRegionStyle, REGION_COLORS };
-
-
 
 interface JobDetailPanelProps {
   job: Job;
   onClose: () => void;
   isMobile: boolean;
 }
-
-
-
-function StarRating({ rating, size = 14 }: { rating: number; size?: number }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {Array.from({ length: STAR_RATING_MAX }, (_, i) => i + 1).map((star) => (
-        <Star
-          key={star}
-          className={cn(
-            star <= Math.round(rating)
-              ? "fill-amber-400 text-amber-400"
-              : "fill-muted text-muted-foreground/40"
-          )}
-          style={{ width: size, height: size }}
-        />
-      ))}
-    </div>
-  );
-}
-
-
 
 function PlacementCard({
   entry,
@@ -86,8 +50,6 @@ function PlacementCard({
   );
 }
 
-
-
 function FYSection({
   label,
   entries,
@@ -114,198 +76,60 @@ function FYSection({
   );
 }
 
-
-
-function ReviewCard({ review }: { review: PlacementReview }) {
+function PanelHeader({
+  job,
+  onClose,
+}: {
+  job: Job;
+  onClose: () => void;
+}) {
+  const style = getRegionStyle(job.region);
   return (
-    <div className="rounded-lg border bg-muted/30 p-3 space-y-1.5">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-medium">{review.author}</span>
-        <span className="text-xs text-muted-foreground shrink-0">{review.date}</span>
+    <div className={cn("px-5 py-4 border-b shrink-0", style.bg)}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-base font-semibold leading-tight truncate">
+            {job.programmeTitle}
+          </h2>
+          <RegionBadge region={job.region} className="inline-block mt-1.5 px-2.5 text-xs font-medium" />
+        </div>
+        <button
+          onClick={onClose}
+          className="shrink-0 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
-      <StarRating rating={review.rating} size={12} />
-      <p className="text-xs text-muted-foreground leading-relaxed">{review.text}</p>
     </div>
   );
 }
 
-
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), COPY_FEEDBACK_DURATION_MS);
-  }, [text]);
-
-  return (
-    <button
-      onClick={handleCopy}
-      className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
-      title="Copy address"
-    >
-      {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-    </button>
-  );
-}
-
-
-
-function PlacementDetailCard({
-  entry,
-  onBack,
-  isMobile,
+function PlacementList({
+  fy1,
+  fy2,
+  selectedPlacement,
+  onSelectPlacement,
 }: {
-  entry: PlacementEntry;
-  onBack: () => void;
-  isMobile: boolean;
+  fy1: PlacementEntry[];
+  fy2: PlacementEntry[];
+  selectedPlacement: PlacementEntry | null;
+  onSelectPlacement: (entry: PlacementEntry) => void;
 }) {
-  const reviews = getPlacementReviews(entry.site, entry.spec);
-  const avgRating = getAverageRating(reviews);
-  const hospital = findHospital(entry.site);
-  const mapCenter = useMemo(
-    () => hospital ? { lat: hospital.lat, lng: hospital.lng } : { lat: SCOTLAND_CENTER_LAT, lng: SCOTLAND_CENTER_LNG },
-    [hospital]
-  );
-
   return (
-    <motion.div
-      className={cn(
-        "fixed z-50 flex flex-col bg-card shadow-2xl",
-        isMobile
-          ? "inset-x-0 bottom-0 max-h-[88vh] rounded-t-2xl"
-          : "top-0 right-0 bottom-0 w-96 border-l"
-      )}
-      initial={isMobile ? { y: "100%" } : { x: "100%" }}
-      animate={isMobile ? { y: 0 } : { x: 0 }}
-      exit={isMobile ? { y: "100%" } : { x: "100%" }}
-      transition={{ type: "spring", damping: 30, stiffness: 300 }}
-    >
-      {}
-      {isMobile && (
-        <div className="flex justify-center pt-2 pb-1 shrink-0">
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-        </div>
-      )}
-
-      {}
-      <div className="px-4 py-3 border-b flex items-center gap-3 shrink-0">
-        <button
-          onClick={onBack}
-          className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-        <div className="min-w-0 flex-1">
-          <h2 className="text-base font-bold leading-snug truncate">{entry.spec}</h2>
-          <p className="text-sm font-semibold italic leading-snug truncate">{entry.site}</p>
-        </div>
-      </div>
-
-      {}
-      <div className="flex-1 overflow-y-auto scrollbar-none">
-        {}
-        <div className="p-4 pb-2">
-          <div className="rounded-lg overflow-hidden border bg-muted h-[200px]">
-            {MAPS_API_KEY ? (
-              <APIProvider apiKey={MAPS_API_KEY}>
-                <Map
-                  defaultCenter={mapCenter}
-                  defaultZoom={hospital ? MAP_DEFAULT_ZOOM : MAP_FALLBACK_ZOOM}
-                  gestureHandling="greedy"
-                  disableDefaultUI
-                  mapId="placement-map"
-                >
-                  {hospital && <AdvancedMarker position={mapCenter} />}
-                </Map>
-              </APIProvider>
-            ) : (
-              <iframe
-                title={`Map of ${entry.site}`}
-                src={`https://maps.google.com/maps?q=${encodeURIComponent(entry.site + " NHS Scotland")}&output=embed`}
-                className="w-full h-full"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-            )}
-          </div>
-        </div>
-
-        {}
-        {hospital && (
-          <div className="px-4 pb-3">
-            <div className="flex items-center gap-2 group/addr">
-              <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <span className="text-xs whitespace-nowrap overflow-x-auto flex-1 min-w-0 scrollbar-none">{hospital.address}</span>
-              <span className="opacity-0 group-hover/addr:opacity-100 transition-opacity shrink-0">
-                <CopyButton text={hospital.address} />
-              </span>
-              <a
-                href={hospital.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 rounded-full border border-primary px-3 py-1 text-xs font-medium text-primary hover:bg-primary/10 transition-colors whitespace-nowrap shrink-0"
-              >
-                Explore site
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            </div>
-          </div>
-        )}
-
-        {}
-        <div className="px-4 pb-3">
-          <div className="flex items-center gap-3">
-            <StarRating rating={avgRating} size={22} />
-            <span className="text-lg font-bold">{avgRating.toFixed(1)}</span>
-            <span className="text-sm text-muted-foreground">({reviews.length} reviews)</span>
-          </div>
-        </div>
-
-        {}
-        <div className="px-4 pb-3">
-          <div className="rounded-lg border p-5 flex flex-col items-center justify-center text-center gap-3">
-            <p className="text-sm font-medium leading-snug">
-              Leave a review for <span className="font-bold">{entry.spec}</span> at {entry.site}
-            </p>
-            <button className="rounded-full bg-primary hover:bg-primary/90 px-5 py-2 text-sm font-semibold text-primary-foreground transition-colors flex items-center gap-1.5">
-              <PenLine className="h-3.5 w-3.5" />
-              Leave a review
-            </button>
-          </div>
-        </div>
-
-        {}
-        {entry.description && (
-          <div className="px-4 pb-3">
-            <SectionLabel as="h4" className="mb-1">Description</SectionLabel>
-            <p className="text-sm leading-relaxed">{entry.description}</p>
-          </div>
-        )}
-
-        {}
-        <div className="px-4 py-2 pb-4 space-y-2">
-          {reviews.map((review, i) => (
-            <ReviewCard key={i} review={review} />
-          ))}
-        </div>
-      </div>
-    </motion.div>
+    <div className="flex-1 overflow-y-auto scrollbar-none px-5 py-4 space-y-5">
+      <FYSection label="FY1" entries={fy1} activePlacementNum={selectedPlacement?.num ?? null} onSelectPlacement={onSelectPlacement} />
+      {fy1.length > 0 && fy2.length > 0 && <div className="border-t" />}
+      <FYSection label="FY2" entries={fy2} activePlacementNum={selectedPlacement?.num ?? null} onSelectPlacement={onSelectPlacement} />
+    </div>
   );
 }
-
-
 
 export function JobDetailPanel({ job, onClose, isMobile }: JobDetailPanelProps) {
-  const style = getRegionStyle(job.region);
   const { fy1, fy2 } = getJobPlacements(job);
   const [selectedPlacement, setSelectedPlacement] = useState<PlacementEntry | null>(null);
 
   return (
     <>
-      {}
       <motion.div
         className="fixed inset-0 z-40 bg-background/50"
         initial={{ opacity: 0 }}
@@ -314,76 +138,30 @@ export function JobDetailPanel({ job, onClose, isMobile }: JobDetailPanelProps) 
         transition={{ duration: 0.2 }}
         onClick={onClose}
       />
-
-      {}
       <motion.div
         className={cn(
           "fixed z-50 flex flex-col bg-card shadow-2xl",
-          isMobile
-            ? "inset-x-0 bottom-0 max-h-[88vh] rounded-t-2xl"
-            : "top-0 bottom-0 w-96 border-l"
+          isMobile ? "inset-x-0 bottom-0 max-h-[88vh] rounded-t-2xl" : "top-0 bottom-0 w-96 border-l"
         )}
         initial={isMobile ? { y: "100%" } : { x: "100%", right: 0 }}
         animate={isMobile ? { y: 0 } : { x: 0, right: selectedPlacement ? "24rem" : 0 }}
         exit={isMobile ? { y: "100%" } : { x: "100%", right: 0 }}
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
       >
-        {}
         {isMobile && (
           <div className="flex justify-center pt-2 pb-1 shrink-0">
             <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
           </div>
         )}
-
-        {}
-        <div className={cn("px-5 py-4 border-b shrink-0", style.bg)}>
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <h2 className="text-base font-semibold leading-tight truncate">
-                {job.programmeTitle}
-              </h2>
-              <RegionBadge region={job.region} className="inline-block mt-1.5 px-2.5 text-xs font-medium" />
-            </div>
-            <button
-              onClick={onClose}
-              className="shrink-0 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        {}
-        <div className="flex-1 overflow-y-auto scrollbar-none px-5 py-4 space-y-5">
-          <FYSection
-            label="FY1"
-            entries={fy1}
-            activePlacementNum={selectedPlacement?.num ?? null}
-            onSelectPlacement={setSelectedPlacement}
-          />
-          {fy1.length > 0 && fy2.length > 0 && (
-            <div className="border-t" />
-          )}
-          <FYSection
-            label="FY2"
-            entries={fy2}
-            activePlacementNum={selectedPlacement?.num ?? null}
-            onSelectPlacement={setSelectedPlacement}
-          />
-        </div>
+        <PanelHeader job={job} onClose={onClose} />
+        <PlacementList fy1={fy1} fy2={fy2} selectedPlacement={selectedPlacement} onSelectPlacement={setSelectedPlacement} />
       </motion.div>
-
-      {}
       {selectedPlacement && (
         <div className={cn(
           "fixed z-50 bg-card shadow-2xl pointer-events-none",
-          isMobile
-            ? "inset-x-0 bottom-0 top-[12vh] rounded-t-2xl"
-            : "top-0 right-0 bottom-0 w-96 border-l"
+          isMobile ? "inset-x-0 bottom-0 top-[12vh] rounded-t-2xl" : "top-0 right-0 bottom-0 w-96 border-l"
         )} />
       )}
-
-      {}
       <AnimatePresence mode="wait">
         {selectedPlacement && (
           <PlacementDetailCard

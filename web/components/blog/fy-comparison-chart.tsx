@@ -38,6 +38,32 @@ interface FYComparisonChartProps {
   data: FYComparisonData;
 }
 
+function buildChartData(entries: FYSpecialtyEntry[]) {
+  return entries.slice(0, TOP_N).map((e) => ({
+    name: e.name.length > NAME_MAX_LENGTH ? e.name.slice(0, NAME_TRUNCATE_AT) + "…" : e.name,
+    fullName: e.name,
+    pct: e.pct,
+    count: e.count,
+  }));
+}
+
+function FYBarChartAxes() {
+  return (
+    <>
+      <CartesianGrid horizontal={false} strokeDasharray="3 3" />
+      <XAxis type="number" tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} />
+      <YAxis
+        type="category"
+        dataKey="name"
+        tickLine={false}
+        axisLine={false}
+        width={140}
+        tick={{ fontSize: 11, fontWeight: 600 }}
+      />
+    </>
+  );
+}
+
 function FYBarChart({
   title,
   entries,
@@ -49,12 +75,7 @@ function FYBarChart({
   config: ChartConfig;
   color: string;
 }) {
-  const chartData = entries.slice(0, TOP_N).map((e) => ({
-    name: e.name.length > NAME_MAX_LENGTH ? e.name.slice(0, NAME_TRUNCATE_AT) + "…" : e.name,
-    fullName: e.name,
-    pct: e.pct,
-    count: e.count,
-  }));
+  const chartData = buildChartData(entries);
 
   return (
     <div className="flex-1 min-w-0">
@@ -63,21 +84,7 @@ function FYBarChart({
       </h3>
       <ChartContainer config={config} className="h-[400px] w-full">
         <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 20 }}>
-          <CartesianGrid horizontal={false} strokeDasharray="3 3" />
-          <XAxis
-            type="number"
-            tickLine={false}
-            axisLine={false}
-            tickFormatter={(v) => `${v}%`}
-          />
-          <YAxis
-            type="category"
-            dataKey="name"
-            tickLine={false}
-            axisLine={false}
-            width={140}
-            tick={{ fontSize: 11, fontWeight: 600 }}
-          />
+          <FYBarChartAxes />
           <ChartTooltip
             content={
               <ChartTooltipContent
@@ -85,8 +92,7 @@ function FYBarChart({
                   const [value, , item] = args;
                   return (
                     <span className="font-semibold">
-                      {item.payload.fullName}: {value}% ({item.payload.count}{" "}
-                      jobs)
+                      {item.payload.fullName}: {value}% ({item.payload.count} jobs)
                     </span>
                   );
                 }}
@@ -106,14 +112,8 @@ function FYBarChart({
 
 export function FYComparisonChart({ data }: FYComparisonChartProps) {
   const { activeRegion } = useRegionFilter();
-
-  const fy1Entries = activeRegion
-    ? data.fy1.byRegion[activeRegion] ?? []
-    : data.fy1.all;
-  const fy2Entries = activeRegion
-    ? data.fy2.byRegion[activeRegion] ?? []
-    : data.fy2.all;
-
+  const fy1Entries = activeRegion ? data.fy1.byRegion[activeRegion] ?? [] : data.fy1.all;
+  const fy2Entries = activeRegion ? data.fy2.byRegion[activeRegion] ?? [] : data.fy2.all;
   const color = activeRegion ? REGION_HEX[activeRegion] : undefined;
 
   return (
@@ -127,22 +127,10 @@ export function FYComparisonChart({ data }: FYComparisonChartProps) {
         GP appears in <strong className="text-primary">45%</strong> of FY2 jobs — but never
         in FY1.
       </p>
-
       <RegionFilterBar className="mb-8" />
-
       <div className="flex flex-col md:flex-row gap-6">
-        <FYBarChart
-          title="FY1"
-          entries={fy1Entries}
-          config={fy1Config}
-          color={color ?? "var(--chart-1)"}
-        />
-        <FYBarChart
-          title="FY2"
-          entries={fy2Entries}
-          config={fy2Config}
-          color={color ?? "var(--chart-3)"}
-        />
+        <FYBarChart title="FY1" entries={fy1Entries} config={fy1Config} color={color ?? "var(--chart-1)"} />
+        <FYBarChart title="FY2" entries={fy2Entries} config={fy2Config} color={color ?? "var(--chart-3)"} />
       </div>
     </BlogSection>
   );

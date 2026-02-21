@@ -1,13 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Navigation, Loader2, MapPin } from "lucide-react";
-import {
-  type Hospital,
-  type UserLocation,
-  geocodeLocation,
-  sortHospitalsByProximity,
-} from "@/lib/proximity";
+import { type Hospital, type UserLocation, geocodeLocation, sortHospitalsByProximity } from "@/lib/proximity";
 import type { RankableItem } from "@/components/rankable-list";
 import { COORD_DECIMAL_PLACES, GEOLOCATION_TIMEOUT } from "@/lib/constants";
 
@@ -23,64 +18,68 @@ interface HospitalSortDropdownProps {
   onSortModeChange: (mode: SortMode) => void;
 }
 
-export function HospitalSortDropdown({
-  items,
-  onSort,
-  userLocation,
-  onLocationChange,
-  hospitals,
-  sortMode,
-  onSortModeChange,
-}: HospitalSortDropdownProps) {
+function LocationDisplay({ location, onClear }: { location: UserLocation; onClear: () => void }) {
+  return (
+    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <MapPin className="h-3 w-3 shrink-0" />
+      <span className="truncate">{location.displayName}</span>
+      <button onClick={onClear} className="shrink-0 text-[10px] text-muted-foreground hover:text-foreground underline">change</button>
+    </div>
+  );
+}
+
+function LocationTabToggle({ locationTab, onTabChange }: { locationTab: "auto" | "manual"; onTabChange: (tab: "auto" | "manual") => void }) {
+  return (
+    <div className="flex items-center rounded-md border bg-background text-xs overflow-hidden">
+      <button onClick={() => onTabChange("auto")} className={`px-2 py-1 transition-colors ${locationTab === "auto" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}>
+        <Navigation className="h-3 w-3 inline mr-0.5" />Detect
+      </button>
+      <div className="w-px h-4 bg-border" />
+      <button onClick={() => onTabChange("manual")} className={`px-2 py-1 transition-colors ${locationTab === "manual" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}>Postcode</button>
+    </div>
+  );
+}
+
+function AutoDetectButton({ loading, onClick }: { loading: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} disabled={loading} className="flex items-center gap-1 rounded-md border bg-background px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50">
+      {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Navigation className="h-3 w-3" />}
+      {loading ? "Locating..." : "Go"}
+    </button>
+  );
+}
+
+function ManualGeocodeInput({ loading, locationInput, onInputChange, onGeocode }: { loading: boolean; locationInput: string; onInputChange: (v: string) => void; onGeocode: () => void }) {
+  return (
+    <div className="flex items-center gap-1">
+      <input type="text" placeholder="e.g. EH1 1YZ" value={locationInput} onChange={(e) => onInputChange(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") onGeocode(); }} className="w-24 rounded-md border bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-ring/50 placeholder:text-muted-foreground" />
+      <button onClick={onGeocode} disabled={loading || !locationInput.trim()} className="rounded-md border bg-background px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50">
+        {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Go"}
+      </button>
+    </div>
+  );
+}
+
+function useLocationHandlers(onLocationChange: (loc: UserLocation | null) => void) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [locationInput, setLocationInput] = useState("");
-  const [locationTab, setLocationTab] = useState<"auto" | "manual">("auto");
-  const handleModeChange = useCallback(
-    (mode: SortMode) => {
-      onSortModeChange(mode);
-
-      if (mode === "default") {
-        onSort([...items].sort((a, b) => a.label.localeCompare(b.label)));
-      } else if (mode === "z-a") {
-        onSort([...items].sort((a, b) => b.label.localeCompare(a.label)));
-      } else if (mode === "proximity") {
-        if (userLocation && hospitals.length > 0) {
-          onSort(sortHospitalsByProximity({ items, userLocation, hospitals }));
-        }
-      }
-    },
-    [items, onSort, onSortModeChange, userLocation, hospitals]
-  );
-
   const handleAutoDetect = useCallback(() => {
-    if (!navigator.geolocation) {
-      setError("Geolocation not supported");
-      return;
-    }
+    if (!navigator.geolocation) { setError("Geolocation not supported"); return; }
     setLoading(true);
     setError(null);
     navigator.geolocation.getCurrentPosition(
       (position) => {
         onLocationChange({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
+          lat: position.coords.latitude, lng: position.coords.longitude,
           displayName: `${position.coords.latitude.toFixed(COORD_DECIMAL_PLACES)}, ${position.coords.longitude.toFixed(COORD_DECIMAL_PLACES)}`,
         });
         setLoading(false);
       },
-      (err) => {
-        setError(
-          err.code === err.PERMISSION_DENIED
-            ? "Access denied — enter a postcode instead"
-            : "Could not get location"
-        );
-        setLoading(false);
-      },
+      (err) => { setError(err.code === err.PERMISSION_DENIED ? "Access denied — enter a postcode instead" : "Could not get location"); setLoading(false); },
       { enableHighAccuracy: false, timeout: GEOLOCATION_TIMEOUT }
     );
   }, [onLocationChange]);
-
   const handleManualGeocode = useCallback(async () => {
     const query = locationInput.trim();
     if (!query) return;
@@ -88,112 +87,63 @@ export function HospitalSortDropdown({
     setError(null);
     try {
       const loc = await geocodeLocation(query);
-      if (loc) {
-        onLocationChange(loc);
-      } else {
-        setError("Not found — try another postcode");
-      }
-    } catch {
-      setError("Lookup failed");
-    } finally {
-      setLoading(false);
-    }
+      if (loc) { onLocationChange(loc); } else { setError("Not found — try another postcode"); }
+    } catch { setError("Lookup failed"); } finally { setLoading(false); }
   }, [locationInput, onLocationChange]);
+  return { loading, error, locationInput, setLocationInput, handleAutoDetect, handleManualGeocode };
+}
 
-  
+function useSortSync(ctx: Pick<HospitalSortDropdownProps, "userLocation" | "hospitals" | "items" | "onSort" | "sortMode">) {
+  const latestCtx = useRef(ctx);
+  useEffect(() => { latestCtx.current = ctx; });
   useEffect(() => {
-    if (sortMode === "proximity" && userLocation && hospitals.length > 0) {
-      onSort(sortHospitalsByProximity({ items, userLocation, hospitals }));
+    const c = latestCtx.current;
+    if (c.sortMode === "proximity" && c.userLocation && c.hospitals.length > 0) {
+      c.onSort(sortHospitalsByProximity({ items: c.items, userLocation: c.userLocation, hospitals: c.hospitals }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userLocation, hospitals]);
+  }, [ctx.userLocation, ctx.hospitals]);
+}
 
+export function HospitalSortDropdown({ items, onSort, userLocation, onLocationChange, hospitals, sortMode, onSortModeChange }: HospitalSortDropdownProps) {
+  const [locationTab, setLocationTab] = useState<"auto" | "manual">("auto");
+  const loc = useLocationHandlers(onLocationChange);
+  useSortSync({ userLocation, hospitals, items, onSort, sortMode });
+  const handleModeChange = useCallback(
+    (mode: SortMode) => {
+      onSortModeChange(mode);
+      if (mode === "default") { onSort([...items].sort((a, b) => a.label.localeCompare(b.label))); }
+      else if (mode === "z-a") { onSort([...items].sort((a, b) => b.label.localeCompare(a.label))); }
+      else if (mode === "proximity" && userLocation && hospitals.length > 0) { onSort(sortHospitalsByProximity({ items, userLocation, hospitals })); }
+    },
+    [items, onSort, onSortModeChange, userLocation, hospitals]
+  );
   return (
     <div className="space-y-2">
-      <select
-        value={sortMode}
-        onChange={(e) => handleModeChange(e.target.value as SortMode)}
-        className="h-7 rounded-md border bg-background px-2 text-xs outline-none focus:ring-2 focus:ring-ring/50 cursor-pointer"
-      >
+      <select value={sortMode} onChange={(e) => handleModeChange(e.target.value as SortMode)} className="h-7 rounded-md border bg-background px-2 text-xs outline-none focus:ring-2 focus:ring-ring/50 cursor-pointer">
         <option value="default">A → Z</option>
         <option value="z-a">Z → A</option>
         <option value="proximity">Nearest to me</option>
       </select>
-
       {sortMode === "proximity" && (
-        <div className="space-y-1.5">
-          {userLocation ? (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <MapPin className="h-3 w-3 shrink-0" />
-              <span className="truncate">{userLocation.displayName}</span>
-              <button
-                onClick={() => onLocationChange(null)}
-                className="shrink-0 text-[10px] text-muted-foreground hover:text-foreground underline"
-              >
-                change
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-wrap items-center gap-1.5">
-              <div className="flex items-center rounded-md border bg-background text-xs overflow-hidden">
-                <button
-                  onClick={() => setLocationTab("auto")}
-                  className={`px-2 py-1 transition-colors ${locationTab === "auto" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}
-                >
-                  <Navigation className="h-3 w-3 inline mr-0.5" />
-                  Detect
-                </button>
-                <div className="w-px h-4 bg-border" />
-                <button
-                  onClick={() => setLocationTab("manual")}
-                  className={`px-2 py-1 transition-colors ${locationTab === "manual" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}
-                >
-                  Postcode
-                </button>
-              </div>
+        <ProximityControls userLocation={userLocation} onClearLocation={() => onLocationChange(null)} locationTab={locationTab} onTabChange={setLocationTab} loading={loc.loading} onAutoDetect={loc.handleAutoDetect} locationInput={loc.locationInput} onInputChange={loc.setLocationInput} onGeocode={loc.handleManualGeocode} error={loc.error} />
+      )}
+    </div>
+  );
+}
 
-              {locationTab === "auto" && (
-                <button
-                  onClick={handleAutoDetect}
-                  disabled={loading}
-                  className="flex items-center gap-1 rounded-md border bg-background px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-                >
-                  {loading ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Navigation className="h-3 w-3" />
-                  )}
-                  {loading ? "Locating..." : "Go"}
-                </button>
-              )}
-
-              {locationTab === "manual" && (
-                <div className="flex items-center gap-1">
-                  <input
-                    type="text"
-                    placeholder="e.g. EH1 1YZ"
-                    value={locationInput}
-                    onChange={(e) => setLocationInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleManualGeocode();
-                    }}
-                    className="w-24 rounded-md border bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-ring/50 placeholder:text-muted-foreground"
-                  />
-                  <button
-                    onClick={handleManualGeocode}
-                    disabled={loading || !locationInput.trim()}
-                    className="rounded-md border bg-background px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-                  >
-                    {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Go"}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {error && <p className="text-[11px] text-destructive">{error}</p>}
+function ProximityControls({ userLocation, onClearLocation, locationTab, onTabChange, loading, onAutoDetect, locationInput, onInputChange, onGeocode, error }: { userLocation: UserLocation | null; onClearLocation: () => void; locationTab: "auto" | "manual"; onTabChange: (tab: "auto" | "manual") => void; loading: boolean; onAutoDetect: () => void; locationInput: string; onInputChange: (v: string) => void; onGeocode: () => void; error: string | null }) {
+  return (
+    <div className="space-y-1.5">
+      {userLocation ? (
+        <LocationDisplay location={userLocation} onClear={onClearLocation} />
+      ) : (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <LocationTabToggle locationTab={locationTab} onTabChange={onTabChange} />
+          {locationTab === "auto" && <AutoDetectButton loading={loading} onClick={onAutoDetect} />}
+          {locationTab === "manual" && <ManualGeocodeInput loading={loading} locationInput={locationInput} onInputChange={onInputChange} onGeocode={onGeocode} />}
         </div>
       )}
+      {error && <p className="text-[11px] text-destructive">{error}</p>}
     </div>
   );
 }

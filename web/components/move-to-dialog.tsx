@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,39 @@ interface MoveToDialogProps {
   onMoveTo: (targetRank: number) => void;
 }
 
+function QuickMoveButtons({
+  totalJobs,
+  onMoveTo,
+  onClose,
+}: {
+  totalJobs: number;
+  onMoveTo: (targetRank: number) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="flex gap-2">
+      <Button
+        size="sm"
+        variant="outline"
+        className="flex-1 gap-1"
+        onClick={() => { onMoveTo(1); onClose(); }}
+      >
+        <ArrowUpToLine className="h-3.5 w-3.5" />
+        Send to Top
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        className="flex-1 gap-1"
+        onClick={() => { onMoveTo(totalJobs); onClose(); }}
+      >
+        <ArrowDownToLine className="h-3.5 w-3.5" />
+        Send to Bottom
+      </Button>
+    </div>
+  );
+}
+
 export function MoveToDialog({
   open,
   onOpenChange,
@@ -25,12 +58,12 @@ export function MoveToDialog({
   totalJobs,
   onMoveTo,
 }: MoveToDialogProps) {
-  const prevOpenRef = useRef(open);
   const [inputValue, setInputValue] = useState(String(currentRank));
-  if (open && !prevOpenRef.current) {
-    setInputValue(String(currentRank));
+  const [prevOpen, setPrevOpen] = useState(false);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) setInputValue(String(currentRank));
   }
-  prevOpenRef.current = open;
 
   function handleMove() {
     const target = Math.max(1, Math.min(Number(inputValue) || 1, totalJobs));
@@ -58,36 +91,9 @@ export function MoveToDialog({
             className="flex-1 rounded-md border bg-background px-3 py-2 text-sm font-mono outline-none focus:ring-2 focus:ring-ring/50"
             autoFocus
           />
-          <Button size="sm" onClick={handleMove}>
-            Move
-          </Button>
+          <Button size="sm" onClick={handleMove}>Move</Button>
         </div>
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            className="flex-1 gap-1"
-            onClick={() => {
-              onMoveTo(1);
-              onOpenChange(false);
-            }}
-          >
-            <ArrowUpToLine className="h-3.5 w-3.5" />
-            Send to Top
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="flex-1 gap-1"
-            onClick={() => {
-              onMoveTo(totalJobs);
-              onOpenChange(false);
-            }}
-          >
-            <ArrowDownToLine className="h-3.5 w-3.5" />
-            Send to Bottom
-          </Button>
-        </div>
+        <QuickMoveButtons totalJobs={totalJobs} onMoveTo={onMoveTo} onClose={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
   );

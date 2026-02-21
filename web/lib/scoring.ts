@@ -45,19 +45,42 @@ export interface ScoreJobsOptions {
   lockRegions?: boolean;
 }
 
+interface PlacementScoreCtx {
+  job: Job;
+  hospitalRanks: Map<string, number>;
+  hospitalTotal: number;
+  specialtyRanks: Map<string, number>;
+  specialtyTotal: number;
+}
+
+function scorePlacementsForJob(ctx: PlacementScoreCtx) {
+  let hospSum = 0;
+  let hospCount = 0;
+  let specSum = 0;
+  let specCount = 0;
+  for (const p of ctx.job.placements) {
+    const site = p.site;
+    if (site && site !== "None" && site.trim() !== "") {
+      hospSum += normalize(ctx.hospitalRanks.get(site) ?? ctx.hospitalTotal, ctx.hospitalTotal);
+      hospCount++;
+    }
+    const spec = p.specialty;
+    if (spec && spec !== "None" && spec.trim() !== "") {
+      specSum += normalize(ctx.specialtyRanks.get(spec) ?? ctx.specialtyTotal, ctx.specialtyTotal);
+      specCount++;
+    }
+  }
+  return {
+    hospitalScore: hospCount > 0 ? hospSum / hospCount : 0,
+    specialtyScore: specCount > 0 ? specSum / specCount : 0,
+  };
+}
+
 export function scoreJobs(options: ScoreJobsOptions): ScoredJob[] {
-  const {
-    jobs,
-    rankedRegions,
-    globalHospitals,
-    rankedSpecialties,
-    weights,
-    lockRegions = false,
-  } = options;
+  const { jobs, rankedRegions, globalHospitals, rankedSpecialties, weights, lockRegions = false } = options;
   const regionRanks = buildRankMap(rankedRegions);
   const hospitalRanks = buildRankMap(globalHospitals);
   const specialtyRanks = buildRankMap(rankedSpecialties);
-
   const regionTotal = rankedRegions.length;
   const hospitalTotal = globalHospitals.length;
   const specialtyTotal = rankedSpecialties.length;
@@ -65,48 +88,20 @@ export function scoreJobs(options: ScoreJobsOptions): ScoredJob[] {
   const scored = jobs.map((job) => {
     const regionRank = regionRanks.get(job.region) ?? regionTotal;
     const regionScore = normalize(regionRank, regionTotal);
-
-    let hospSum = 0;
-    let hospCount = 0;
-    let specSum = 0;
-    let specCount = 0;
-
-    for (const p of job.placements) {
-      const site = p.site;
-      if (site && site !== "None" && site.trim() !== "") {
-        const rank = hospitalRanks.get(site) ?? hospitalTotal;
-        hospSum += normalize(rank, hospitalTotal);
-        hospCount++;
-      }
-
-      const spec = p.specialty;
-      if (spec && spec !== "None" && spec.trim() !== "") {
-        const rank = specialtyRanks.get(spec) ?? specialtyTotal;
-        specSum += normalize(rank, specialtyTotal);
-        specCount++;
-      }
-    }
-
-    const hospitalScore = hospCount > 0 ? hospSum / hospCount : 0;
-    const specialtyScore = specCount > 0 ? specSum / specCount : 0;
-
+    const { hospitalScore, specialtyScore } = scorePlacementsForJob({ job, hospitalRanks, hospitalTotal, specialtyRanks, specialtyTotal });
     const score = lockRegions
       ? weights.hospital * hospitalScore + weights.specialty * specialtyScore
-      : weights.region * regionScore +
-        weights.hospital * hospitalScore +
-        weights.specialty * specialtyScore;
-
+      : weights.region * regionScore + weights.hospital * hospitalScore + weights.specialty * specialtyScore;
     return { job, score, scoreAdjustment: 0, regionScore, hospitalScore, specialtyScore };
   });
 
   if (lockRegions) {
     return scored.sort((a, b) => {
-      const aRegionRank = regionRanks.get(a.job.region) ?? regionTotal + 1;
-      const bRegionRank = regionRanks.get(b.job.region) ?? regionTotal + 1;
-      if (aRegionRank !== bRegionRank) return aRegionRank - bRegionRank;
+      const aRank = regionRanks.get(a.job.region) ?? regionTotal + 1;
+      const bRank = regionRanks.get(b.job.region) ?? regionTotal + 1;
+      if (aRank !== bRank) return aRank - bRank;
       return b.score - a.score;
     });
   }
-
   return scored.sort((a, b) => b.score - a.score);
 }

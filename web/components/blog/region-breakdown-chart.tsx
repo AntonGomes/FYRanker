@@ -28,16 +28,21 @@ const chartConfig = {
 const INACTIVE_OPACITY = 0.2;
 const BAR_RADIUS = 4;
 
+interface RegionChartEntry {
+  region: string;
+  rotations: number;
+  sites: number;
+  specialties: number;
+  fill: string;
+  opacity: number;
+}
+
 interface RegionBreakdownChartProps {
   data: RegionsData;
 }
 
-export function RegionBreakdownChart({ data }: RegionBreakdownChartProps) {
-  const { activeRegion } = useRegionFilter();
-
-  const chartData = (
-    ["North", "East", "West", "South and SE"] as Region[]
-  ).map((region) => ({
+function buildChartData(data: RegionsData, activeRegion: Region | null): RegionChartEntry[] {
+  return (["North", "East", "West", "South and SE"] as Region[]).map((region) => ({
     region: region === "South and SE" ? "South & SE" : region,
     rotations: data[region].rotations,
     sites: data[region].sites,
@@ -45,6 +50,67 @@ export function RegionBreakdownChart({ data }: RegionBreakdownChartProps) {
     fill: REGION_HEX[region],
     opacity: activeRegion === null || activeRegion === region ? 1 : INACTIVE_OPACITY,
   }));
+}
+
+function MobileRegionCards({ chartData }: { chartData: RegionChartEntry[] }) {
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:hidden">
+      {chartData.map((d) => (
+        <div
+          key={d.region}
+          className="rounded-xl border-2 p-4 transition-opacity"
+          style={{ borderColor: d.fill, opacity: d.opacity }}
+        >
+          <h3 className="text-sm font-bold mb-2" style={{ color: d.fill }}>
+            {d.region}
+          </h3>
+          <RegionStatList rotations={d.rotations} sites={d.sites} specialties={d.specialties} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RegionStatList({ rotations, sites, specialties }: { rotations: number; sites: number; specialties: number }) {
+  return (
+    <div className="space-y-1">
+      <div>
+        <span className="text-2xl font-black text-foreground">{rotations}</span>
+        <span className="text-xs font-semibold text-foreground ml-1">rotations</span>
+      </div>
+      <div>
+        <span className="text-lg font-bold text-foreground">{sites}</span>
+        <span className="text-xs font-semibold text-foreground ml-1">sites</span>
+      </div>
+      <div>
+        <span className="text-lg font-bold text-foreground">{specialties}</span>
+        <span className="text-xs font-semibold text-foreground ml-1">specialties</span>
+      </div>
+    </div>
+  );
+}
+
+function DesktopRegionChart({ chartData }: { chartData: RegionChartEntry[] }) {
+  return (
+    <div className="hidden sm:block">
+      <ChartContainer config={chartConfig} className="h-[400px] w-full">
+        <BarChart data={chartData} barCategoryGap="20%">
+          <CartesianGrid vertical={false} strokeDasharray="3 3" />
+          <XAxis dataKey="region" tickLine={false} axisLine={false} className="font-semibold" />
+          <YAxis tickLine={false} axisLine={false} />
+          <ChartTooltip content={<ChartTooltipContent />} />
+          <Bar dataKey="rotations" fill="var(--chart-1)" radius={[BAR_RADIUS, BAR_RADIUS, 0, 0]} name="Rotations" />
+          <Bar dataKey="sites" fill="var(--chart-2)" radius={[BAR_RADIUS, BAR_RADIUS, 0, 0]} name="Sites" />
+          <Bar dataKey="specialties" fill="var(--chart-3)" radius={[BAR_RADIUS, BAR_RADIUS, 0, 0]} name="Specialties" />
+        </BarChart>
+      </ChartContainer>
+    </div>
+  );
+}
+
+export function RegionBreakdownChart({ data }: RegionBreakdownChartProps) {
+  const { activeRegion } = useRegionFilter();
+  const chartData = buildChartData(data, activeRegion);
 
   return (
     <BlogSection id="regions">
@@ -52,93 +118,11 @@ export function RegionBreakdownChart({ data }: RegionBreakdownChartProps) {
         Not all regions are created equal.
       </h2>
       <p className="text-lg sm:text-xl text-foreground text-center mb-8 max-w-2xl mx-auto">
-        570 rotations in the West. 120 in the East. Here&apos;s how they
-        compare.
+        570 rotations in the West. 120 in the East. Here&apos;s how they compare.
       </p>
-
       <RegionFilterBar className="mb-8" />
-
-      {}
-      <div className="grid grid-cols-2 gap-3 sm:hidden">
-        {chartData.map((d) => (
-          <div
-            key={d.region}
-            className="rounded-xl border-2 p-4 transition-opacity"
-            style={{
-              borderColor: d.fill,
-              opacity: d.opacity,
-            }}
-          >
-            <h3
-              className="text-sm font-bold mb-2"
-              style={{ color: d.fill }}
-            >
-              {d.region}
-            </h3>
-            <div className="space-y-1">
-              <div>
-                <span className="text-2xl font-black text-foreground">
-                  {d.rotations}
-                </span>
-                <span className="text-xs font-semibold text-foreground ml-1">
-                  rotations
-                </span>
-              </div>
-              <div>
-                <span className="text-lg font-bold text-foreground">
-                  {d.sites}
-                </span>
-                <span className="text-xs font-semibold text-foreground ml-1">
-                  sites
-                </span>
-              </div>
-              <div>
-                <span className="text-lg font-bold text-foreground">
-                  {d.specialties}
-                </span>
-                <span className="text-xs font-semibold text-foreground ml-1">
-                  specialties
-                </span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {}
-      <div className="hidden sm:block">
-        <ChartContainer config={chartConfig} className="h-[400px] w-full">
-          <BarChart data={chartData} barCategoryGap="20%">
-            <CartesianGrid vertical={false} strokeDasharray="3 3" />
-            <XAxis
-              dataKey="region"
-              tickLine={false}
-              axisLine={false}
-              className="font-semibold"
-            />
-            <YAxis tickLine={false} axisLine={false} />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar
-              dataKey="rotations"
-              fill="var(--chart-1)"
-              radius={[BAR_RADIUS, BAR_RADIUS, 0, 0]}
-              name="Rotations"
-            />
-            <Bar
-              dataKey="sites"
-              fill="var(--chart-2)"
-              radius={[BAR_RADIUS, BAR_RADIUS, 0, 0]}
-              name="Sites"
-            />
-            <Bar
-              dataKey="specialties"
-              fill="var(--chart-3)"
-              radius={[BAR_RADIUS, BAR_RADIUS, 0, 0]}
-              name="Specialties"
-            />
-          </BarChart>
-        </ChartContainer>
-      </div>
+      <MobileRegionCards chartData={chartData} />
+      <DesktopRegionChart chartData={chartData} />
     </BlogSection>
   );
 }

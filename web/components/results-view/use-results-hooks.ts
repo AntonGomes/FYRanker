@@ -10,7 +10,6 @@ import {
   closestCenter,
   type CollisionDetection,
 } from "@dnd-kit/core";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ScoredJob } from "@/lib/scoring";
 import { MOBILE_BREAKPOINT } from "@/lib/constants";
 import type { RowData } from "@/components/results-view/row-data";
