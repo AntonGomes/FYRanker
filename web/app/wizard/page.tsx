@@ -450,10 +450,25 @@ export default function WizardPage() {
       }
     } else if (step === 3) {
       if (specialtyPhase === "ranking") {
-        // Start duel transition
-        setRankedSpecialties(
-          ensureAllRanked(rankedSpecialties, allSpecialties)
+        const finalSpecialties = ensureAllRanked(rankedSpecialties, allSpecialties);
+        setRankedSpecialties(finalSpecialties);
+
+        // If fewer than 2 unlocked items, skip duel entirely
+        const unlockedCount = finalSpecialties.filter(
+          (s) => !lockedSpecialtyIds.has(s.id)
+        ).length;
+        if (unlockedCount < 2) {
+          setStep(4);
+          return;
+        }
+
+        // Seed ELO immediately so the callback doesn't need stale state
+        const movedIds = new Set(rankedSpecialties.map((s) => s.id));
+        const seeded = initEloFromRanking(
+          finalSpecialties as SortableItem[],
+          movedIds
         );
+        setEloState(seeded);
         setDuelTransitioning(true);
         setSpecialtyPhase("transitioning");
       } else if (specialtyPhase === "refining") {
@@ -529,19 +544,11 @@ export default function WizardPage() {
     }
   }
 
-  // Duel transition complete
+  // Duel transition complete — ELO already seeded in doAdvance
   const handleDuelTransitionComplete = useCallback(() => {
-    const finalSpecialties = ensureAllRanked(rankedSpecialties, allSpecialties);
-    // Seed ELO from ranking
-    const movedIds = new Set(rankedSpecialties.map((s) => s.id));
-    const seeded = initEloFromRanking(
-      finalSpecialties as SortableItem[],
-      movedIds
-    );
-    setEloState(seeded);
     setDuelTransitioning(false);
     setSpecialtyPhase("refining");
-  }, [rankedSpecialties, allSpecialties]);
+  }, []);
 
   // Description text
   function getDescription(): string {
