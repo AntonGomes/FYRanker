@@ -10,6 +10,8 @@ import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronRight, ArrowLeft, Star, ExternalLink, Copy, Check, MapPin, PenLine } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RegionBadge } from "@/components/ui/region-badge";
+import { SectionLabel } from "@/components/ui/section-label";
 
 const MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
 
@@ -92,9 +94,7 @@ function FYSection({
   if (entries.length === 0) return null;
   return (
     <div>
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-        {label}
-      </h3>
+      <SectionLabel className="mb-2">{label}</SectionLabel>
       <div className="space-y-2">
         {entries.map((entry) => (
           <div key={entry.num}>
@@ -272,7 +272,7 @@ function PlacementDetailCard({
         {/* Description */}
         {entry.description && (
           <div className="px-4 pb-3">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Description</h4>
+            <SectionLabel as="h4" className="mb-1">Description</SectionLabel>
             <p className="text-sm leading-relaxed">{entry.description}</p>
           </div>
         )}
@@ -334,17 +334,7 @@ export function JobDetailPanel({ job, onClose, isMobile }: JobDetailPanelProps) 
               <h2 className="text-base font-semibold leading-tight truncate">
                 {job.programmeTitle}
               </h2>
-              <span
-                className={cn(
-                  "inline-block mt-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
-                  style.bg,
-                  style.border,
-                  style.text,
-                  "border"
-                )}
-              >
-                {job.region}
-              </span>
+              <RegionBadge region={job.region} className="inline-block mt-1.5 px-2.5 text-xs font-medium" />
             </div>
             <button
               onClick={onClose}
