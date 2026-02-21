@@ -76,3 +76,20 @@ npx shadcn@latest list @shadcn
 # View component source before installing
 npx shadcn@latest view button card
 ```
+
+---
+# Worktree Session: clean-up-wizard
+
+## Dev Servers
+- http://localhost:3101 (web)
+
+## Playwright
+Use port 3101 for all screenshots:
+```bash
+npx playwright screenshot --viewport-size="375,812" http://localhost:3101/results /tmp/screenshot.png
+```
+
+## When Done
+1. Commit all changes and push the branch: `git push -u origin clean-up-wizard`
+2. Create a PR into main: `gh pr create --base main`
+3. Report the PR URL to the user

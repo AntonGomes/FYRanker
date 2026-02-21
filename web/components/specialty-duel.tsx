@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { motion, LayoutGroup, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, Swords } from "lucide-react";
 import {
   type EloState,
   type RankingEntry,
@@ -23,6 +23,7 @@ interface SpecialtyDuelProps {
   onStateChange: (state: EloState) => void;
   onRankingChange: (items: SortableItem[]) => void;
   movedIds?: Set<string>;
+  lockedIds?: Set<string>;
 }
 
 const SPRING = { type: "spring" as const, stiffness: 500, damping: 35, mass: 0.8 };
@@ -169,6 +170,7 @@ export function SpecialtyDuel({
   onStateChange,
   onRankingChange,
   movedIds,
+  lockedIds,
 }: SpecialtyDuelProps) {
   const state = eloState ?? initElo(specialties);
 
@@ -183,10 +185,10 @@ export function SpecialtyDuel({
   }, []);
 
   const [currentMatchup, setCurrentMatchup] = useState<[string, string]>(() =>
-    selectNextMatchup(state, movedIds)
+    selectNextMatchup(state, movedIds, lockedIds)
   );
   const [neighbourhood, setNeighbourhood] = useState<RankingEntry[]>(() =>
-    getFocusedNeighbourhood(state, currentMatchup[0], 7)
+    getFocusedNeighbourhood(state, currentMatchup[0], 999)
   );
   const [trackedItem, setTrackedItem] = useState<{ id: string; delta: number } | null>(null);
   const [loserAnnotation, setLoserAnnotation] = useState<{ id: string; delta: number } | null>(null);
@@ -199,6 +201,10 @@ export function SpecialtyDuel({
   const [loserFlyOff, setLoserFlyOff] = useState(false);
   const [loserEmoji, setLoserEmoji] = useState<string | null>(null);
   const matchupKeyRef = useRef(0);
+  const windowRef = useRef<HTMLDivElement>(null);
+  // Keep previous matchup highlighted until layout animation settles
+  const [lingeringIds, setLingeringIds] = useState<Set<string>>(new Set());
+  const lingerTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Glow animation tracking (same pattern as results-view.tsx)
   const glowKeyRef = useRef<Map<string, number>>(new Map());
@@ -212,6 +218,10 @@ export function SpecialtyDuel({
   const handleComparison = useCallback(
     (weight: number) => {
       if (isTransitioning) return;
+
+      // Clear any lingering highlight from previous matchup
+      clearTimeout(lingerTimerRef.current);
+      setLingeringIds(new Set());
 
       const [a, b] = currentMatchup;
 
@@ -236,9 +246,9 @@ export function SpecialtyDuel({
       // Equal → no winner/loser, advance immediately
       if (weight === 0) {
         matchupKeyRef.current += 1;
-        const next = selectNextMatchup(newState, movedIds);
+        const next = selectNextMatchup(newState, movedIds, lockedIds);
         setCurrentMatchup(next);
-        setNeighbourhood(getFocusedNeighbourhood(newState, next[0], 7));
+        setNeighbourhood(getFocusedNeighbourhood(newState, next[0], 999));
         setSliderValue(0);
         return;
       }
@@ -273,7 +283,7 @@ export function SpecialtyDuel({
 
       setTrackedItem({ id: winner, delta: winnerDelta });
       setLoserAnnotation({ id: loser, delta: loserDelta });
-      setNeighbourhood(getFocusedNeighbourhood(newState, winner, 7));
+      setNeighbourhood(getFocusedNeighbourhood(newState, winner, 999));
       setIsTransitioning(true);
 
       // Phase 2: After emoji has shown, fly the loser off
@@ -281,26 +291,46 @@ export function SpecialtyDuel({
         setLoserFlyOff(true);
       }, 600);
 
-      // Phase 3: Reset and load next matchup
+      // Phase 3: Clear list decorations, keep cards off-screen (loserFlyOff stays true)
       setTimeout(() => {
+        setLingeringIds(new Set([a, b]));
         setTrackedItem(null);
         setLoserAnnotation(null);
         setFlashMap(new Map());
+        setNeighbourhood(getFocusedNeighbourhood(newState, a, 999));
+        setSliderValue(0);
+      }, 1400);
+
+      // Phase 4: New key → old cards unmount, new cards mount with initial animation
+      setTimeout(() => {
+        setLingeringIds(new Set());
         setWinSide(null);
         setLoserEmoji(null);
         setLoserFlyOff(false);
         matchupKeyRef.current += 1;
-        const next = selectNextMatchup(newState, movedIds);
+        const next = selectNextMatchup(newState, movedIds, lockedIds);
         setCurrentMatchup(next);
-        setNeighbourhood(getFocusedNeighbourhood(newState, next[0], 7));
-        setSliderValue(0);
+        setNeighbourhood(getFocusedNeighbourhood(newState, next[0], 999));
         setIsTransitioning(false);
-      }, 1400);
+      }, 2000);
     },
-    [currentMatchup, state, onStateChange, onRankingChange, movedIds, isTransitioning]
+    [currentMatchup, state, onStateChange, onRankingChange, movedIds, lockedIds, isTransitioning]
   );
 
   const [leftSpec, rightSpec] = currentMatchup;
+
+  // Scroll the left-matchup item to center of viewing window
+  useEffect(() => {
+    const container = windowRef.current;
+    if (!container) return;
+    const timer = setTimeout(() => {
+      const el = container.querySelector(`[data-duel-id="${leftSpec}"]`);
+      if (el) {
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [leftSpec]);
 
   // Compute card glow intensity from slider value (0..1)
   const leftGlow = Math.max(0, -sliderValue) / 2;
@@ -314,68 +344,79 @@ export function SpecialtyDuel({
 
   return (
     <div className="flex flex-col flex-1 min-h-0 justify-evenly gap-2">
-      {/* Ranking neighbourhood — recessed viewport */}
-      <div className="shrink-0 max-h-[160px] sm:max-h-[180px] overflow-hidden px-1">
-        <div className="bg-muted/40 dark:bg-black/20 shadow-[inset_0_2px_8px_rgba(0,0,0,0.25)] border border-border/30 rounded-xl pointer-events-none p-2">
-          <LayoutGroup>
-            <div className="space-y-0.5">
-              <AnimatePresence mode="popLayout">
-                {neighbourhood.map((entry) => {
-                  const isWinner = trackedItem?.id === entry.id;
-                  const isLoser = loserAnnotation?.id === entry.id;
-                  const flashDir = flashMap.get(entry.id);
-                  const glowKey = glowKeyRef.current.get(entry.id) ?? 0;
-                  const isInMatchup = entry.id === leftSpec || entry.id === rightSpec;
+      {/* Ranking neighbourhood — recessed viewing window */}
+      <div ref={windowRef} className="shrink-0 flex-1 min-h-0 max-h-[200px] sm:max-h-[220px] overflow-y-auto rounded-xl border-[3px] border-zinc-700/80 bg-black/60 shadow-[inset_0_4px_24px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.06)] outline outline-1 outline-black/50 p-1.5">
+        <LayoutGroup>
+          <div className="space-y-1">
+            <AnimatePresence mode="popLayout">
+              {neighbourhood.map((entry) => {
+                const isWinner = trackedItem?.id === entry.id;
+                const isLoser = loserAnnotation?.id === entry.id;
+                const flashDir = flashMap.get(entry.id);
+                const glowKey = glowKeyRef.current.get(entry.id) ?? 0;
+                const isInMatchup = entry.id === leftSpec || entry.id === rightSpec || lingeringIds.has(entry.id);
+                const rank = entry.rank - 1; // 0-indexed for styling
 
-                  return (
-                    <motion.div
-                      key={entry.id}
-                      layoutId={`duel-rank-${entry.id}`}
-                      layout="position"
-                      transition={SPRING}
+                return (
+                  <motion.div
+                    key={entry.id}
+                    data-duel-id={entry.id}
+                    layoutId={`duel-rank-${entry.id}`}
+                    layout="position"
+                    transition={SPRING}
+                  >
+                    <div
+                      key={glowKey}
+                      className={cn(
+                        "flex items-center gap-1.5 rounded-lg border px-2 py-2 transition-colors",
+                        flashDir === "up" && "animate-card-glow-up-fast",
+                        flashDir === "down" && "animate-card-glow-down-fast",
+                        // Matchup highlight always wins — applied regardless of flash
+                        isInMatchup && "bg-primary/15 border-primary/40 ring-2 ring-primary/30",
+                        // Default + medal styling only when NOT in matchup
+                        !isInMatchup && !flashDir && "bg-card/50 border-border/30 hover:bg-card/70",
+                        !isInMatchup && rank === 0 && !flashDir && "ring-2 ring-yellow-400/40 bg-yellow-400/8",
+                        !isInMatchup && rank === 1 && !flashDir && "ring-2 ring-zinc-300/30 bg-zinc-300/6",
+                        !isInMatchup && rank === 2 && !flashDir && "ring-2 ring-orange-400/30 bg-orange-400/6",
+                      )}
                     >
-                      <div
-                        key={glowKey}
-                        className={cn(
-                          "flex items-center gap-2 rounded px-2 py-1",
-                          flashDir === "up" && "animate-card-glow-up-fast",
-                          flashDir === "down" && "animate-card-glow-down-fast",
-                          !flashDir && isInMatchup && "bg-primary/10 dark:bg-primary/15",
-                          !flashDir && !isInMatchup && "bg-muted/30"
-                        )}
-                      >
-                        <span className="text-xs font-mono font-bold text-muted-foreground w-5 text-right tabular-nums">
-                          #{entry.rank}
+                      <span className={cn(
+                        "w-7 shrink-0 text-center text-xs font-mono font-bold tabular-nums",
+                        rank === 0 ? "text-yellow-400" : rank === 1 ? "text-zinc-300" : rank === 2 ? "text-orange-400" : "text-muted-foreground"
+                      )}>
+                        #{entry.rank}
+                      </span>
+                      <span className={cn(
+                        "flex-1 text-xs sm:text-sm text-foreground truncate",
+                        isInMatchup ? "font-semibold" : "font-medium"
+                      )}>
+                        {entry.label}
+                      </span>
+                      {isWinner && trackedItem.delta > 0 && (
+                        <span className="flex items-center gap-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                          <ArrowUp className="h-2.5 w-2.5" />
+                          +{trackedItem.delta}
                         </span>
-                        <span className={cn(
-                          "flex-1 text-xs sm:text-sm text-foreground truncate",
-                          isInMatchup ? "font-semibold" : "font-medium"
-                        )}>
-                          {entry.label}
+                      )}
+                      {isLoser && loserAnnotation.delta < 0 && (
+                        <span className="text-[9px] font-bold text-red-500 dark:text-red-400">
+                          {loserAnnotation.delta}
                         </span>
-                        {isWinner && trackedItem.delta > 0 && (
-                          <span className="flex items-center gap-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
-                            <ArrowUp className="h-2.5 w-2.5" />
-                            +{trackedItem.delta}
-                          </span>
-                        )}
-                        {isLoser && loserAnnotation.delta < 0 && (
-                          <span className="text-[9px] font-bold text-red-500 dark:text-red-400">
-                            {loserAnnotation.delta}
-                          </span>
-                        )}
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            </div>
-          </LayoutGroup>
-        </div>
+                      )}
+                      {(entry.id === leftSpec || entry.id === rightSpec) && !isWinner && !isLoser && (
+                        <Swords className="h-3.5 w-3.5 shrink-0 text-primary" />
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        </LayoutGroup>
       </div>
 
       {/* Matchup + slider — boxed section */}
-      <div className="shrink-0 border-2 border-border rounded-xl bg-muted/20 dark:bg-muted/10 px-3 sm:px-5 pt-4 sm:pt-5 pb-3 overflow-visible">
+      <div className="shrink-0 rounded-xl bg-muted/10 px-3 sm:px-5 pt-4 sm:pt-5 pb-3 overflow-visible">
         <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground text-center mb-4 uppercase tracking-wide">Choose your preference</p>
         <div className="border-b border-border/50 -mx-3 sm:-mx-5 mb-4" />
         <div className="flex items-stretch gap-2 sm:gap-3 px-1 sm:px-2">
@@ -384,12 +425,12 @@ export function SpecialtyDuel({
             key={`left-${matchupKeyRef.current}`}
             initial={{ opacity: 0, x: -30, scale: 0.95 }}
             animate={
-              leftIsLoser && loserFlyOff
+              loserFlyOff
                 ? { opacity: 0, x: -180, scale: 0.7, rotate: -15 }
                 : { opacity: 1, x: 0, scale: 1, rotate: 0 }
             }
             transition={
-              leftIsLoser && loserFlyOff
+              loserFlyOff
                 ? { type: "spring", stiffness: 200, damping: 20 }
                 : { type: "spring", stiffness: 350, damping: 28 }
             }
@@ -430,12 +471,12 @@ export function SpecialtyDuel({
             key={`right-${matchupKeyRef.current}`}
             initial={{ opacity: 0, x: 30, scale: 0.95 }}
             animate={
-              rightIsLoser && loserFlyOff
+              loserFlyOff
                 ? { opacity: 0, x: 180, scale: 0.7, rotate: 15 }
                 : { opacity: 1, x: 0, scale: 1, rotate: 0 }
             }
             transition={
-              rightIsLoser && loserFlyOff
+              loserFlyOff
                 ? { type: "spring", stiffness: 200, damping: 20 }
                 : { type: "spring", stiffness: 350, damping: 28 }
             }

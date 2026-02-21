@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useMemo, memo } from "react";
+import { useState, useRef, useMemo, memo } from "react";
 import {
   DndContext,
   closestCenter,
@@ -23,10 +23,21 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { cn } from "@/lib/utils";
-import {
-  Lock,
-  Unlock,
-} from "lucide-react";
+import { GripVertical } from "lucide-react";
+
+function rankClass(index: number): string {
+  if (index === 0) return "text-yellow-400 font-bold";
+  if (index === 1) return "text-zinc-300 font-bold";
+  if (index === 2) return "text-orange-400 font-bold";
+  return "text-muted-foreground";
+}
+
+function rankRowClass(index: number): string {
+  if (index === 0) return "ring-2 ring-yellow-400/50 bg-yellow-400/10";
+  if (index === 1) return "ring-2 ring-zinc-300/40 bg-zinc-300/8";
+  if (index === 2) return "ring-2 ring-orange-400/40 bg-orange-400/8";
+  return "";
+}
 import { REGION_COLORS } from "@/components/job-detail-panel";
 
 export interface RankableItem {
@@ -48,13 +59,9 @@ interface RankableListProps {
 const DraggableRow = memo(function DraggableRow({
   item,
   index,
-  isPinned,
-  onTogglePin,
 }: {
   item: RankableItem;
   index: number;
-  isPinned: boolean;
-  onTogglePin: (id: string) => void;
 }) {
   const {
     attributes,
@@ -81,14 +88,15 @@ const DraggableRow = memo(function DraggableRow({
       {...listeners}
       className={cn(
         "group flex items-center gap-1.5 rounded-lg border px-2 py-2.5 transition-colors touch-manipulation cursor-grab",
-        isPinned
-          ? "bg-primary/5 border-primary/20"
-          : "bg-card hover:bg-accent/50",
+        "bg-card hover:bg-accent/50",
+        rankRowClass(index),
         isDragging && "opacity-40 shadow-lg z-50"
       )}
     >
+      <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" />
+
       {/* Rank number */}
-      <span className="w-9 shrink-0 text-center text-xs font-mono text-muted-foreground">
+      <span className={cn("w-7 shrink-0 text-center text-xs font-mono", rankClass(index))}>
         {index + 1}
       </span>
 
@@ -106,24 +114,6 @@ const DraggableRow = memo(function DraggableRow({
           {item.badge}
         </span>
       )}
-
-      {/* Pin */}
-      <button
-        onClick={() => onTogglePin(item.id)}
-        className={cn(
-          "p-0.5 transition-colors opacity-0 group-hover:opacity-100",
-          isPinned
-            ? "text-primary opacity-100"
-            : "text-muted-foreground hover:text-foreground"
-        )}
-        title={isPinned ? "Unlock position" : "Lock position"}
-      >
-        {isPinned ? (
-          <Lock className="h-3.5 w-3.5" />
-        ) : (
-          <Unlock className="h-3.5 w-3.5" />
-        )}
-      </button>
     </div>
   );
 });
@@ -132,7 +122,8 @@ const DraggableRow = memo(function DraggableRow({
 const DragOverlayRow = memo(function DragOverlayRow({ item, index }: { item: RankableItem; index: number }) {
   return (
     <div className="flex items-center gap-1.5 rounded-lg border border-primary/40 bg-card px-2 py-2.5 shadow-xl ring-2 ring-primary/20 scale-[1.03]">
-      <span className="w-9 shrink-0 text-center text-xs font-mono text-muted-foreground">
+      <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <span className={cn("w-7 shrink-0 text-center text-xs font-mono", rankClass(index))}>
         {index + 1}
       </span>
       <span className="flex-1 text-sm truncate min-w-0">{item.label}</span>
@@ -154,7 +145,6 @@ export function RankableList({
   onItemMoved,
   searchFilter = "",
 }: RankableListProps) {
-  const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
   const [activeId, setActiveId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -186,15 +176,6 @@ export function RankableList({
     : items;
 
   const scrollableItems = isSearching ? filteredItems : items;
-
-  const togglePin = useCallback((id: string) => {
-    setPinnedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
 
   function handleDragStart(event: DragStartEvent) {
     setActiveId(event.active.id as string);
@@ -249,7 +230,7 @@ export function RankableList({
           strategy={verticalListSortingStrategy}
         >
           {/* Virtualized list */}
-          <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 pr-1">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 px-0.5">
             <div style={{ height: `${virtualizer.getTotalSize()}px`, position: "relative" }}>
               {virtualizer.getVirtualItems().map((virtualRow) => {
                 const item = scrollableItems[virtualRow.index];
@@ -269,8 +250,6 @@ export function RankableList({
                     <DraggableRow
                       item={item}
                       index={realIndex}
-                      isPinned={pinnedIds.has(item.id)}
-                      onTogglePin={togglePin}
                     />
                   </div>
                 );
@@ -291,7 +270,7 @@ export function RankableList({
         <span>
           {items.length} items
           {isSearching && ` · ${filteredItems.length} shown`}
-          {pinnedIds.size > 0 && ` · ${pinnedIds.size} locked`}
+          <span className="sm:hidden"> · Hold to drag</span>
         </span>
       </div>
     </div>

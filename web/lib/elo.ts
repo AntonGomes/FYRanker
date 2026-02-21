@@ -129,10 +129,12 @@ export function updateElo(
 
 export function selectNextMatchup(
   state: EloState,
-  movedIds?: Set<string>
+  movedIds?: Set<string>,
+  lockedIds?: Set<string>
 ): [string, string] {
-  const items = Array.from(state.ratings.entries());
-  if (items.length < 2) throw new Error("Need at least 2 items");
+  const items = Array.from(state.ratings.entries())
+    .filter(([name]) => !lockedIds?.has(name));
+  if (items.length < 2) throw new Error("Need at least 2 items for matchup");
 
   // Sort by rating for adjacent-pair candidates
   items.sort((a, b) => b[1] - a[1]);

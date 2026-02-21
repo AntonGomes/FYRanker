@@ -22,6 +22,21 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
+import { GripVertical } from "lucide-react";
+
+function rankClass(index: number): string {
+  if (index === 0) return "text-yellow-400 font-bold";
+  if (index === 1) return "text-zinc-300 font-bold";
+  if (index === 2) return "text-orange-400 font-bold";
+  return "text-muted-foreground";
+}
+
+function rankRowClass(index: number): string {
+  if (index === 0) return "ring-2 ring-yellow-400/50 bg-yellow-400/10";
+  if (index === 1) return "ring-2 ring-zinc-300/40 bg-zinc-300/8";
+  if (index === 2) return "ring-2 ring-orange-400/40 bg-orange-400/8";
+  return "";
+}
 
 export interface SortableItem {
   id: string;
@@ -35,7 +50,7 @@ interface SortableListProps {
   onReorder: (items: SortableItem[]) => void;
 }
 
-function SortableRow({ item }: { item: SortableItem }) {
+function SortableRow({ item, index }: { item: SortableItem; index: number }) {
   const {
     attributes,
     listeners,
@@ -57,20 +72,28 @@ function SortableRow({ item }: { item: SortableItem }) {
       {...attributes}
       {...listeners}
       className={cn(
-        "flex items-center gap-3 rounded-lg border px-4 py-3 touch-manipulation cursor-grab",
-        item.regionStyle
-          ? `${item.regionStyle.bg} ${item.regionStyle.border}`
-          : "bg-card",
+        "flex items-center gap-3 rounded-lg border px-4 py-3 touch-manipulation cursor-grab bg-card",
+        rankRowClass(index),
         isDragging && "opacity-50 shadow-lg"
       )}
     >
-      <span className={cn(
-        "flex-1 text-sm font-medium",
-        item.regionStyle?.text
-      )}>
-        {item.label}
+      <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <span className={cn("w-5 shrink-0 text-center text-xs font-mono", rankClass(index))}>
+        {index + 1}
       </span>
-      {item.badge && (
+      {item.regionStyle ? (
+        <span className={cn(
+          "rounded-full px-2.5 py-0.5 text-xs font-semibold border",
+          item.regionStyle.bg, item.regionStyle.border, item.regionStyle.text
+        )}>
+          {item.label}
+        </span>
+      ) : (
+        <span className="flex-1 text-sm font-medium">
+          {item.label}
+        </span>
+      )}
+      {item.badge && !item.regionStyle && (
         <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
           {item.badge}
         </span>
@@ -80,18 +103,26 @@ function SortableRow({ item }: { item: SortableItem }) {
 }
 
 /* ── Overlay shown while dragging ── */
-const DragOverlayRow = memo(function DragOverlayRow({ item }: { item: SortableItem }) {
+const DragOverlayRow = memo(function DragOverlayRow({ item, index }: { item: SortableItem; index: number }) {
   return (
-    <div className={cn(
-      "flex items-center gap-3 rounded-lg border px-4 py-3 shadow-xl ring-2 ring-primary/20 scale-[1.03]",
-      item.regionStyle
-        ? `${item.regionStyle.bg} ${item.regionStyle.border}`
-        : "bg-card border-primary/40",
-    )}>
-      <span className={cn("flex-1 text-sm font-medium", item.regionStyle?.text)}>
-        {item.label}
+    <div className="flex items-center gap-3 rounded-lg border border-primary/40 bg-card px-4 py-3 shadow-xl ring-2 ring-primary/20 scale-[1.03]">
+      <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <span className={cn("w-5 shrink-0 text-center text-xs font-mono", rankClass(index))}>
+        {index + 1}
       </span>
-      {item.badge && (
+      {item.regionStyle ? (
+        <span className={cn(
+          "rounded-full px-2.5 py-0.5 text-xs font-semibold border",
+          item.regionStyle.bg, item.regionStyle.border, item.regionStyle.text
+        )}>
+          {item.label}
+        </span>
+      ) : (
+        <span className="flex-1 text-sm font-medium">
+          {item.label}
+        </span>
+      )}
+      {item.badge && !item.regionStyle && (
         <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
           {item.badge}
         </span>
@@ -130,6 +161,7 @@ export function SortableList({ items, onReorder }: SortableListProps) {
   const activeItem = activeId ? items.find((i) => i.id === activeId) : null;
 
   return (
+    <>
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
@@ -140,16 +172,18 @@ export function SortableList({ items, onReorder }: SortableListProps) {
         items={items.map((i) => i.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="flex flex-col gap-1.5">
-          {items.map((item) => (
-            <SortableRow key={item.id} item={item} />
+        <div className="flex flex-col gap-2">
+          {items.map((item, i) => (
+            <SortableRow key={item.id} item={item} index={i} />
           ))}
         </div>
       </SortableContext>
 
       <DragOverlay>
-        {activeItem ? <DragOverlayRow item={activeItem} /> : null}
+        {activeItem ? <DragOverlayRow item={activeItem} index={items.indexOf(activeItem)} /> : null}
       </DragOverlay>
     </DndContext>
+    <p className="mt-2 text-center text-[11px] text-muted-foreground sm:hidden">Press and hold to drag</p>
+    </>
   );
 }
