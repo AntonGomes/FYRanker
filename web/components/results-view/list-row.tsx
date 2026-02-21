@@ -23,13 +23,13 @@ import {
 } from "lucide-react";
 import { PLACEMENTS_PER_FY, SCORE_DISPLAY_DECIMALS } from "@/lib/constants";
 
-/* ── Animated score constants ── */
+
 const SCORE_DIFF_THRESHOLD = 0.0001;
 const SCORE_ANIM_DURATION_MS = 700;
 const EASING_EXPONENT = 3;
 const FLASH_RESET_MS = 600;
 
-/* ── Swipe constants ── */
+
 const SWIPE_ABORT_RATIO = 1.5;
 const SWIPE_MIN_DX = 10;
 const SWIPE_BOOST_THRESHOLD = 15;

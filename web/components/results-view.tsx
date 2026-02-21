@@ -55,7 +55,7 @@ import {
   PLACEMENTS_PER_FY,
 } from "@/lib/constants";
 
-/* ── Results view layout constants ── */
+
 const ROW_HEIGHT_DESKTOP = 56;
 const ROW_HEIGHT_MOBILE = 172;
 const VIRTUALIZER_OVERSCAN = 5;
@@ -67,13 +67,13 @@ const CASCADE_STAGGER_FAST = 0.08;
 const CASCADE_STAGGER_SLOW = 0.05;
 const CASCADE_THRESHOLD = 3;
 
-/* ── Animation easing ── */
+
 const EASE_P1 = 0.25;
 const EASE_P2 = 0.1;
 const EASE_BEZIER: [number, number, number, number] = [EASE_P1, EASE_P2, EASE_P1, 1];
 const CASCADE_DURATION = 0.35;
 
-/* ── Ghost animation ── */
+
 const GHOST_DURATION = 0.5;
 const GHOST_SCALE_PEAK = 1.05;
 const GHOST_OPACITY_END = 0.7;
@@ -412,14 +412,17 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   
 
   
-  const launchGhost = useCallback((
-    jobId: string,
-    direction: 'up' | 'down',
-    scored: ScoredJob,
-    oldRank: number,
-    fromRect: DOMRect,
-    newIdx: number,
-  ) => {
+  interface LaunchGhostOptions {
+    jobId: string;
+    direction: 'up' | 'down';
+    scored: ScoredJob;
+    oldRank: number;
+    fromRect: DOMRect;
+    newIdx: number;
+  }
+
+  const launchGhost = useCallback((opts: LaunchGhostOptions) => {
+    const { jobId, direction, scored, oldRank, fromRect, newIdx } = opts;
     const scrollEl = scrollRef.current;
     if (!scrollEl) return;
 
@@ -482,13 +485,16 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
     pendingSortRef.current = null;
   }, [pushAndSetRanked]);
 
-  const launchCascadeGhosts = useCallback((
-    prevJobs: ScoredJob[],
-    lo: number,
-    hi: number,
-    direction: 'up' | 'down',
-    gapIdx: number,
-  ): number => {
+  interface CascadeGhostOptions {
+    prevJobs: ScoredJob[];
+    lo: number;
+    hi: number;
+    direction: 'up' | 'down';
+    gapIdx: number;
+  }
+
+  const launchCascadeGhosts = useCallback((opts: CascadeGhostOptions): number => {
+    const { prevJobs, lo, hi, direction, gapIdx } = opts;
     const scrollEl = scrollRef.current;
     const contentEl = contentRef.current;
     if (!scrollEl || !contentEl || lo > hi) return 0;
@@ -650,14 +656,14 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
 
       
       if (fromRect) {
-        launchGhost(jobId, direction, scored, oldIdx + 1, fromRect, newIdx);
+        launchGhost({ jobId, direction, scored, oldRank: oldIdx + 1, fromRect, newIdx });
       }
 
       
       const [lo, hi] = direction === 'up'
         ? [newIdx, oldIdx - 1]   
         : [oldIdx + 1, newIdx];  
-      launchCascadeGhosts(prev, lo, hi, direction, oldIdx);
+      launchCascadeGhosts({ prevJobs: prev, lo, hi, direction, gapIdx: oldIdx });
 
       
       const safetyTimeout = setTimeout(() => applyPendingSort(), SAFETY_TIMEOUT_MS);

@@ -25,7 +25,7 @@ function AnimatedStat({
   trigger: boolean;
   delay: number;
 }) {
-  const count = useAnimatedCounter(value, COUNTER_DURATION_MS, trigger);
+  const count = useAnimatedCounter({ target: value, duration: COUNTER_DURATION_MS, trigger });
 
   return (
     <motion.div

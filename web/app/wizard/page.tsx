@@ -50,14 +50,14 @@ const STEPS = [
 
 const TOTAL_STEPS = STEPS.length;
 
-/* ── Step indices (1-based) ── */
+
 const STEP_REGIONS = 1;
 const STEP_HOSPITALS = 2;
 const STEP_GLOBAL_HOSPITALS = 3;
 const STEP_SPECIALTIES = 4;
 const STEP_WEIGHTS = 5;
 
-/* ── Ring / percentage constants ── */
+
 const RING_CIRCUMFERENCE = 94.25;
 const PERCENTAGE = 100;
 

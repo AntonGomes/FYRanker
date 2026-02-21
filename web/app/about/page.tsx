@@ -14,11 +14,11 @@ export default function AboutPage() {
               About <BrandLogo className="inline-flex align-baseline" />
             </h1>
             <p className="text-muted-foreground leading-relaxed">
-              Ranking FY jobs is a ridculously dawnting task, but it doesn't need to be.
+              Ranking FY jobs is a ridculously dawnting task, but it doesn&apos;t need to be.
               FYRanker lets you choose your preferred regions, hospitals and specialties and
               gives you a personalised ranking of all the foundation programme jobs.
               <br /><br />
-              But the fun doens't stop there. The intuitive ranking interface lets you compare jobs side by side
+              But the fun doens&apos;t stop there. The intuitive ranking interface lets you compare jobs side by side
               and easily navigate through the hundereds of options. 
             </p>
 

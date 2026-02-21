@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,16 +18,22 @@ interface WelcomeModalProps {
   onExternalClose?: () => void;
 }
 
-export function WelcomeModal({ externalOpen, onExternalClose }: WelcomeModalProps) {
-  const [autoOpen, setAutoOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+function subscribeToResize(callback: () => void) {
+  window.addEventListener("resize", callback);
+  return () => window.removeEventListener("resize", callback);
+}
+function getIsMobile() {
+  return typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT;
+}
+function getServerIsMobile() {
+  return false;
+}
 
-  useEffect(() => {
-    if (!localStorage.getItem(STORAGE_KEY)) {
-      setAutoOpen(true);
-    }
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-  }, []);
+export function WelcomeModal({ externalOpen, onExternalClose }: WelcomeModalProps) {
+  const [autoOpen, setAutoOpen] = useState(() =>
+    typeof window !== "undefined" && !localStorage.getItem(STORAGE_KEY)
+  );
+  const isMobile = useSyncExternalStore(subscribeToResize, getIsMobile, getServerIsMobile);
 
   const open = autoOpen || (externalOpen ?? false);
 

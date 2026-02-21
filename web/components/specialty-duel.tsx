@@ -40,7 +40,7 @@ const CONFETTI_COLORS = [
   "#facc15", "#f472b6", "#818cf8",
 ];
 
-/* ── Confetti / particle constants ── */
+
 const CONFETTI_ANGLE_MIN = -140;
 const CONFETTI_ANGLE_RANGE = 140;
 const CONFETTI_DIST_BASE = 50;
@@ -54,10 +54,10 @@ const CONFETTI_RECT_THRESHOLD = 0.4;
 const CONFETTI_SCALE_END = 0.2;
 const HALF = 0.5;
 
-/* ── Degree / radians ── */
+
 const DEG_HALF_CIRCLE = 180;
 
-/* ── Card glow / visual intensity constants ── */
+
 const GLOW_SCALE_FACTOR = 0.06;
 const GLOW_RADIUS_BASE = 15;
 const GLOW_RADIUS_SCALE = 50;
@@ -93,7 +93,7 @@ const GRADIENT_L_OFFSET = 0.03;
 const GRADIENT_C_OFFSET = 0.02;
 const GRADIENT_H_OFFSET = 10;
 
-/* ── Duel card enter/exit ── */
+
 const FLY_DIR_LEFT = -180;
 const FLY_DIR_RIGHT = 180;
 const ENTER_DIR_LEFT = -30;
@@ -101,19 +101,19 @@ const ENTER_DIR_RIGHT = 30;
 const FLY_ROTATE_LEFT = -15;
 const FLY_ROTATE_RIGHT = 15;
 
-/* ── Neighbourhood ── */
+
 const NEIGHBOURHOOD_SIZE = 7;
 
-/* ── Timings ── */
+
 const LOSER_FLY_DELAY_MS = 600;
 const NEXT_MATCHUP_DELAY_MS = 1400;
 
-/* ── Slider progress bar ── */
+
 const SLIDER_RANGE = 4;
 const SLIDER_HALF = 2;
 const PERCENTAGE = 100;
 
-/* ── Confidence ring ── */
+
 const RING_CIRCUMFERENCE = 94.25;
 
 function randomPick<T>(arr: T[]): T {
@@ -370,7 +370,7 @@ export function SpecialtyDuel({
     selectNextMatchup(state, movedIds)
   );
   const [neighbourhood, setNeighbourhood] = useState<RankingEntry[]>(() =>
-    getFocusedNeighbourhood(state, currentMatchup[0], NEIGHBOURHOOD_SIZE)
+    getFocusedNeighbourhood({ state, focal: currentMatchup[0], windowSize: NEIGHBOURHOOD_SIZE })
   );
   const [trackedItem, setTrackedItem] = useState<{ id: string; delta: number } | null>(null);
   const [loserAnnotation, setLoserAnnotation] = useState<{ id: string; delta: number } | null>(null);
@@ -389,7 +389,7 @@ export function SpecialtyDuel({
     matchupKeyRef.current += 1;
     const next = selectNextMatchup(newState, movedIds);
     setCurrentMatchup(next);
-    setNeighbourhood(getFocusedNeighbourhood(newState, next[0], NEIGHBOURHOOD_SIZE));
+    setNeighbourhood(getFocusedNeighbourhood({ state: newState, focal: next[0], windowSize: NEIGHBOURHOOD_SIZE }));
     setSliderValue(0);
   }
 
@@ -409,7 +409,7 @@ export function SpecialtyDuel({
 
       const [a, b] = currentMatchup;
       const ranksBefore = computeRanks(state.ratings);
-      const newState = updateElo(state, a, b, weight);
+      const newState = updateElo({ state, a, b, weight });
       const ranksAfter = computeRanks(newState.ratings);
 
       onStateChange(newState);
@@ -440,7 +440,7 @@ export function SpecialtyDuel({
       setLoserFlyOff(false);
       setTrackedItem({ id: winner, delta: winnerDelta });
       setLoserAnnotation({ id: loser, delta: loserDelta });
-      setNeighbourhood(getFocusedNeighbourhood(newState, winner, NEIGHBOURHOOD_SIZE));
+      setNeighbourhood(getFocusedNeighbourhood({ state: newState, focal: winner, windowSize: NEIGHBOURHOOD_SIZE }));
       setIsTransitioning(true);
 
       setTimeout(() => setLoserFlyOff(true), LOSER_FLY_DELAY_MS);

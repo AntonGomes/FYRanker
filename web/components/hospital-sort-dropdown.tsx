@@ -46,7 +46,7 @@ export function HospitalSortDropdown({
         onSort([...items].sort((a, b) => b.label.localeCompare(a.label)));
       } else if (mode === "proximity") {
         if (userLocation && hospitals.length > 0) {
-          onSort(sortHospitalsByProximity(items, userLocation, hospitals));
+          onSort(sortHospitalsByProximity({ items, userLocation, hospitals }));
         }
       }
     },
@@ -103,7 +103,7 @@ export function HospitalSortDropdown({
   
   useEffect(() => {
     if (sortMode === "proximity" && userLocation && hospitals.length > 0) {
-      onSort(sortHospitalsByProximity(items, userLocation, hospitals));
+      onSort(sortHospitalsByProximity({ items, userLocation, hospitals }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userLocation, hospitals]);

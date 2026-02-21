@@ -81,12 +81,15 @@ function FYBarChart({
           <ChartTooltip
             content={
               <ChartTooltipContent
-                formatter={(value, _name, item) => (
-                  <span className="font-semibold">
-                    {item.payload.fullName}: {value}% ({item.payload.count}{" "}
-                    jobs)
-                  </span>
-                )}
+                formatter={(...args) => {
+                  const [value, , item] = args;
+                  return (
+                    <span className="font-semibold">
+                      {item.payload.fullName}: {value}% ({item.payload.count}{" "}
+                      jobs)
+                    </span>
+                  );
+                }}
               />
             }
           />

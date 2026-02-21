@@ -95,12 +95,15 @@ export function initEloFromRanking(
   };
 }
 
-export function updateElo(
-  state: EloState,
-  a: string,
-  b: string,
-  weight: number
-): EloState {
+export interface UpdateEloOptions {
+  state: EloState;
+  a: string;
+  b: string;
+  weight: number;
+}
+
+export function updateElo(options: UpdateEloOptions): EloState {
+  const { state, a, b, weight } = options;
   const rA = state.ratings.get(a) ?? INITIAL_RATING;
   const rB = state.ratings.get(b) ?? INITIAL_RATING;
 
@@ -221,11 +224,14 @@ export function toRankedList(state: EloState): SortableItem[] {
     .map(([name]) => ({ id: name, label: name }));
 }
 
-export function getFocusedNeighbourhood(
-  state: EloState,
-  focal: string,
-  windowSize = DEFAULT_WINDOW_SIZE
-): RankingEntry[] {
+interface FocusedNeighbourhoodOptions {
+  state: EloState;
+  focal: string;
+  windowSize?: number;
+}
+
+export function getFocusedNeighbourhood(options: FocusedNeighbourhoodOptions): RankingEntry[] {
+  const { state, focal, windowSize = DEFAULT_WINDOW_SIZE } = options;
   const sorted = Array.from(state.ratings.entries())
     .sort((x, y) => y[1] - x[1])
     .map(([name, rating], i) => ({

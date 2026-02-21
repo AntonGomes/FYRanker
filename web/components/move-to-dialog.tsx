@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -25,11 +25,12 @@ export function MoveToDialog({
   totalJobs,
   onMoveTo,
 }: MoveToDialogProps) {
+  const prevOpenRef = useRef(open);
   const [inputValue, setInputValue] = useState(String(currentRank));
-
-  useEffect(() => {
-    if (open) setInputValue(String(currentRank));
-  }, [open, currentRank]);
+  if (open && !prevOpenRef.current) {
+    setInputValue(String(currentRank));
+  }
+  prevOpenRef.current = open;
 
   function handleMove() {
     const target = Math.max(1, Math.min(Number(inputValue) || 1, totalJobs));

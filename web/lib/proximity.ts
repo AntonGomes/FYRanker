@@ -100,11 +100,14 @@ export async function geocodeLocation(
   };
 }
 
-export function sortHospitalsByProximity(
-  items: RankableItem[],
-  userLocation: UserLocation,
-  hospitals: Hospital[]
-): RankableItem[] {
+export interface SortByProximityOptions {
+  items: RankableItem[];
+  userLocation: UserLocation;
+  hospitals: Hospital[];
+}
+
+export function sortHospitalsByProximity(options: SortByProximityOptions): RankableItem[] {
+  const { items, userLocation, hospitals } = options;
   const distanceMap = new Map<string, number>();
 
   for (const item of items) {

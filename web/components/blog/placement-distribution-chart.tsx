@@ -106,7 +106,8 @@ export function PlacementDistributionChart({
           <ChartTooltip
             content={
               <ChartTooltipContent
-                formatter={(value, name, item) => {
+                formatter={(...args) => {
+                  const [value, name, item] = args;
                   const label =
                     chartConfig[name as keyof typeof chartConfig]?.label ??
                     name;

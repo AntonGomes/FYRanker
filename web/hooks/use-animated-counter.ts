@@ -4,11 +4,16 @@ import { useEffect, useRef, useState } from "react";
 
 const EASING_EXPONENT = 3;
 
-export function useAnimatedCounter(
-  target: number,
-  duration = 2000,
-  trigger = true
-): number {
+const DEFAULT_DURATION = 2000;
+
+interface AnimatedCounterOptions {
+  target: number;
+  duration?: number;
+  trigger?: boolean;
+}
+
+export function useAnimatedCounter(options: AnimatedCounterOptions): number {
+  const { target, duration = DEFAULT_DURATION, trigger = true } = options;
   const [value, setValue] = useState(0);
   const startTime = useRef<number | null>(null);
   const rafId = useRef<number>(0);
