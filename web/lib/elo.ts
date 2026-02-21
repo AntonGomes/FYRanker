@@ -1,15 +1,38 @@
 import type { SortableItem } from "@/components/sortable-list";
+import {
+  INITIAL_RATING,
+  K_FACTOR,
+  ELO_DIVISOR,
+  SPREAD_FACTOR,
+  INITIAL_COMPARISONS_IF_MOVED,
+  ADJACENT_PAIR_INITIAL_COUNT,
+  MATCHUP_RANDOM_CANDIDATES,
+  MATCHUP_CLOSENESS_DIVISOR,
+  MATCHUP_FLIP_THRESHOLD,
+  HALF_SCORE,
+  WEIGHT_SCALE,
+  MIN_K_WEIGHT,
+  K_DIVISOR,
+  CONFIDENCE_BASE_FACTOR,
+  CONFIDENCE_COMP_WEIGHT,
+  CONFIDENCE_SPREAD_WEIGHT,
+  CONFIDENCE_TARGET_MULTIPLIER,
+  CONFIDENCE_SPREAD_TARGET,
+  UNMOVED_BOTH_BOOST,
+  UNMOVED_ONE_BOOST,
+  DEFAULT_WINDOW_SIZE,
+} from "@/lib/constants";
 
 export interface ComparisonRecord {
   a: string;
   b: string;
-  weight: number; // -2..+2: negative favours a, positive favours b
+  weight: number;
 }
 
 export interface EloState {
   ratings: Map<string, number>;
-  comparisons: Map<string, number>; // per-specialty comparison count
-  pairCounts: Map<string, number>; // "a::b" sorted key -> count
+  comparisons: Map<string, number>;
+  pairCounts: Map<string, number>;
   history: ComparisonRecord[];
 }
 
@@ -28,7 +51,7 @@ export function initElo(specialties: string[]): EloState {
   const ratings = new Map<string, number>();
   const comparisons = new Map<string, number>();
   for (const s of specialties) {
-    ratings.set(s, 1500);
+    ratings.set(s, INITIAL_RATING);
     comparisons.set(s, 0);
   }
   return {
@@ -44,16 +67,15 @@ export function initEloFromRanking(
   movedIds: Set<string>
 ): EloState {
   const n = items.length;
-  const spreadFactor = 10;
   const ratings = new Map<string, number>();
   const comparisons = new Map<string, number>();
   const pairCounts = new Map<string, number>();
 
   for (let i = 0; i < n; i++) {
     const id = items[i].id;
-    const rating = 1500 + (n / 2 - i) * spreadFactor;
+    const rating = INITIAL_RATING + (n / 2 - i) * SPREAD_FACTOR;
     ratings.set(id, rating);
-    comparisons.set(id, movedIds.has(id) ? 3 : 0);
+    comparisons.set(id, movedIds.has(id) ? INITIAL_COMPARISONS_IF_MOVED : 0);
   }
 
   for (let i = 0; i < n - 1; i++) {
@@ -61,7 +83,7 @@ export function initEloFromRanking(
     const b = items[i + 1].id;
     if (movedIds.has(a) && movedIds.has(b)) {
       const pk = pairKey(a, b);
-      pairCounts.set(pk, (pairCounts.get(pk) ?? 0) + 2);
+      pairCounts.set(pk, (pairCounts.get(pk) ?? 0) + ADJACENT_PAIR_INITIAL_COUNT);
     }
   }
 
@@ -79,17 +101,16 @@ export function updateElo(
   b: string,
   weight: number
 ): EloState {
-  const rA = state.ratings.get(a) ?? 1500;
-  const rB = state.ratings.get(b) ?? 1500;
+  const rA = state.ratings.get(a) ?? INITIAL_RATING;
+  const rB = state.ratings.get(b) ?? INITIAL_RATING;
 
-  const eA = 1 / (1 + Math.pow(10, (rB - rA) / 400));
+  const eA = 1 / (1 + Math.pow(10, (rB - rA) / ELO_DIVISOR));
   const eB = 1 - eA;
 
-  const sA = 0.5 - weight * 0.25;
+  const sA = HALF_SCORE - weight * WEIGHT_SCALE;
   const sB = 1 - sA;
 
-  const kBase = 32;
-  const kScaled = kBase * Math.max(Math.abs(weight), 0.5) / 2;
+  const kScaled = K_FACTOR * Math.max(Math.abs(weight), MIN_K_WEIGHT) / K_DIVISOR;
 
   const newRA = rA + kScaled * (sA - eA);
   const newRB = rB + kScaled * (sB - eB);
@@ -130,7 +151,7 @@ export function selectNextMatchup(
     candidates.push([names[i], names[i + 1]]);
   }
 
-  for (let k = 0; k < 30; k++) {
+  for (let k = 0; k < MATCHUP_RANDOM_CANDIDATES; k++) {
     const i = Math.floor(Math.random() * names.length);
     let j = Math.floor(Math.random() * (names.length - 1));
     if (j >= i) j++;
@@ -143,16 +164,16 @@ export function selectNextMatchup(
   for (const [a, b] of candidates) {
     const pk = pairKey(a, b);
     const pc = state.pairCounts.get(pk) ?? 0;
-    const rA = state.ratings.get(a) ?? 1500;
-    const rB = state.ratings.get(b) ?? 1500;
+    const rA = state.ratings.get(a) ?? INITIAL_RATING;
+    const rB = state.ratings.get(b) ?? INITIAL_RATING;
 
-    let score = 1 / (pc + 1) + 1 / (1 + Math.abs(rA - rB) / 100);
+    let score = 1 / (pc + 1) + 1 / (1 + Math.abs(rA - rB) / MATCHUP_CLOSENESS_DIVISOR);
 
     if (movedIds) {
       const aUnmoved = !movedIds.has(a);
       const bUnmoved = !movedIds.has(b);
       if (aUnmoved || bUnmoved) {
-        score *= aUnmoved && bUnmoved ? 3 : 2;
+        score *= aUnmoved && bUnmoved ? UNMOVED_BOTH_BOOST : UNMOVED_ONE_BOOST;
       }
     }
 
@@ -162,7 +183,7 @@ export function selectNextMatchup(
     }
   }
 
-  if (Math.random() < 0.5) {
+  if (Math.random() < MATCHUP_FLIP_THRESHOLD) {
     return [bestPair[1], bestPair[0]];
   }
   return bestPair;
@@ -175,10 +196,10 @@ export function getConfidence(
   const n = state.ratings.size;
   if (n <= 1) return 1;
 
-  const baseConfidence = movedCount != null ? (movedCount / n) * 0.5 : 0;
+  const baseConfidence = movedCount != null ? (movedCount / n) * CONFIDENCE_BASE_FACTOR : 0;
 
   const totalComps = state.history.length;
-  const targetComps = n * Math.log2(n) * 0.6;
+  const targetComps = n * Math.log2(n) * CONFIDENCE_TARGET_MULTIPLIER;
   const compRatio = Math.min(totalComps / targetComps, 1);
 
   const ratings = Array.from(state.ratings.values());
@@ -186,9 +207,9 @@ export function getConfidence(
   const variance =
     ratings.reduce((a, r) => a + (r - mean) ** 2, 0) / ratings.length;
   const stddev = Math.sqrt(variance);
-  const spreadRatio = Math.min(stddev / 200, 1);
+  const spreadRatio = Math.min(stddev / CONFIDENCE_SPREAD_TARGET, 1);
 
-  const eloConfidence = 0.7 * compRatio + 0.3 * spreadRatio;
+  const eloConfidence = CONFIDENCE_COMP_WEIGHT * compRatio + CONFIDENCE_SPREAD_WEIGHT * spreadRatio;
 
   return Math.min(baseConfidence + (1 - baseConfidence) * eloConfidence, 1);
 }
@@ -202,7 +223,7 @@ export function toRankedList(state: EloState): SortableItem[] {
 export function getFocusedNeighbourhood(
   state: EloState,
   focal: string,
-  windowSize = 7
+  windowSize = DEFAULT_WINDOW_SIZE
 ): RankingEntry[] {
   const sorted = Array.from(state.ratings.entries())
     .sort((x, y) => y[1] - x[1])

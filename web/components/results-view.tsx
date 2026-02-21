@@ -11,11 +11,6 @@ import {
 import {
   DndContext,
   closestCenter,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
   DragOverlay,
   type DragStartEvent,
   type DragEndEvent,
@@ -24,7 +19,6 @@ import {
 import {
   arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
@@ -59,6 +53,7 @@ import { SiteHeader } from "@/components/site-header";
 import { WelcomeModal } from "@/components/welcome-modal";
 import { exportRankingsToXlsx } from "@/lib/export-xlsx";
 import { importRankingsFromXlsx, ImportError } from "@/lib/import-xlsx";
+import { useListDragSensors } from "@/hooks/use-list-drag-sensors";
 
 /* ── Types ── */
 
@@ -1036,16 +1031,7 @@ export function ResultsView({ scoredJobs }: ResultsViewProps) {
   const isMobileRef = useRef(isMobile);
   isMobileRef.current = isMobile;
 
-  // Sensors
-  const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, {
-      activationConstraint: { delay: 250, tolerance: 8 },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+  const sensors = useListDragSensors();
 
   /* ── Nudge amount ── */
   const nudgeAmount = useMemo(

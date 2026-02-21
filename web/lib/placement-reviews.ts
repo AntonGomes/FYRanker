@@ -1,4 +1,21 @@
-/* ── Seeded fake review data for placement detail cards ── */
+import {
+  LCG_MULTIPLIER,
+  LCG_INCREMENT,
+  LCG_MODULUS,
+  HASH_SHIFT,
+  MIN_REVIEWS,
+  MAX_EXTRA_REVIEWS,
+  POSITIVE_THRESHOLD,
+  NEUTRAL_THRESHOLD,
+  POSITIVE_MIN_RATING,
+  POSITIVE_RATING_RANGE,
+  NEUTRAL_MIN_RATING,
+  NEUTRAL_RATING_RANGE,
+  NEGATIVE_MIN_RATING,
+  NEGATIVE_RATING_RANGE,
+  MAX_REVIEW_MONTHS,
+  BASE_YEAR,
+} from "@/lib/constants";
 
 export interface PlacementReview {
   author: string;
@@ -44,53 +61,50 @@ const REVIEW_SNIPPETS = [
   "Not the best-organised placement. Induction was minimal and expectations unclear.",
 ];
 
-/** Simple hash for deterministic seeding */
 function hashStr(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) {
-    h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+    h = ((h << HASH_SHIFT) - h + s.charCodeAt(i)) | 0;
   }
   return Math.abs(h);
 }
 
-/** Seeded pseudo-random number generator */
 function seededRandom(seed: number): () => number {
   let s = seed;
   return () => {
-    s = (s * 1664525 + 1013904223) | 0;
-    return (s >>> 0) / 4294967296;
+    s = (s * LCG_MULTIPLIER + LCG_INCREMENT) | 0;
+    return (s >>> 0) / LCG_MODULUS;
   };
+}
+
+function ratingForSnippet(snippetIdx: number, rand: () => number): number {
+  if (snippetIdx < POSITIVE_THRESHOLD) return POSITIVE_MIN_RATING + Math.floor(rand() * POSITIVE_RATING_RANGE);
+  if (snippetIdx < NEUTRAL_THRESHOLD) return NEUTRAL_MIN_RATING + Math.floor(rand() * NEUTRAL_RATING_RANGE);
+  return NEGATIVE_MIN_RATING + Math.floor(rand() * NEGATIVE_RATING_RANGE);
 }
 
 export function getPlacementReviews(site: string, specialty: string): PlacementReview[] {
   const seed = hashStr(site + "|" + specialty);
   const rand = seededRandom(seed);
 
-  const count = 3 + Math.floor(rand() * 3); // 3-5 reviews
+  const count = MIN_REVIEWS + Math.floor(rand() * MAX_EXTRA_REVIEWS);
   const reviews: PlacementReview[] = [];
   const usedSnippets = new Set<number>();
   const usedAuthors = new Set<number>();
 
   for (let i = 0; i < count; i++) {
-    // Pick unique author
     let authorIdx: number;
     do { authorIdx = Math.floor(rand() * AUTHORS.length); } while (usedAuthors.has(authorIdx) && usedAuthors.size < AUTHORS.length);
     usedAuthors.add(authorIdx);
 
-    // Pick unique snippet
     let snippetIdx: number;
     do { snippetIdx = Math.floor(rand() * REVIEW_SNIPPETS.length); } while (usedSnippets.has(snippetIdx) && usedSnippets.size < REVIEW_SNIPPETS.length);
     usedSnippets.add(snippetIdx);
 
-    // Rating skewed by snippet position
-    let rating: number;
-    if (snippetIdx < 10) rating = 4 + Math.floor(rand() * 2); // 4-5
-    else if (snippetIdx < 18) rating = 3 + Math.floor(rand() * 2); // 3-4
-    else rating = 1 + Math.floor(rand() * 2); // 1-2
+    const rating = ratingForSnippet(snippetIdx, rand);
 
-    // Date in last ~2 years
-    const monthsAgo = Math.floor(rand() * 24);
-    const d = new Date(2025, 0, 1);
+    const monthsAgo = Math.floor(rand() * MAX_REVIEW_MONTHS);
+    const d = new Date(BASE_YEAR, 0, 1);
     d.setMonth(d.getMonth() - monthsAgo);
     const date = d.toLocaleDateString("en-GB", { month: "short", year: "numeric" });
 

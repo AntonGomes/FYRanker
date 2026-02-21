@@ -15,6 +15,7 @@ import {
   getFocusedNeighbourhood,
 } from "@/lib/elo";
 import type { SortableItem } from "@/components/sortable-list";
+import { SPRING, ENTER_SPRING, EXIT_SPRING } from "@/lib/animation-presets";
 
 interface SpecialtyDuelProps {
   specialties: string[];
@@ -23,10 +24,6 @@ interface SpecialtyDuelProps {
   onRankingChange: (items: SortableItem[]) => void;
   movedIds?: Set<string>;
 }
-
-const SPRING = { type: "spring" as const, stiffness: 500, damping: 35, mass: 0.8 };
-const ENTER_SPRING = { type: "spring" as const, stiffness: 350, damping: 28 };
-const EXIT_SPRING = { type: "spring" as const, stiffness: 200, damping: 20 };
 
 const TICK_LABELS = [
   { label: "Strong", sublabel: "left" },

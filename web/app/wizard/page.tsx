@@ -321,14 +321,14 @@ export default function WizardPage() {
 
       case 5:
         if (jobs) {
-          const scored = scoreJobs(
+          const scored = scoreJobs({
             jobs,
             rankedRegions,
             globalHospitals,
             rankedSpecialties,
             weights,
-            lockRegions
-          );
+            lockRegions,
+          });
           const json = JSON.stringify(scored);
           sessionStorage.setItem("fy_scored_jobs", json);
           localStorage.setItem("fy_scored_jobs", json);

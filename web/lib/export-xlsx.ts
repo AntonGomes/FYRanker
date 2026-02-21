@@ -1,22 +1,23 @@
 import * as XLSX from "xlsx";
 import type { ScoredJob } from "./scoring";
 import { effectiveScore } from "./scoring";
+import { PLACEMENTS_PER_JOB, SCORE_DECIMAL_PLACES } from "@/lib/constants";
 
 const REGIONS = ["East", "West", "North", "South and SE"] as const;
 
 function buildRow(sj: ScoredJob, rank: number) {
   const row: Record<string, string | number> = {
     Rank: rank,
-    Score: Number(effectiveScore(sj).toFixed(4)),
-    "Score Adjustment": Number((sj.scoreAdjustment ?? 0).toFixed(4)),
-    "Region Score": Number(sj.regionScore.toFixed(4)),
-    "Hospital Score": Number(sj.hospitalScore.toFixed(4)),
-    "Specialty Score": Number(sj.specialtyScore.toFixed(4)),
+    Score: Number(effectiveScore(sj).toFixed(SCORE_DECIMAL_PLACES)),
+    "Score Adjustment": Number((sj.scoreAdjustment ?? 0).toFixed(SCORE_DECIMAL_PLACES)),
+    "Region Score": Number(sj.regionScore.toFixed(SCORE_DECIMAL_PLACES)),
+    "Hospital Score": Number(sj.hospitalScore.toFixed(SCORE_DECIMAL_PLACES)),
+    "Specialty Score": Number(sj.specialtyScore.toFixed(SCORE_DECIMAL_PLACES)),
     "Programme Title": sj.job.programmeTitle,
     Region: sj.job.region,
   };
 
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < PLACEMENTS_PER_JOB; i++) {
     const p = sj.job.placements[i];
     const n = i + 1;
     row[`Placement ${n}: Site`] = p?.site ?? "";
@@ -38,10 +39,9 @@ function buildSheet(jobs: ScoredJob[]) {
 export function exportRankingsToXlsx(rankedJobs: ScoredJob[]): void {
   const wb = XLSX.utils.book_new();
 
-  // Global sheet — all jobs ordered by effective score
   XLSX.utils.book_append_sheet(wb, buildSheet(rankedJobs), "All Programmes");
 
-  // Per-region sheets
+
   for (const region of REGIONS) {
     const regionJobs = rankedJobs.filter((sj) => sj.job.region === region);
     if (regionJobs.length > 0) {

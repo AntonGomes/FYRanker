@@ -4,11 +4,6 @@ import { useState, memo } from "react";
 import {
   DndContext,
   closestCenter,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
   type DragEndEvent,
   type DragStartEvent,
   DragOverlay,
@@ -16,12 +11,12 @@ import {
 import {
   arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
+import { useListDragSensors } from "@/hooks/use-list-drag-sensors";
 
 export interface SortableItem {
   id: string;
@@ -102,15 +97,7 @@ const DragOverlayRow = memo(function DragOverlayRow({ item }: { item: SortableIt
 export function SortableList({ items, onReorder }: SortableListProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, {
-      activationConstraint: { delay: 250, tolerance: 8 },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+  const sensors = useListDragSensors();
 
   function handleDragStart(event: DragStartEvent) {
     setActiveId(event.active.id as string);

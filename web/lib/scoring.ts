@@ -1,5 +1,6 @@
 import type { Job } from "./parse-xlsx";
 import type { SortableItem } from "@/components/sortable-list";
+import { EPSILON, MIN_STDDEV_DIVISOR, MIN_NUDGE } from "@/lib/constants";
 
 export interface ScoredJob {
   job: Job;
@@ -15,13 +16,13 @@ export function effectiveScore(sj: ScoredJob): number {
 }
 
 export function computeNudgeAmount(jobs: ScoredJob[]): number {
-  if (jobs.length <= 1) return 0.01;
+  if (jobs.length <= 1) return EPSILON;
   const scores = jobs.map((j) => effectiveScore(j));
   const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
   const variance =
     scores.reduce((a, s) => a + (s - mean) ** 2, 0) / scores.length;
   const stddev = Math.sqrt(variance);
-  return Math.max(stddev / 12, 0.001);
+  return Math.max(stddev / MIN_STDDEV_DIVISOR, MIN_NUDGE);
 }
 
 function normalize(rank: number, total: number): number {
@@ -35,14 +36,24 @@ function buildRankMap(items: SortableItem[]): Map<string, number> {
   return map;
 }
 
-export function scoreJobs(
-  jobs: Job[],
-  rankedRegions: SortableItem[],
-  globalHospitals: SortableItem[],
-  rankedSpecialties: SortableItem[],
-  weights: { region: number; hospital: number; specialty: number },
-  lockRegions = false
-): ScoredJob[] {
+export interface ScoreJobsOptions {
+  jobs: Job[];
+  rankedRegions: SortableItem[];
+  globalHospitals: SortableItem[];
+  rankedSpecialties: SortableItem[];
+  weights: { region: number; hospital: number; specialty: number };
+  lockRegions?: boolean;
+}
+
+export function scoreJobs(options: ScoreJobsOptions): ScoredJob[] {
+  const {
+    jobs,
+    rankedRegions,
+    globalHospitals,
+    rankedSpecialties,
+    weights,
+    lockRegions = false,
+  } = options;
   const regionRanks = buildRankMap(rankedRegions);
   const hospitalRanks = buildRankMap(globalHospitals);
   const specialtyRanks = buildRankMap(rankedSpecialties);

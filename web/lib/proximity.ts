@@ -1,4 +1,5 @@
 import type { RankableItem } from "@/components/rankable-list";
+import { EARTH_RADIUS_KM, DEG_TO_RAD, MIN_WORD_LENGTH, MIN_WORD_OVERLAP } from "@/lib/constants";
 
 export interface Hospital {
   name: string;
@@ -10,29 +11,26 @@ export interface Hospital {
   place_id?: string;
 }
 
-export interface UserLocation {
+export interface LatLng {
   lat: number;
   lng: number;
+}
+
+export interface UserLocation extends LatLng {
   displayName?: string;
 }
 
-export function haversineDistance(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number
-): number {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
+export function haversineDistance(a: LatLng, b: LatLng): number {
+  const dLat = (b.lat - a.lat) * DEG_TO_RAD;
+  const dLng = (b.lng - a.lng) * DEG_TO_RAD;
+  const sinHalf =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
+    Math.cos(a.lat * DEG_TO_RAD) *
+      Math.cos(b.lat * DEG_TO_RAD) *
       Math.sin(dLng / 2) *
       Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+  const c = 2 * Math.atan2(Math.sqrt(sinHalf), Math.sqrt(1 - sinHalf));
+  return EARTH_RADIUS_KM * c;
 }
 
 function normalise(name: string): string {
@@ -49,29 +47,26 @@ export function matchHospitalName(
 ): Hospital | null {
   const norm = normalise(jobName);
 
-  // Tier 1: exact match
   for (const h of hospitals) {
     if (normalise(h.name) === norm) return h;
   }
 
-  // Tier 2: one contains the other
   for (const h of hospitals) {
     const hn = normalise(h.name);
     if (hn.includes(norm) || norm.includes(hn)) return h;
   }
 
-  // Tier 3: significant word overlap (at least 2 shared words of length ≥3)
   const jobWords = new Set(
-    norm.split(" ").filter((w) => w.length >= 3)
+    norm.split(" ").filter((w) => w.length >= MIN_WORD_LENGTH)
   );
   let bestMatch: Hospital | null = null;
   let bestOverlap = 0;
   for (const h of hospitals) {
     const hWords = normalise(h.name)
       .split(" ")
-      .filter((w) => w.length >= 3);
+      .filter((w) => w.length >= MIN_WORD_LENGTH);
     const overlap = hWords.filter((w) => jobWords.has(w)).length;
-    if (overlap >= 2 && overlap > bestOverlap) {
+    if (overlap >= MIN_WORD_OVERLAP && overlap > bestOverlap) {
       bestOverlap = overlap;
       bestMatch = h;
     }
@@ -117,12 +112,7 @@ export function sortHospitalsByProximity(
     if (hospital) {
       distanceMap.set(
         item.id,
-        haversineDistance(
-          userLocation.lat,
-          userLocation.lng,
-          hospital.lat,
-          hospital.lng
-        )
+        haversineDistance(userLocation, hospital)
       );
     }
   }

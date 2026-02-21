@@ -4,11 +4,6 @@ import { useState, useCallback, useRef, useMemo, memo } from "react";
 import {
   DndContext,
   closestCenter,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
   type DragEndEvent,
   DragOverlay,
   type DragStartEvent,
@@ -16,7 +11,6 @@ import {
 import {
   arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
@@ -28,6 +22,7 @@ import {
   Unlock,
 } from "lucide-react";
 import { REGION_COLORS } from "@/lib/region-colors";
+import { useListDragSensors } from "@/hooks/use-list-drag-sensors";
 
 export interface RankableItem {
   id: string;
@@ -150,17 +145,8 @@ export function RankableList({
   const [activeId, setActiveId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, {
-      activationConstraint: { delay: 250, tolerance: 8 },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+  const sensors = useListDragSensors();
 
-  // Pre-compute O(1) index lookup map
   const indexById = useMemo(() => {
     const map = new Map<string, number>();
     items.forEach((item, i) => map.set(item.id, i));

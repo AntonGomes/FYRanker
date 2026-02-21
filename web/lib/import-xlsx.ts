@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import type { ScoredJob } from "./scoring";
 import type { Job, Placement } from "./parse-xlsx";
+import { PLACEMENTS_PER_JOB } from "@/lib/constants";
 
 const REQUIRED_COLUMNS = [
   "Rank",
@@ -40,7 +41,6 @@ export async function importRankingsFromXlsx(
     throw new ImportError("The All Programmes sheet is empty.");
   }
 
-  // Validate columns
   const firstRow = rows[0];
   const missing = REQUIRED_COLUMNS.filter((col) => !(col in firstRow));
   if (missing.length > 0) {
@@ -51,7 +51,7 @@ export async function importRankingsFromXlsx(
 
   const scoredJobs: ScoredJob[] = rows.map((row) => {
     const placements: Placement[] = [];
-    for (let i = 1; i <= 6; i++) {
+    for (let i = 1; i <= PLACEMENTS_PER_JOB; i++) {
       placements.push({
         site: String(row[`Placement ${i}: Site`] ?? ""),
         specialty: String(row[`Placement ${i}: Specialty`] ?? ""),
