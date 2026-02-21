@@ -1,0 +1,1793 @@
+[
+  {
+    "name": "Aberdeen Community Health and Care Village",
+    "lat": 57.150126,
+    "lng": -2.091956,
+    "website": "https://www.nhsgrampian.org/hospital-hub/aberdeen-health-village",
+    "address": "50 Frederick St, Aberdeen AB24 5HY, UK",
+    "phone": "01224 655555",
+    "place_id": "ChIJM0NPQD4OhEgRt_T-4FNTMgk"
+  },
+  {
+    "name": "Aberdeen Maternity Hospital",
+    "lat": 57.15523100000001,
+    "lng": -2.131816,
+    "website": "http://www.nhsgrampian.org/",
+    "address": "Cornhill Rd, Aberdeen AB25 2ZL, UK",
+    "phone": "0345 456 6000",
+    "place_id": "ChIJFWEeGeYRhEgRQIAQgygBRjI"
+  },
+  {
+    "name": "Aberdeen Royal Infirmary",
+    "lat": 57.1546037,
+    "lng": -2.1362461,
+    "website": "http://www.nhsgrampian.org/",
+    "address": "Foresterhill Health Campus, Foresterhill Rd, Aberdeen AB25 2ZN, UK",
+    "phone": "0345 456 6000",
+    "place_id": "ChIJISay-CIOhEgR9H1tzAqUk-4"
+  },
+  {
+    "name": "Aberlour Medical Practice",
+    "lat": 57.4704006,
+    "lng": -3.2254315,
+    "website": "https://aberlourmedicalpractice.co.uk/",
+    "address": "Queens Rd, Charlestown of Aberlour, Aberlour AB38 9PR, UK",
+    "phone": "01340 871210",
+    "place_id": "ChIJ3ytY-GKkhUgRdAmAe8Uaiec"
+  },
+  {
+    "name": "Mintlaw Group Practice",
+    "lat": 57.52391209999999,
+    "lng": -2.0091432,
+    "website": "http://www.adenhealthcentre.co.uk/",
+    "address": "Newlands Rd, Mintlaw, Peterhead AB42 5GP, UK",
+    "phone": "01771 624070",
+    "place_id": "ChIJ0RUVJUV5hEgRL1Cj5JO-2GU"
+  },
+  {
+    "name": "Alva Medical Practice",
+    "lat": 56.15231199999999,
+    "lng": -3.8042976,
+    "website": "http://www.alvamedical.com/",
+    "address": "W Johnstone St, Alva FK12 5BD, UK",
+    "phone": "01259 760331",
+    "place_id": "ChIJoSxi3lCHiEgRWvda4Md4KZw"
+  },
+  {
+    "name": "Anchor Mill Medical Practice",
+    "lat": 55.840835,
+    "lng": -4.419386600000001,
+    "website": "https://www.anchormillmedical.com/",
+    "address": "4 Saucel Cres, Paisley PA1 1UB, UK",
+    "phone": "0141 889 8809",
+    "place_id": "ChIJGU-tWjlJiEgRWEbMzYK6bfw"
+  },
+  {
+    "name": "Ardach Health Centre",
+    "lat": 57.67162769999999,
+    "lng": -2.9661775,
+    "website": "https://www.ardach.org.uk/",
+    "address": "Highfield Rd, Buckie AB56 1JE, UK",
+    "phone": "0345 099 7200",
+    "place_id": "ChIJVcSS4QsBhUgRzLCkDiTbiUU"
+  },
+  {
+    "name": "Ardoch Medical Practice",
+    "lat": 55.819802,
+    "lng": -4.176781,
+    "website": "http://www.ardochmedicalcentre.scot.nhs.uk/staff1.aspx",
+    "address": "6 Ardoch Grove, Cambuslang, Glasgow G72 8HA, UK",
+    "phone": "0141 641 1255",
+    "place_id": "ChIJger6BeJAiEgRM3eFrpPykfI"
+  },
+  {
+    "name": "Arran Medical Group",
+    "lat": 55.53009729999999,
+    "lng": -5.1301215,
+    "website": "https://www.arranmedical.co.uk/",
+    "address": "Murray Cres, Lamlash, Isle of Arran KA27 8NS, UK",
+    "phone": "01770 600516",
+    "place_id": "ChIJE-1mJ6_miUgREtDott_T9LQ"
+  },
+  {
+    "name": "Balfour Hospital",
+    "lat": 58.9736221,
+    "lng": -2.9655784,
+    "website": "http://www.ohb.scot.nhs.uk/contact-us",
+    "address": "Foreland Rd, Kirkwall KW15 1NZ, UK",
+    "phone": "01856 888000",
+    "place_id": "ChIJ7b03OtgDm0gR2v1Fe5ECEL0"
+  },
+  {
+    "name": "Banchory Group Practice",
+    "lat": 57.0507916,
+    "lng": -2.5009554,
+    "website": "https://www.banchorygrouppractice.co.uk/",
+    "address": "Dee St, Banchory AB31 5XS, UK",
+    "phone": "0345 013 0750",
+    "place_id": "ChIJ_z_nr-skhEgRHuRudK97ZV4"
+  },
+  {
+    "name": "Barns Medical Practice",
+    "lat": 55.4590979,
+    "lng": -4.6318953,
+    "website": "http://www.medicayr.co.uk/",
+    "address": "40 Dalblair Rd, Ayr KA7 1UL, UK",
+    "phone": "01292 281439",
+    "place_id": "ChIJFb4NNoPWiUgRMfpj4vHnUJg"
+  },
+  {
+    "name": "Beatson West of Scotland Cancer Centre",
+    "lat": 55.8817648,
+    "lng": -4.3130875,
+    "website": "http://www.beatson.scot.nhs.uk/",
+    "address": "1053 Great Western Rd, Glasgow G12 0YN, UK",
+    "phone": "0141 301 7000",
+    "place_id": "ChIJPf1DkL9FiEgRiZMuOoBwiQk"
+  },
+  {
+    "name": "Belford Hospital",
+    "lat": 56.8194744,
+    "lng": -5.1044218,
+    "website": "https://www.nhshighland.scot.nhs.uk/your-services/in-person-services-and-locations/hospitals/belford-hospital-fort-william/",
+    "address": "Belford Rd, Fort William PH33 6BS, UK",
+    "phone": "01397 702481",
+    "place_id": "ChIJF3oddK3MjkgReV2-rYSGPp8"
+  },
+  {
+    "name": "Bellyeoman GP Surgery",
+    "lat": 56.07589249999999,
+    "lng": -3.4475626,
+    "website": "http://www.bellyeomansurgery.co.uk/",
+    "address": "Bellyeoman Rd, Dunfermline KY12 0AE, UK",
+    "phone": "01383 721266",
+    "place_id": "ChIJTW3FPxrSh0gRU0hlt8vDDBc"
+  },
+  {
+    "name": "Borders General Hospital",
+    "lat": 55.5954505,
+    "lng": -2.7421468,
+    "website": "https://www.nhsborders.scot.nhs.uk/patients-and-visitors/our-services/hospitals/borders-general-hospital/",
+    "address": "Huntlyburn Terrace, Melrose TD6 9BS, UK",
+    "phone": "01896 826000",
+    "place_id": "ChIJd-uaOgeDh0gRCiIkWj-kYes"
+  },
+  {
+    "name": "Bourtreehill Medical Practice",
+    "lat": 55.6186174,
+    "lng": -4.6325607,
+    "website": "http://www.bourtreehillmedicalpractice.scot.nhs.uk/",
+    "address": "Bourtreehill Health Centre, Cheviot Way, Bourtreehill South, Irvine KA11 1JU, UK",
+    "phone": "01294 211993",
+    "place_id": "ChIJOblEls7NiUgRI1fss_6yyIY"
+  },
+  {
+    "name": "Braehead Medical Practice",
+    "lat": 55.8814499,
+    "lng": -4.3838343,
+    "website": "http://www.braeheadmedicalpractice.co.uk/",
+    "address": "10 Ferry Rd, Renfrew PA4 8RU, UK",
+    "phone": "0141 207 7480",
+    "place_id": "ChIJTas70xdPiEgRZACzsSRU3Ng"
+  },
+  {
+    "name": "Butterbiggins Medical Centre",
+    "lat": 55.8405949,
+    "lng": -4.2609244,
+    "website": "https://www.butterbigginsmedicalcentre.scot.nhs.uk/",
+    "address": "134 Butterbiggins Rd, Glasgow G42 7AF, UK",
+    "phone": "0141 423 1398",
+    "place_id": "ChIJ7yyC1pJGiEgREYJyGAnkDL8"
+  },
+  {
+    "name": "The Bydand Medical Centre",
+    "lat": 57.44376980000001,
+    "lng": -2.7905488,
+    "website": "http://bydandmedicalgroup.gp.scot/",
+    "address": "Bleachfield St, Huntly AB54 8EX, UK",
+    "phone": "01466 792116",
+    "place_id": "ChIJQQIRBnJShEgRRnjz4_YKqug"
+  },
+  {
+    "name": "Cairnsmore Medical Practice",
+    "lat": 54.96070599999999,
+    "lng": -4.4783037,
+    "website": "https://www.cairnsmore.org.uk/",
+    "address": "Creebridge, Newton Stewart DG8 6NR, UK",
+    "phone": "01671 402198",
+    "place_id": "ChIJB_i6kNZYYkgRhU1G6tKyk84"
+  },
+  {
+    "name": "Caithness General Hospital",
+    "lat": 58.4407562,
+    "lng": -3.0948472,
+    "website": "https://www.nhshighland.scot.nhs.uk/your-services/in-person-services-and-locations/hospitals/caithness-general-hospital-wick/",
+    "address": "Bankhead, Wick KW1 5NS, UK",
+    "phone": "01955 605050",
+    "place_id": "ChIJCxIKcbrWmkgRA3rJBeCHJ8o"
+  },
+  {
+    "name": "Caldergreen Medical Practice",
+    "lat": 55.76293159999999,
+    "lng": -4.1756934,
+    "website": "https://www.caldergreenmedicalpractice.co.uk/",
+    "address": "Andrew St, East Kilbride, Glasgow G74 1AD, UK",
+    "phone": "01355 578030",
+    "place_id": "ChIJ-XKSLmg_iEgRV2-f7PL_6MU"
+  },
+  {
+    "name": "Callander Medical Practice",
+    "lat": 56.2385056,
+    "lng": -4.1975783,
+    "website": "http://www.callandermedicalpractice.co.uk/",
+    "address": "Lagrannoch Industrial Estate, Geisher Rd, Callander FK17 8LX, UK",
+    "phone": "01877 331000",
+    "place_id": "ChIJE3YZZzvziEgRPlAeljVygEw"
+  },
+  {
+    "name": "Calsayseat Medical Group",
+    "lat": 57.1583023,
+    "lng": -2.1102494,
+    "website": "https://calsayseat.co.uk/",
+    "address": "44 Powis Pl, Aberdeen AB25 3TX, UK",
+    "phone": "0345 337 6370",
+    "place_id": "ChIJpYKwCxwOhEgR1qgVa_Zb1dM"
+  },
+  {
+    "name": "Camelon Medical Practice",
+    "lat": 56.00331629999999,
+    "lng": -3.8143501,
+    "website": "https://www.camelonmedicalpractice.co.uk/",
+    "address": "3 Baird St, Camelon, Falkirk FK1 4PP, UK",
+    "phone": "01324 622854",
+    "place_id": "ChIJ9ewoL056iEgRxu9FtDiXkfQ"
+  },
+  {
+    "name": "Carseview Centre",
+    "lat": 56.4634094,
+    "lng": -3.0451009,
+    "website": "http://www.mhtscotland.gov.uk/mhts//Venues/Tayside_Venues/Carseview_Centre_Ninewells_Hospital",
+    "address": "Carseview Centre, 4 Tom McDonald Ave, Dundee DD2 1NH, UK",
+    "phone": "01382 423000",
+    "place_id": "ChIJYw05Ig5DhkgRoZXsV6kYWHc"
+  },
+  {
+    "name": "Castle Douglas Medical Group",
+    "lat": 54.9497552,
+    "lng": -3.9226956,
+    "website": "http://www.castledouglasmedicalgroup.co.uk/",
+    "address": "2 Garden Hill Rd, Castle Douglas DG7 3EE, UK",
+    "phone": "01556 505900",
+    "place_id": "ChIJtSSFrFvCYkgRvUVmloywjh8"
+  },
+  {
+    "name": "Castlemilk Group Practice",
+    "lat": 55.80579789999999,
+    "lng": -4.2351239,
+    "website": "https://castlemilkgrouppractice.gp.scot/",
+    "address": "GP Reception, Castlemilk Health Centre, 71 Dougrie Dr, Glasgow G45 9AW, UK",
+    "phone": "0141 531 8585",
+    "place_id": "ChIJt3Q_YTtHiEgRGxQ2p9yUYC0"
+  },
+  {
+    "name": "Constitution House",
+    "lat": 56.46392299999999,
+    "lng": -2.9759363,
+    "website": null,
+    "address": "Constitution House, Dundee DD1, UK",
+    "phone": null,
+    "place_id": "ChIJreKKg8FchkgR9loXag7x7jE"
+  },
+  {
+    "name": "Cornhill Macmillan Centre",
+    "lat": 56.39692900000001,
+    "lng": -3.4574469,
+    "website": "http://www.nhstayside.scot.nhs.uk/OurServicesA-Z/SpecialistPalliativeCare/PROD_210000/",
+    "address": "Perth Royal Infirmary, Jeanfield Rd, Perth PH1 1NX, UK",
+    "phone": "01738 413000",
+    "place_id": "ChIJDTMp9zk7hkgRMs27C5DCA8E"
+  },
+  {
+    "name": "Craig Nevis Surgery",
+    "lat": 56.8392391,
+    "lng": -5.0792107,
+    "website": "http://www.craignevissurgery.co.uk/",
+    "address": "Fort William Health Centre, Camaghael, Fort William PH33 7AQ, UK",
+    "phone": "01397 702947",
+    "place_id": "ChIJWds3ksLMjkgR0kCsEpRJ27Q"
+  },
+  {
+    "name": "Crimond Medical Centre",
+    "lat": 57.6027719,
+    "lng": -1.9169699,
+    "website": "http://www.crimondmedicalcentre.co.uk/",
+    "address": "Crimond Medical and Community Hub, Crimond, Fraserburgh AB43 8QJ, UK",
+    "phone": "01346 532215",
+    "place_id": "ChIJv3Yz0Yt_hEgR8fXZf90fuGA"
+  },
+  {
+    "name": "Croyard Road",
+    "lat": 57.4841249,
+    "lng": -4.4618364,
+    "website": null,
+    "address": "Croyard Rd, Beauly IV4, UK",
+    "phone": null,
+    "place_id": "ChIJ6ULX6vILj0gRuiAcYMb1_O8"
+  },
+  {
+    "name": "Dalbeattie Clinic",
+    "lat": 54.9285188,
+    "lng": -3.827604499999999,
+    "website": "https://www.dalbeattiemedicalpractice.co.uk/",
+    "address": "Craignair Health Centre, Dalbeattie DG5 4AZ, UK",
+    "phone": "01556 610331",
+    "place_id": "ChIJmaT75JLEYkgR05J_qn4LNAM"
+  },
+  {
+    "name": "Dalblair Medical Practice",
+    "lat": 55.45836509999999,
+    "lng": -4.630803,
+    "website": "https://www.dalblairmedicalpractice.co.uk/",
+    "address": "56 Dalblair Rd, Ayr KA7 1UQ, UK",
+    "phone": "01292 267432",
+    "place_id": "ChIJtajAJYPWiUgR_Neo0ntXORk"
+  },
+  {
+    "name": "Dalhousie Medical Practice",
+    "lat": 55.8786312,
+    "lng": -3.106764,
+    "website": "https://www.dalhousiemedicalpractice.co.uk/",
+    "address": "109-111 High St, Bonnyrigg EH19 2ET, UK",
+    "phone": "0131 370 3999",
+    "place_id": "ChIJC4czGN--h0gREmVzybtuuJg"
+  },
+  {
+    "name": "Denny Cross Medical Centre",
+    "lat": 56.0225788,
+    "lng": -3.9086514,
+    "website": "https://dennycrossmedical.com/",
+    "address": "1 Duke St, Denny FK6 6DB, UK",
+    "phone": "01324 822330",
+    "place_id": "ChIJUTiYlsNkiEgRQi-7_PdtKmk"
+  },
+  {
+    "name": "Doune Health Centre",
+    "lat": 56.1915145,
+    "lng": -4.0540805,
+    "website": "https://www.dounehealthcentre.co.uk/",
+    "address": "Springbank Rd, Doune FK16 6DU, UK",
+    "phone": "01786 841213",
+    "place_id": "ChIJc5NRGs6LiEgRkVwdnx3Qk0M"
+  },
+  {
+    "name": "Dr Mair & Partners",
+    "lat": 55.8462097,
+    "lng": -4.335658,
+    "website": "https://www.drmairandpartners.co.uk/",
+    "address": "1600 Paisley Rd W, Glasgow G52 3QN, UK",
+    "phone": "0141 882 4567",
+    "place_id": "ChIJr50lDR1GiEgRPfOrHKbz-o4"
+  },
+  {
+    "name": "Dr. Gray's Hospital",
+    "lat": 57.64578840000001,
+    "lng": -3.330043,
+    "website": "http://www.nhsgrampian.org/",
+    "address": "Pluscarden Rd, Elgin IV30 1SN, UK",
+    "phone": "0345 456 6000",
+    "place_id": "ChIJbw1DJgALhUgRVjXKK1IiB68"
+  },
+  {
+    "name": "Dr A Sullivan - Dr Jm Simpsonpartners",
+    "lat": 55.7607168,
+    "lng": -4.0475746,
+    "website": null,
+    "address": "Low Waters Medical Centre, 11 Mill Rd, Hamilton ML3 8AA, UK",
+    "phone": "01698 283626",
+    "place_id": "ChIJNy-_AT0ViEgRlIeSz1mDENI"
+  },
+  {
+    "name": "Clyde Practice",
+    "lat": 55.7852147,
+    "lng": -3.984239,
+    "website": "https://www.theclydepractice.co.uk/",
+    "address": "138, 144 Windmillhill St, Motherwell ML1 1TB, UK",
+    "phone": "01698 266525",
+    "place_id": "ChIJAdd9p1NriEgRFPhuL5A_0_w"
+  },
+  {
+    "name": "Dr McCulloch & Partners",
+    "lat": 55.2483686,
+    "lng": -4.846735199999999,
+    "website": "https://www.ailsacraigpractice.co.uk/",
+    "address": "Community Hospital, Bridgemill Roundabout, Girvan KA26 9HQ, UK",
+    "phone": "01465 712281",
+    "place_id": "ChIJy5facDlyYkgR_B0hlelJOrc"
+  },
+  {
+    "name": "North Surgery",
+    "lat": 54.9863437,
+    "lng": -3.2627732,
+    "website": "http://www.northsurgery.co.uk/",
+    "address": "Greencroft Wynd, Annan DG12 6GN, UK",
+    "phone": "01461 202745",
+    "place_id": "ChIJPcigghU6fUgRuEhEOB2ZPGs"
+  },
+  {
+    "name": "Dumbarton Health Centre - Dr Dunn & Partners",
+    "lat": 55.94602459999999,
+    "lng": -4.573642599999999,
+    "website": "http://www.drstephenandjuliadunn.co.uk/",
+    "address": "Station Rd, Dumbarton G82 1PW, UK",
+    "phone": "01389 811833",
+    "place_id": "ChIJr8M0-aNSiEgRKTNBnlSSDzo"
+  },
+  {
+    "name": "Practice B Govanhill Health Centre",
+    "lat": 55.837309,
+    "lng": -4.2584138,
+    "website": null,
+    "address": "233 Calder St, Glasgow G42 7DR, UK",
+    "phone": "0141 531 8365",
+    "place_id": "ChIJr5eUVuxGiEgRswmdDVMEqIU"
+  },
+  {
+    "name": "Dr J Morgan - Edinburgh Road Surgery",
+    "lat": 55.8632418,
+    "lng": -4.1818727,
+    "website": null,
+    "address": "463 Edinburgh Rd, Glasgow G33 3AL, UK",
+    "phone": "0141 770 4044",
+    "place_id": "ChIJV8AoX2JBiEgRUgcgybaKuDg"
+  },
+  {
+    "name": "Dr J Morgan - Edinburgh Road Surgery",
+    "lat": 55.8632418,
+    "lng": -4.1818727,
+    "website": null,
+    "address": "463 Edinburgh Rd, Glasgow G33 3AL, UK",
+    "phone": "0141 770 4044",
+    "place_id": "ChIJV8AoX2JBiEgRUgcgybaKuDg"
+  },
+  {
+    "name": "Drs Lynas and Rodgers",
+    "lat": 55.85246009999999,
+    "lng": -4.228196,
+    "website": "https://www.drslynasandrodgers.co.uk/",
+    "address": "201 Abercromby St, Bridgeton, Glasgow G40 2DA, UK",
+    "phone": "0141 531 6640",
+    "place_id": "ChIJ3U7hAK5GiEgRG5_FqXijdFg"
+  },
+  {
+    "name": "Riverview Medical Centre",
+    "lat": 55.83776539999999,
+    "lng": -4.5141219,
+    "website": "http://www.riverviewmedicalcentre.com/",
+    "address": "6-8 George St, Johnstone PA5 8SL, UK",
+    "phone": "01505 320208",
+    "place_id": "ChIJK5vHHXZLiEgRlZIBGnK7KmE"
+  },
+  {
+    "name": "Drs Logan and Macdonald",
+    "lat": 55.91059130000001,
+    "lng": -4.3712956,
+    "website": "http://drsloganandmacdonald.co.uk/",
+    "address": "Drumchapel Health centre, 80/90 Kinfauns Dr, Glasgow G15 7TS, UK",
+    "phone": "0141 211 6090",
+    "place_id": "ChIJMbvlXJlPiEgRezFWW3lbENk"
+  },
+  {
+    "name": "Dr C Mills and Partners (Dr G Marshall, Dr J O\u2019Dowd & Dr P McNamara)",
+    "lat": 55.8487575,
+    "lng": -4.252857,
+    "website": "https://www.drsmillsmarshallodowd.co.uk/",
+    "address": "2 Sandiefield Rd, Gorbals, Glasgow G5 9AB, UK",
+    "phone": "0141 201 5111",
+    "place_id": "ChIJM6uGnL1GiEgRRFXvEPKhkEg"
+  },
+  {
+    "name": "Simpson Dr L",
+    "lat": 55.8932291,
+    "lng": -4.6267423,
+    "website": null,
+    "address": "Dorema Surgery, Bridge of Weir Rd, Kilmacolm PA13 4AP, UK",
+    "phone": "01505 872155",
+    "place_id": "ChIJhfFdZh2ziUgRpIjsuCWC94I"
+  },
+  {
+    "name": "Dudhope Young People's Unit",
+    "lat": 56.4661516,
+    "lng": -2.9885243,
+    "website": null,
+    "address": "17 Dudhope Terrace, Dundee DD3 6HH, UK",
+    "phone": null,
+    "place_id": "ChIJc0MJXc9chkgR-G8Em6BzMuk"
+  },
+  {
+    "name": "Dumfries & Galloway Royal Infirmary",
+    "lat": 55.058437,
+    "lng": -3.6588131,
+    "website": "https://www.nhsdg.co.uk/",
+    "address": "A75, Cargenbridge, Dumfries DG2 8RX, UK",
+    "phone": "01387 246246",
+    "place_id": "ChIJAQAAAEXKYkgRpvpvMiR75hk"
+  },
+  {
+    "name": "Dykebar Hospital",
+    "lat": 55.823269,
+    "lng": -4.3952005,
+    "website": "http://www.nhsggc.org.uk/content/default.asp?page=s762&loc_id=2526",
+    "address": "Grahamston Rd, Paisley PA2 7DE, UK",
+    "phone": "0141 201 1099",
+    "place_id": "ChIJpy6MKgNJiEgR6Kv-lUbLFDA"
+  },
+  {
+    "name": "East Renfrewshire",
+    "lat": 55.74765,
+    "lng": -4.351420399999999,
+    "website": null,
+    "address": "East Renfrewshire, UK",
+    "phone": null,
+    "place_id": "ChIJN1Yy_zQ2iEgRMLNCBhpoDAM"
+  },
+  {
+    "name": "Eglinton Medical Practice",
+    "lat": 55.6311001,
+    "lng": -4.6749901,
+    "website": "https://www.eglintonmedicalpractice.scot.nhs.uk/",
+    "address": "Ayrshire Central Hosp, Kilwinning Rd, Irvine KA12 8SS, UK",
+    "phone": "01294 279178",
+    "place_id": "ChIJaVniMI7OiUgRKEp1gwxjgWk"
+  },
+  {
+    "name": "Elmbank Group Practice",
+    "lat": 57.15272659999999,
+    "lng": -2.1441654,
+    "website": "https://elmbankpractice.scot.nhs.uk/",
+    "address": "Foresterhill Health Centre, Aberdeen Royal Infirmary, Foresterhill Rd, Aberdeen AB25 2XE, UK",
+    "phone": "0345 337 0710",
+    "place_id": "ChIJheGAP-cRhEgRFIILLN3RQWc"
+  },
+  {
+    "name": "Fallin Health Centre",
+    "lat": 56.1045652,
+    "lng": -3.8761203,
+    "website": "https://www.fallincowieandairthmedicalpractice.co.uk/",
+    "address": "Stirling Rd, Fallin, Stirling FK7 7JD, UK",
+    "phone": "01786 812412",
+    "place_id": "ChIJm_2dqxh9iEgRVzfRDygOKnk"
+  },
+  {
+    "name": "Forth Valley Royal Hospital",
+    "lat": 56.0254142,
+    "lng": -3.8476993,
+    "website": "http://nhsforthvalley.com/",
+    "address": "Stirling Rd, Larbert FK5 4WR, UK",
+    "phone": "01324 566000",
+    "place_id": "ChIJz57Rkwh7iEgRckeWWhInpKs"
+  },
+  {
+    "name": "Fortrose Medical Practice",
+    "lat": 57.58218129999999,
+    "lng": -4.1320047,
+    "website": "https://www.fortrosesurgery.co.uk/prescriptions.aspx",
+    "address": "Surgery/Station Rd, Fortrose IV10 8SY, UK",
+    "phone": "01381 622000",
+    "place_id": "ChIJxdKxplSdj0gRU3f1Ct68sT4"
+  },
+  {
+    "name": "Frew Terrace Surgery",
+    "lat": 55.6266535,
+    "lng": -4.664147799999999,
+    "website": "https://www.frewterracesurgery.co.uk/prescriptions.aspx",
+    "address": "9 Frew Terrace, Irvine KA12 9DY, UK",
+    "phone": "01294 272326",
+    "place_id": "ChIJl2FON4fOiUgR7O27NZzc8QE"
+  },
+  {
+    "name": "Sandyford Central Sexual Health Service",
+    "lat": 55.86557579999999,
+    "lng": -4.2795312,
+    "website": "http://www.sandyford.org/",
+    "address": "2-6 Sandyford Pl, Glasgow G3 7NB, UK",
+    "phone": "0141 211 8130",
+    "place_id": "ChIJmcjpDCtEiEgRy6_DYakzjEk"
+  },
+  {
+    "name": "Gartnavel General Hospital",
+    "lat": 55.8826498,
+    "lng": -4.3128461,
+    "website": "https://www.nhsggc.scot/hospitals-services/main-hospitals/gartnavel-general-hospital/",
+    "address": "1053 Great Western Rd, Glasgow G12 0YN, UK",
+    "phone": "0141 211 3000",
+    "place_id": "ChIJ0497FL9FiEgRCN5we70a-Xc"
+  },
+  {
+    "name": "Gartnavel General Hospital",
+    "lat": 55.8826498,
+    "lng": -4.3128461,
+    "website": "https://www.nhsggc.scot/hospitals-services/main-hospitals/gartnavel-general-hospital/",
+    "address": "1053 Great Western Rd, Glasgow G12 0YN, UK",
+    "phone": "0141 211 3000",
+    "place_id": "ChIJ0497FL9FiEgRCN5we70a-Xc"
+  },
+  {
+    "name": "Gartnavel Royal Hospital",
+    "lat": 55.8817313,
+    "lng": -4.3170546,
+    "website": null,
+    "address": "1055 Great Western Rd, Glasgow G12 0XH, UK",
+    "phone": "0141 211 3600",
+    "place_id": "ChIJBX3j2upFiEgRV8xYCg_XWRk"
+  },
+  {
+    "name": "Gilbert Bain Hospital",
+    "lat": 60.1509698,
+    "lng": -1.1558646,
+    "website": "http://www.shb.scot.nhs.uk/hospital/",
+    "address": "South Rd, Lerwick, Shetland ZE1 0TB, UK",
+    "phone": "01595 743000",
+    "place_id": "ChIJxYIjK5qLnkgR-EouHKFXt80"
+  },
+  {
+    "name": "Gilbert Road Medical Group",
+    "lat": 57.17769029999999,
+    "lng": -2.1746769,
+    "website": "https://www.gilbertmedical.co.uk/",
+    "address": "39 Gilbert Rd, Bucksburn, Aberdeen AB21 9AN, UK",
+    "phone": "01224 712138",
+    "place_id": "ChIJm0CNgCsShEgR4wX4jTtKAkY"
+  },
+  {
+    "name": "Gilbert Road Medical Group",
+    "lat": 57.17769029999999,
+    "lng": -2.1746769,
+    "website": "https://www.gilbertmedical.co.uk/",
+    "address": "39 Gilbert Rd, Bucksburn, Aberdeen AB21 9AN, UK",
+    "phone": "01224 712138",
+    "place_id": "ChIJm0CNgCsShEgR4wX4jTtKAkY"
+  },
+  {
+    "name": "Gillbrae Medical Practice",
+    "lat": 55.0638546,
+    "lng": -3.5865366,
+    "website": "https://www.gillbraemedicalpractice.co.uk/",
+    "address": "Gillbrae Medical Practice, Gillbrae Rd, Dumfries DG1 4EJ, UK",
+    "phone": "01387 246282",
+    "place_id": "ChIJjVw9ZmDKYkgRQ8yq_v3cySc"
+  },
+  {
+    "name": "Drs McMaster, Moore & Brooksbank",
+    "lat": 55.2483442,
+    "lng": -4.8467616,
+    "website": null,
+    "address": "Girvan Community Hospital, Girvan KA26 9HQ, UK",
+    "phone": "01465 713343",
+    "place_id": "ChIJy5facDlyYkgRG7qlwoS4aJ8"
+  },
+  {
+    "name": "Royal Infirmary",
+    "lat": 55.8646772,
+    "lng": -4.2324495,
+    "website": null,
+    "address": "Royal Infirmary, Glasgow G4 0SA, UK",
+    "phone": null,
+    "place_id": "ChIJtWGKQgJEiEgRiiMzT0xq5ns"
+  },
+  {
+    "name": "Glebe Medical Centre",
+    "lat": 55.6391727,
+    "lng": -3.8856207,
+    "website": "http://www.glebemedicalpractice.co.uk/",
+    "address": "Abbeygreen, Lesmahagow, Lanark ML11 0DB, UK",
+    "phone": "01555 892328",
+    "place_id": "ChIJdZj8JVoQiEgRzYgAaApfsAo"
+  },
+  {
+    "name": "Glen Mor Medical Practice",
+    "lat": 56.8393424,
+    "lng": -5.0787678,
+    "website": "https://www.glenmorsurgery.co.uk/",
+    "address": "Fort William PH33 7AQ, UK",
+    "phone": "01397 703773",
+    "place_id": "ChIJW9s3ksLMjkgRROW_h5ROtFw"
+  },
+  {
+    "name": "Golden Jubilee National Hospital",
+    "lat": 55.9059178,
+    "lng": -4.4250747,
+    "website": "http://www.nhsgoldenjubilee.co.uk/",
+    "address": "Agamemnon St, Clydebank G81 4DY, UK",
+    "phone": "0141 951 5000",
+    "place_id": "ChIJxzQCNFdOiEgRLCIUDud1hm0"
+  },
+  {
+    "name": "Grantown On Spey Medical Practice",
+    "lat": 57.3370895,
+    "lng": -3.6040313,
+    "website": "http://www.grantownonspeymedicalpractice.co.uk/",
+    "address": "Castle Road East,Grantown-on-Spey,PH26 3HR, Grantown-on-Spey PH26 3HN, UK",
+    "phone": "01479 872484",
+    "place_id": "ChIJ3UGR8BuOhUgRz4lP3kqoLO0"
+  },
+  {
+    "name": "Greencroft Medical Centre South",
+    "lat": 54.98639009999999,
+    "lng": -3.2627253,
+    "website": "https://www.greencroftsouth.co.uk/",
+    "address": "Greencroft Wynd, Annan DG12 6GS, UK",
+    "phone": "01461 202244",
+    "place_id": "ChIJPcigghU6fUgR9mrgNfoLle0"
+  },
+  {
+    "name": "Hamilton Medical Group",
+    "lat": 57.1428685,
+    "lng": -2.1295265,
+    "website": "http://www.hamiltonmedicalgroup.co.uk/",
+    "address": "4 Queen's Rd, Aberdeen AB15 4ZT, UK",
+    "phone": "01224 562888",
+    "place_id": "ChIJ23SFKdsRhEgRVU4ElYWemYQ"
+  },
+  {
+    "name": "Holburn Medical Groups",
+    "lat": 57.14259759999999,
+    "lng": -2.114234,
+    "website": "http://www.holburnmedicalgroup.co.uk/",
+    "address": "7 Albyn Pl, Aberdeen AB10 1YE, UK",
+    "phone": "01224 400800",
+    "place_id": "ChIJG82pnycOhEgRxNdenVm0--c"
+  },
+  {
+    "name": "Inverclyde Royal Hospital",
+    "lat": 55.9438261,
+    "lng": -4.8094151,
+    "website": "https://www.nhsggc.scot/hospitals-services/main-hospitals/inverclyde-royal/",
+    "address": "Larkfield Rd, Greenock PA16 0XN, UK",
+    "phone": "0141 314 9504",
+    "place_id": "ChIJTYYiN--viUgRrdB3fycTVfQ"
+  },
+  {
+    "name": "The Jamieson Medical Practice",
+    "lat": 55.9043235,
+    "lng": -4.1087985,
+    "website": "http://www.jamiesonmedical.co.uk/",
+    "address": "2 Cliffvale Rd, Chryston, Glasgow G69 9DW, UK",
+    "phone": "0141 779 2228",
+    "place_id": "ChIJgaNAsddpiEgRsuoUzFV8ynE"
+  },
+  {
+    "name": "Kenmure Medical Practice",
+    "lat": 55.9043705,
+    "lng": -4.2226627,
+    "website": "http://www.kenmuremedicalpractice.com/",
+    "address": "7 Springfield Rd, Bishopbriggs, Glasgow G64 1PJ, UK",
+    "phone": "0141 772 6309",
+    "place_id": "ChIJI0JY3oNDiEgRuBNqqliRYcE"
+  },
+  {
+    "name": "Kenmure Medical Practice",
+    "lat": 55.9043705,
+    "lng": -4.2226627,
+    "website": "http://www.kenmuremedicalpractice.com/",
+    "address": "7 Springfield Rd, Bishopbriggs, Glasgow G64 1PJ, UK",
+    "phone": "0141 772 6309",
+    "place_id": "ChIJI0JY3oNDiEgRuBNqqliRYcE"
+  },
+  {
+    "name": "Kersland House Surgery",
+    "lat": 55.9421761,
+    "lng": -4.3154484,
+    "website": "https://www.kerslandhouse.co.uk/",
+    "address": "City Centre, 37 Station Rd, Milngavie, Glasgow G62 8BT, UK",
+    "phone": "0141 956 1005",
+    "place_id": "ChIJJ74kOjFFiEgRVPypBVg3NBs"
+  },
+  {
+    "name": "Killearn Health Centre",
+    "lat": 56.0456864,
+    "lng": -4.3722992,
+    "website": "http://www.killearnhealthcentre.com/",
+    "address": "16 Balfron Rd, Killearn, Glasgow G63 9NJ, UK",
+    "phone": "01360 550339",
+    "place_id": "ChIJMfkSyVdXiEgRH4sk3yKWyOE"
+  },
+  {
+    "name": "Kincorth Medical Centre",
+    "lat": 57.1211378,
+    "lng": -2.1042609,
+    "website": "http://www.covebayandkincorthmedical.co.uk/",
+    "address": "Provost Watt Dr, Kincorth, Aberdeen AB12 5NA, UK",
+    "phone": "0345 337 1170",
+    "place_id": "ChIJ_6dwENEPhEgRsXbH_bN1cc8"
+  },
+  {
+    "name": "King Street Surgery",
+    "lat": 55.8444066,
+    "lng": -4.439447599999999,
+    "website": "https://kingstreetsurgery.gp.scot/",
+    "address": "15 King St, Paisley PA1 2PS, UK",
+    "phone": "0141 889 3144",
+    "place_id": "ChIJd_YcXkVJiEgRG_PhS4KRXZA"
+  },
+  {
+    "name": "Kingsway Care Centre",
+    "lat": 56.4769316,
+    "lng": -3.0000419,
+    "website": "http://www.nhstayside.scot.nhs.uk/GoingToHospital/OurPremisesA-Z/KingswayCentre/index.htm",
+    "address": "King's Cross Rd, Dundee DD2 3PT, UK",
+    "phone": "01382 649003",
+    "place_id": "ChIJ-3xA99RchkgRNNwDMLx4IW0"
+  },
+  {
+    "name": "Kinmylies Medical Practice",
+    "lat": 57.47261469999999,
+    "lng": -4.2565194,
+    "website": "http://www.kinmyliesmp.org.uk/",
+    "address": "1 Assynt Rd, Inverness IV3 8PB, UK",
+    "phone": "01463 239865",
+    "place_id": "ChIJJ1BBi_Bzj0gRhMVJUp8XLKE"
+  },
+  {
+    "name": "The Kittoch Practice",
+    "lat": 55.7630882,
+    "lng": -4.1755339,
+    "website": "http://bluesuitemedicalpractice.co.uk/",
+    "address": "Andrew St, East Kilbride, Glasgow G74 1AD, UK",
+    "phone": "01355 271080",
+    "place_id": "ChIJxXKSLmg_iEgRBPmPSGN43QU"
+  },
+  {
+    "name": "Largs Medical Practice",
+    "lat": 55.7980194,
+    "lng": -4.867022,
+    "website": "http://www.largsmedicalgroup.com/",
+    "address": "Brooksby Medical & Resource Centre, 31 Brisbane Rd, Largs KA30 8LH, UK",
+    "phone": "01475 674545",
+    "place_id": "ChIJvakIYAC5iUgRlduRPfpFyxo"
+  },
+  {
+    "name": "Levern Medical Group",
+    "lat": 55.802356,
+    "lng": -4.3870414,
+    "website": null,
+    "address": "213 Main St, Barrhead, Glasgow G78 1SW, UK",
+    "phone": "0141 800 7000",
+    "place_id": "ChIJ9Wk-1bNJiEgRpQ9E-WmKy6c"
+  },
+  {
+    "name": "Leverndale Hospital",
+    "lat": 55.835176,
+    "lng": -4.3668857,
+    "website": "https://www.nhsggc.scot/hospitals-services/mental-health-hospitals-centres-teams/leverndale-hospital/",
+    "address": "510 Crookston Rd, Glasgow G53 7TU, UK",
+    "phone": "0141 211 6400",
+    "place_id": "ChIJaQdPQpVIiEgRXeKSKyFqxiI"
+  },
+  {
+    "name": "Links Medical Centre",
+    "lat": 55.96918789999999,
+    "lng": -3.1643305,
+    "website": "http://www.linksmedicalcentre.scot.nhs.uk/",
+    "address": "4 Hermitage Pl, Edinburgh EH6 8BW, UK",
+    "phone": "0131 554 1036",
+    "place_id": "ChIJFyZl3RG4h0gRoOL0-LUCrAU"
+  },
+  {
+    "name": "Linkwood Medical",
+    "lat": 57.63630029999999,
+    "lng": -3.2951791,
+    "website": "https://www.linkwoodmedical.org.uk/",
+    "address": "2 Thornhill Dr, Elgin IV30 6GQ, UK",
+    "phone": "0345 337 6350",
+    "place_id": "ChIJfRMoaUgKhUgRGxPLccVH36k"
+  },
+  {
+    "name": "Lochmaben Medical Group",
+    "lat": 55.1275598,
+    "lng": -3.4396832,
+    "website": "https://www.lochmabenmedical.co.uk/",
+    "address": "42-44 High St, Lochmaben, Lockerbie DG11 1NH, UK",
+    "phone": "01387 810252",
+    "place_id": "ChIJK5Qr2jNKfUgRR2zPizMkXfw"
+  },
+  {
+    "name": "Lockerbie Medical Practice",
+    "lat": 55.1221002,
+    "lng": -3.3570907,
+    "website": "http://www.lockerbiemedicalpractice.scot.nhs.uk/",
+    "address": "Victoria Gardens, Lockerbie DG11 2BJ, UK",
+    "phone": "01576 205505",
+    "place_id": "ChIJi1iyzE1IfUgRleXovRsmWCU"
+  },
+  {
+    "name": "Dr A Logan",
+    "lat": 55.7749754,
+    "lng": -3.919647,
+    "website": "http://www.loganpractice.scot.nhs.uk/",
+    "address": "Kenilworth Ave, Wishaw ML2 7LP, UK",
+    "phone": "01698 373341",
+    "place_id": "ChIJjSCW3SgTiEgRLOf-q7CcB-g"
+  },
+  {
+    "name": "Lorn & Islands Hospital",
+    "lat": 56.4006115,
+    "lng": -5.4750122,
+    "website": "https://www.nhshighland.scot.nhs.uk/your-services/in-person-services-and-locations/hospitals/lorn-and-islands-hospital/",
+    "address": "Glengallan Rd, Oban, Argyll PA34 4HH, UK",
+    "phone": "01631 567500",
+    "place_id": "ChIJhRxw3gNniUgRlM58NWmj3fM"
+  },
+  {
+    "name": "Ludovic Medical Practice",
+    "lat": 55.834196,
+    "lng": -4.513852,
+    "website": null,
+    "address": "60 Quarry St, Johnstone PA5 8DY, UK",
+    "phone": "01505 324348",
+    "place_id": "ChIJQyMBJp5LiEgRO2WLRjVQ3js"
+  },
+  {
+    "name": "MacInnes Medical Centre",
+    "lat": 55.8138978,
+    "lng": -3.942007,
+    "website": "http://www.macinnesmedicalcentre.co.uk/",
+    "address": "60 High St, Newarthill, Motherwell ML1 5JU, UK",
+    "phone": "01698 860246",
+    "place_id": "ChIJb3Y1Vu5siEgRAhHCLyJDxAY"
+  },
+  {
+    "name": "Main Street Medical Centre",
+    "lat": 55.8478685,
+    "lng": -4.2267754,
+    "website": "https://www.mainstreetdoctors.co.uk/",
+    "address": "40 Main St, Bridgeton, Glasgow G40 1HA, UK",
+    "phone": "0141 739 6666",
+    "place_id": "ChIJs2Un57NGiEgRwyk32JMhoP4"
+  },
+  {
+    "name": "Marie Curie Hospice, Glasgow",
+    "lat": 55.8948587,
+    "lng": -4.2230633,
+    "website": "https://www.mariecurie.org.uk/help/hospice-care/hospices/glasgow",
+    "address": "133 Balornock Rd, Glasgow G21 3US, UK",
+    "phone": "0141 557 7400",
+    "place_id": "ChIJgRYPLYxDiEgRffkhmqi8vX4"
+  },
+  {
+    "name": "Maryhill Health And Care Centre",
+    "lat": 55.8900112,
+    "lng": -4.292761,
+    "website": "http://www.nhsggc.org.uk/locations/health-centresclinics/maryhill-health-care-centre/",
+    "address": "51 Gairbraid Ave, Glasgow G20 8FB, UK",
+    "phone": "0141 451 2600",
+    "place_id": "ChIJE-6nwrNFiEgRKK1ETjIWV1I"
+  },
+  {
+    "name": "Mavor Medical Practice",
+    "lat": 55.76298569999999,
+    "lng": -4.1756907,
+    "website": "http://www.mavormedicalpractice.co.uk/",
+    "address": "Andrew St, East Kilbride, Glasgow G74 1AD, UK",
+    "phone": "01355 573790",
+    "place_id": "ChIJX4jHR2g_iEgRp4WQ5FafM6c"
+  },
+  {
+    "name": "Maybole Medical Practice Within Maybole Health Centre",
+    "lat": 55.3549538,
+    "lng": -4.6818706,
+    "website": null,
+    "address": "6 High St, Maybole KA19 7BY, UK",
+    "phone": "01655 882708",
+    "place_id": "ChIJzQ-Jg615YkgR9xz-3KOcMy8"
+  },
+  {
+    "name": "McGlone Practice",
+    "lat": 55.8495273,
+    "lng": -4.1160882,
+    "website": null,
+    "address": "20 Muirside Rd, Baillieston, Glasgow G69 7AD, UK",
+    "phone": "0141 471 7418",
+    "place_id": "ChIJQc5tF-ZBiEgRfznqPiWocKw"
+  },
+  {
+    "name": "Mid Argyll Community Hospital and Integrated Care Centre",
+    "lat": 56.0401247,
+    "lng": -5.423273600000001,
+    "website": "http://www.nhshighland.scot.nhs.uk/Services/Pages/MidArgyllCommunityHospitalandIntegratedCareCentre.aspx",
+    "address": "Blarbuie Rd, Lochgilphead PA31 8JZ, UK",
+    "phone": "01546 462000",
+    "place_id": "ChIJ3Qn3kEuCiUgR9LdaL7gjPew"
+  },
+  {
+    "name": "Midlock Medical Centre",
+    "lat": 55.851629,
+    "lng": -4.3000614,
+    "website": "https://www.midlockmedicalcentre.co.uk/",
+    "address": "7 Midlock St, Glasgow G51 1SL, UK",
+    "phone": "0141 427 4271",
+    "place_id": "ChIJOdabvXFGiEgR0G04psDui18"
+  },
+  {
+    "name": "Moffat Medical Practice",
+    "lat": 55.3314099,
+    "lng": -3.4302935,
+    "website": "https://moffatdoctors.co.uk/",
+    "address": "Community Health and Social Care Hub, The Holm, Moffat DG10 9JY, UK",
+    "phone": "01683 220062",
+    "place_id": "ChIJ3YGl7l9RfUgRLdeZnMplYFY"
+  },
+  {
+    "name": "Morgan Glen Surgery",
+    "lat": 55.73480989999999,
+    "lng": -3.9763814,
+    "website": "https://www.morganglen.scot.nhs.uk/",
+    "address": "Morgan St, Larkhall ML9 1RJ, UK",
+    "phone": "01698 882105",
+    "place_id": "ChIJ84oaA4gViEgRs0NuoYbYs2c"
+  },
+  {
+    "name": "Mount Florida Medical Centre",
+    "lat": 55.8280535,
+    "lng": -4.2596846,
+    "website": null,
+    "address": "183 Prospecthill Rd, Glasgow G42 9LQ, UK",
+    "phone": "0141 632 4004",
+    "place_id": "ChIJfZdlkgJCiEgRCSZocvQGu5Q"
+  },
+  {
+    "name": "Murray Royal Hospital",
+    "lat": 56.4009975,
+    "lng": -3.4138641,
+    "website": "http://www.nhstayside.scot.nhs.uk/patients/hospital/MURRAY_ROY_HOSP.shtml",
+    "address": "Muirhall Rd, Perth PH2 7BH, UK",
+    "phone": "01738 621151",
+    "place_id": "ChIJw18CRQo7hkgR5yyWSc-DrEk"
+  },
+  {
+    "name": "NHS Ayrshire and Arran",
+    "lat": 55.613514,
+    "lng": -4.5395375,
+    "website": "https://www.nhsaaa.net/",
+    "address": "Crosshouse Hospital, Kilmarnock Rd, Crosshouse, Kilmarnock KA2 0BE, UK",
+    "phone": "01563 521133",
+    "place_id": "ChIJ5bpBgzPNiUgREFcPGjabIIs"
+  },
+  {
+    "name": "NHS Fife",
+    "lat": 56.1259479,
+    "lng": -3.1609657,
+    "website": "http://www.nhsfife.org/",
+    "address": "Hayfield House, Hayfield Rd, Kirkcaldy KY2 5AH, UK",
+    "phone": "01592 643355",
+    "place_id": "ChIJjXNR8QT_hkgR2dSlxqzUNIo"
+  },
+  {
+    "name": "Forth Valley Royal Hospital",
+    "lat": 56.0254142,
+    "lng": -3.8476993,
+    "website": "http://nhsforthvalley.com/",
+    "address": "Stirling Rd, Larbert FK5 4WR, UK",
+    "phone": "01324 566000",
+    "place_id": "ChIJz57Rkwh7iEgRckeWWhInpKs"
+  },
+  {
+    "name": "NHS Grampian (Corporate Headquarters)",
+    "lat": 57.1491035,
+    "lng": -2.1617207,
+    "website": "http://www.nhsgrampian.org/",
+    "address": "Summerfield House, 2 Eday Rd, Aberdeen AB15 6RE, UK",
+    "phone": "0345 456 6000",
+    "place_id": "ChIJ2Uq2-OYRhEgRvb5sjk-zFco"
+  },
+  {
+    "name": "NHS Greater Glasgow and Clyde Board HQ",
+    "lat": 55.883619,
+    "lng": -4.321016,
+    "website": "https://www.nhsggc.scot/",
+    "address": "1055 Great Western Rd, Glasgow G12 0XH, UK",
+    "phone": "0141 201 4444",
+    "place_id": "ChIJJ4s9o5RFiEgRI7JJzNIwooQ"
+  },
+  {
+    "name": "NHS Highland",
+    "lat": 57.4722708,
+    "lng": -4.1887567,
+    "website": "https://www.nhshighland.scot.nhs.uk/",
+    "address": "Assynt House, BEECHWOOD PARK, Inverness IV2 3BW, UK",
+    "phone": "01463 704000",
+    "place_id": "ChIJjdxqBitxj0gRvimzN7jhq8g"
+  },
+  {
+    "name": "NHS Lanarkshire",
+    "lat": 55.7799732,
+    "lng": -4.0496351,
+    "website": null,
+    "address": "14 Beckford St, Hamilton ML3 0TA, UK",
+    "phone": "0300 303 0243",
+    "place_id": "ChIJa2oOwDIViEgRjIx8HGd_PK0"
+  },
+  {
+    "name": "NHS Tayside",
+    "lat": 56.4641751,
+    "lng": -3.0364251,
+    "website": "http://www.nhstayside.scot.nhs.uk/",
+    "address": "Ninewells Hospital, Dundee DD2 1UB, UK",
+    "phone": "01382 660111",
+    "place_id": "ChIJF8oLBMlchkgR5gdhB_B7Btw"
+  },
+  {
+    "name": "Nairn Healthcare Group",
+    "lat": 57.57816949999999,
+    "lng": -3.8725625,
+    "website": "https://www.nairnhealthcaregroup.co.uk/",
+    "address": "Cawdor Rd, Nairn IV12 5EE, UK",
+    "phone": "01667 452096",
+    "place_id": "ChIJW_JFugaAhUgRpxa0ABD3Pu8"
+  },
+  {
+    "name": "Neilston Medical Centre",
+    "lat": 55.7852573,
+    "lng": -4.424943499999999,
+    "website": null,
+    "address": "1 High St, Neilston, Glasgow G78 3HJ, UK",
+    "phone": "0141 880 6505",
+    "place_id": "ChIJ5Rh3HexJiEgR7f4IJ1AQWKs"
+  },
+  {
+    "name": "New Craigs Psychiatric Hospital",
+    "lat": 57.4695377,
+    "lng": -4.2696831,
+    "website": "https://www.nhshighland.scot.nhs.uk/your-services/in-person-services-and-locations/hospitals/new-craigs-hospital/",
+    "address": "Leachkin Rd, Inverness IV3 8NP, UK",
+    "phone": "01463 704000",
+    "place_id": "ChIJlSd1rPJzj0gR08zsI1qwgv0"
+  },
+  {
+    "name": "New Park Medical Practice",
+    "lat": 56.0824212,
+    "lng": -3.4330673,
+    "website": "https://www.newparkmedicalpractice.nhs.scot/",
+    "address": "163 Robertson Rd, Dunfermline KY12 0BL, UK",
+    "phone": "01383 629200",
+    "place_id": "ChIJdddqSQnSh0gRXt_38VoK804"
+  },
+  {
+    "name": "Doctors Newburn Healthcare",
+    "lat": 57.1459339,
+    "lng": -2.1159218,
+    "website": "http://www.denburnmedicalpractice.co.uk/",
+    "address": "Carden House, Carden Pl, Aberdeen AB10 1UT, UK",
+    "phone": "0345 013 0740",
+    "place_id": "ChIJ8Vgs0iMOhEgREsyF3MQbuhs"
+  },
+  {
+    "name": "Newland Medical Practice",
+    "lat": 55.8977803,
+    "lng": -3.6467947,
+    "website": "http://www.newlandmedicalpractice.scot.nhs.uk/",
+    "address": "Bathgate Primary Care Centre, Whitburn Rd, Bathgate EH48 2SS, UK",
+    "phone": "01506 655155",
+    "place_id": "ChIJlYDajw92iEgRWwgv49KMrs0"
+  },
+  {
+    "name": "Ninewells Hospital",
+    "lat": 56.4644071,
+    "lng": -3.0390129,
+    "website": "http://www.nhstayside.scot.nhs.uk/patients/hospital/ninewells.shtml",
+    "address": "James Arrott Dr, Dundee DD2 1SG, UK",
+    "phone": "01382 660111",
+    "place_id": "ChIJF8oLBMlchkgR1uGhLED1O7w"
+  },
+  {
+    "name": "Oakview Medical Practice",
+    "lat": 55.9914681,
+    "lng": -4.5857453,
+    "website": "http://www.oakviewmedicalpractice.co.uk/",
+    "address": "The Vale Centre for Health & Care, N Main St, Alexandria G83 0UE, UK",
+    "phone": "01389 752650",
+    "place_id": "ChIJM7WKBCdTiEgR9_VQw5rI92w"
+  },
+  {
+    "name": "Parkhill Medical Practice",
+    "lat": 55.9865742,
+    "lng": -3.7158044,
+    "website": "https://www.parkhillmedicalpractice.co.uk/",
+    "address": "Salmon Inn Rd, Polmont, Falkirk FK2 0XF, UK",
+    "phone": "01324 715446",
+    "place_id": "ChIJ-dd1RMl5iEgRjXDm_Jf9bL4"
+  },
+  {
+    "name": "Perth Royal Infirmary",
+    "lat": 56.3972594,
+    "lng": -3.4563905,
+    "website": "http://www.nhstayside.scot.nhs.uk/index.htm",
+    "address": "Taymount Terrace, Perth PH1 1NX, UK",
+    "phone": "01738 623311",
+    "place_id": "ChIJQXbR8Dk7hkgRXLchEhL51Dc"
+  },
+  {
+    "name": "Peterhead Health Centre",
+    "lat": 57.50331419999999,
+    "lng": -1.7940752,
+    "website": "https://www.peterheadmedicalpractice.co.uk/",
+    "address": "Links Terrace, Peterhead AB42 2XA, UK",
+    "phone": "0345 013 0710",
+    "place_id": "ChIJ-1patYWGg0gRK-5EkWHWbIU"
+  },
+  {
+    "name": "Pollokshaws Medical Centre",
+    "lat": 55.8269305,
+    "lng": -4.2962086,
+    "website": "https://www.pollokshawsmedicalcentre.co.uk/",
+    "address": "Wellgreen Health Centre, 26 Well Grn, Shawlands, Glasgow G43 1RR, UK",
+    "phone": "0141 620 4300",
+    "place_id": "ChIJwYEeRE9GiEgR4KvV2sQ88Ak"
+  },
+  {
+    "name": "The Medical Centre",
+    "lat": 55.9246159,
+    "lng": -4.6637388,
+    "website": "https://www.portglasgowmedicalcentre.scot.nhs.uk/",
+    "address": "4 Dubbs Rd, Port Glasgow PA14 5UD, UK",
+    "phone": "01475 705604",
+    "place_id": "ChIJ_2TL9W-yiUgRsO8AO1hh6nM"
+  },
+  {
+    "name": "Queen Elizabeth University Hospital",
+    "lat": 55.8624213,
+    "lng": -4.3404361,
+    "website": "https://www.nhsggc.scot/hospitals-services/main-hospitals/queen-elizabeth/",
+    "address": "1345 Govan Rd, Glasgow G51 4TF, UK",
+    "phone": "0141 201 1100",
+    "place_id": "ChIJVyrwy_5FiEgR5mScCeYz3TM"
+  },
+  {
+    "name": "Queens Park Medical Practice",
+    "lat": 55.83545549999999,
+    "lng": -4.2714054,
+    "website": "https://www.queensparkmedicalpractice.co.uk/",
+    "address": "181 Queen's Dr, Glasgow G42 8QD, UK",
+    "phone": "0141 423 3474",
+    "place_id": "ChIJk3-ZavRGiEgRiOWk0sprKUc"
+  },
+  {
+    "name": "Raigmore Hospital",
+    "lat": 57.4741546,
+    "lng": -4.193685299999999,
+    "website": "https://www.nhshighland.scot.nhs.uk/your-services/in-person-services-and-locations/hospitals/raigmore-hospital-inverness/",
+    "address": "Old Perth Rd, Inverness IV2 3UJ, UK",
+    "phone": "01463 704000",
+    "place_id": "ChIJvfNErTFxj0gRVaWoFt9ijuM"
+  },
+  {
+    "name": "Rowanbank Clinic",
+    "lat": 55.89085739999999,
+    "lng": -4.217484,
+    "website": "http://www.nhsggc.org.uk/locations/hospitals/rowanbank-clinic/",
+    "address": "Balornock Rd, Glasgow G21 3UL, UK",
+    "phone": "0141 232 6400",
+    "place_id": "ChIJeYTkF4xDiEgRij1j4NkpzSE"
+  },
+  {
+    "name": "Roxburghe House",
+    "lat": 57.1566336,
+    "lng": -2.1253505,
+    "website": "https://www.nhsgrampian.org/hospital-hub/roxburghe-house/",
+    "address": "NHS Grampian, Ashgrove Rd, Aberdeen AB25 3BX, UK",
+    "phone": "01224 557057",
+    "place_id": "ChIJXyiID-QRhEgRKzSSXPtMr9k"
+  },
+  {
+    "name": "Royal Aberdeen Children's Hospital",
+    "lat": 57.1535962,
+    "lng": -2.1355886,
+    "website": "https://www.rach.scot.nhs.uk/",
+    "address": "c, o Royal, Children's Hospital, Westburn Rd, Aberdeen AB25 2ZG, UK",
+    "phone": "0345 456 6000",
+    "place_id": "ChIJ63dRhOARhEgRII9Y63kZysM"
+  },
+  {
+    "name": "Royal Alexandra Hospital",
+    "lat": 55.8357078,
+    "lng": -4.4372372,
+    "website": "https://www.nhsggc.scot/hospitals-services/royal-alexandra/",
+    "address": "Corsebar Rd, Paisley PA2 9PN, UK",
+    "phone": "0141 314 7294",
+    "place_id": "ChIJd2IYlUJJiEgR8UWD6WkJXxw"
+  },
+  {
+    "name": "Royal Cornhill Hospital",
+    "lat": 57.1544509,
+    "lng": -2.1174149,
+    "website": null,
+    "address": "Cornhill Rd, Aberdeen AB25 2ZH, UK",
+    "phone": "0345 456 6000",
+    "place_id": "ChIJu-41O-ARhEgRq6qtuu5ia3o"
+  },
+  {
+    "name": "Royal Hospital for Children",
+    "lat": 55.86204069999999,
+    "lng": -4.3429597,
+    "website": "https://www.nhsggc.scot/hospitals-services/main-hospitals/royal-hospital-for-children/",
+    "address": "1345 Govan Rd, Glasgow G51 4TF, UK",
+    "phone": "0141 201 0000",
+    "place_id": "ChIJHbVO0_5FiEgR_NRzl_b5ZTE"
+  },
+  {
+    "name": "Royal Hospital for Children & Young People",
+    "lat": 55.9213827,
+    "lng": -3.1386723,
+    "website": "https://children.nhslothian.scot/the-rhcyp/",
+    "address": "50 Little France Cres, Edinburgh EH16 4TJ, UK",
+    "phone": "0131 536 1000",
+    "place_id": "ChIJY6DFEXjHh0gRe0aF0yMC2NI"
+  },
+  {
+    "name": "Royal Infirmary of Edinburgh",
+    "lat": 55.9219259,
+    "lng": -3.1351754,
+    "website": "https://www.nhslothian.scot/",
+    "address": "51 Little France Cres, Old Dalkeith Rd, Edinburgh EH16 4SA, UK",
+    "phone": "0131 536 1000",
+    "place_id": "ChIJN6OvPZzHh0gR_QyWQQKSfss"
+  },
+  {
+    "name": "Victoria Hospital",
+    "lat": 56.1254347,
+    "lng": -3.1594377,
+    "website": "https://www.nhsfife.org/services/hospitals-and-health-centres/hospitals/victoria-hospital/",
+    "address": "Hayfield Rd, Kirkcaldy KY2 5AH, UK",
+    "phone": "01592 643355",
+    "place_id": "ChIJxZYz4tu1h0gR8B4eefa_HqA"
+  },
+  {
+    "name": "Saltcoats Group Practice",
+    "lat": 55.6346386,
+    "lng": -4.7841124,
+    "website": "http://www.saltcoatsgrouppractice.scot.nhs.uk/",
+    "address": "17-19 Raise St, Saltcoats KA21 5LX, UK",
+    "phone": "01294 605141",
+    "place_id": "ChIJS_JR2o7FiUgRQpYuzEbG5z8"
+  },
+  {
+    "name": "Skerryvore Practice",
+    "lat": 58.97399779999999,
+    "lng": -2.9649397,
+    "website": "http://www.skerryvorepractice.co.uk/",
+    "address": "The Balfour, Foreland Rd, Kirkwall KW15 1NZ, UK",
+    "phone": "01856 888240",
+    "place_id": "ChIJhUKY8WIBm0gRA8sSMuMC8mg"
+  },
+  {
+    "name": "Skye House",
+    "lat": 55.8929211,
+    "lng": -4.2262116,
+    "website": "https://www.nhsggc.scot/hospitals-services/mental-health-hospitals-centres-teams/skye-house/",
+    "address": "133 Balornock Rd, Glasgow G21 3UW, UK",
+    "phone": "0141 232 6420",
+    "place_id": "ChIJv-_sw4lDiEgRHPjn3S2os6Y"
+  },
+  {
+    "name": "Kirkcudbright Health Centre",
+    "lat": 54.8347129,
+    "lng": -4.0503668,
+    "website": "https://www.solwaymedicalgroup.co.uk/",
+    "address": "St Mary's Pl, Kirkcudbright DG6 4BJ, UK",
+    "phone": "01557 330755",
+    "place_id": "ChIJJVH0QJrmYkgR8nbBk5ybHAg"
+  },
+  {
+    "name": "St Andrew's Hospice",
+    "lat": 55.86838119999999,
+    "lng": -3.9751878,
+    "website": "http://www.st-andrews-hospice.com/",
+    "address": "St Andrews Hospice, Henderson St, Airdrie ML6 6DJ, UK",
+    "phone": "01236 766951",
+    "place_id": "ChIJgWaFBQNsiEgRg_9g9dpVLiA"
+  },
+  {
+    "name": "St John's Hospital",
+    "lat": 55.89235170000001,
+    "lng": -3.5237219,
+    "website": "https://www.nhslothian.scot/goingtohospital/st-johns-hospital/",
+    "address": "Howden W Rd, Howden, Livingston EH54 6PP, UK",
+    "phone": "01506 523000",
+    "place_id": "ChIJEWfWYFbZh0gR1bKUzRLxkwA"
+  },
+  {
+    "name": "St Margaret of Scotland Hospice",
+    "lat": 55.8946273,
+    "lng": -4.385621599999999,
+    "website": "https://smh.org.uk/",
+    "address": "E Barns St, Clydebank G81 1EG, UK",
+    "phone": "0141 952 1141",
+    "place_id": "ChIJmehxFg9PiEgRu2CS0yUPuPI"
+  },
+  {
+    "name": "St Michaels Medical Centre",
+    "lat": 55.0647144,
+    "lng": -3.607966799999999,
+    "website": "https://www.stmichaelsmedical.co.uk/",
+    "address": "10 St Michael's Bridge Rd, Dumfries DG1 2PX, UK",
+    "phone": "01387 244950",
+    "place_id": "ChIJeaHnJWrKYkgRqj3d6zxlOlk"
+  },
+  {
+    "name": "Station Road Medical Practice",
+    "lat": 55.5016283,
+    "lng": -4.6115607,
+    "website": "http://www.stationroadmedicalpractice.co.uk/",
+    "address": "Medical Practice, 2 Station Rd, Prestwick KA9 1AQ, UK",
+    "phone": "01292 671444",
+    "place_id": "ChIJ5-eQcPHTiUgRjW5d_f2p0d4"
+  },
+  {
+    "name": "Stobhill Hospital",
+    "lat": 55.8923632,
+    "lng": -4.2181665,
+    "website": "https://www.nhsggc.scot/hospitals-services/main-hospitals/new-stobhill/",
+    "address": "133 Balornock Rd, Glasgow G21 3UW, UK",
+    "phone": "0141 201 3000",
+    "place_id": "ChIJ-etVBIlDiEgRxUV7dV6JCJ8"
+  },
+  {
+    "name": "Strathcarron Hospice",
+    "lat": 56.02433809999999,
+    "lng": -3.939262,
+    "website": "https://www.strathcarronhospice.net/",
+    "address": "Randolph Hill, Fankerton, Denny FK6 5HJ, UK",
+    "phone": "01324 826222",
+    "place_id": "ChIJtxkraPRkiEgR7H78vSuPvko"
+  },
+  {
+    "name": "Strathgryffe Medical Practice",
+    "lat": 55.870954,
+    "lng": -4.543605599999999,
+    "website": "https://www.strathgryffemedicalpractice.co.uk/",
+    "address": "Kirk Rd, Houston, Johnstone PA6 7AR, UK",
+    "phone": "01505 613240",
+    "place_id": "ChIJnyKPcZRMiEgRNFEX-jbBdI4"
+  },
+  {
+    "name": "Princess Royal Maternity Hospital",
+    "lat": 55.8656271,
+    "lng": -4.2311979,
+    "website": "https://www.nhsggc.org.uk/locations/hospitals/princess-royal-maternity/",
+    "address": "16 Alexandra Parade, Glasgow G31 2ER, UK",
+    "phone": "0141 211 5400",
+    "place_id": "ChIJkYmQnAFEiEgRc3aRwCzRzYg"
+  },
+  {
+    "name": "Aird Medical Practice",
+    "lat": 57.48279100000001,
+    "lng": -4.459378699999999,
+    "website": "https://www.airdmedicalpractice.co.uk/",
+    "address": "Ferry Rd, Beauly IV4 7EA, UK",
+    "phone": "01463 782214",
+    "place_id": "ChIJJWwYM40Lj0gRgBLp0UBX0ic"
+  },
+  {
+    "name": "Aird Medical Practice",
+    "lat": 57.48279100000001,
+    "lng": -4.459378699999999,
+    "website": "https://www.airdmedicalpractice.co.uk/",
+    "address": "Ferry Rd, Beauly IV4 7EA, UK",
+    "phone": "01463 782214",
+    "place_id": "ChIJJWwYM40Lj0gRgBLp0UBX0ic"
+  },
+  {
+    "name": "Avon Medical Centre",
+    "lat": 55.7386403,
+    "lng": -3.971592,
+    "website": "http://www.avonmedicalcentre.co.uk/contact1.aspx",
+    "address": "1 Academy St, Larkhall ML9 2BJ, UK",
+    "phone": "01698 552930",
+    "place_id": "ChIJlSyH7IAUiEgRNgONaPzE2F4"
+  },
+  {
+    "name": "Beatson West of Scotland Cancer Centre",
+    "lat": 55.8817648,
+    "lng": -4.3130875,
+    "website": "http://www.beatson.scot.nhs.uk/",
+    "address": "1053 Great Western Rd, Glasgow G12 0YN, UK",
+    "phone": "0141 301 7000",
+    "place_id": "ChIJPf1DkL9FiEgRiZMuOoBwiQk"
+  },
+  {
+    "name": "The Cairns Practice",
+    "lat": 55.8523053,
+    "lng": -4.1699407,
+    "website": "https://www.thecairnspractice.co.uk/",
+    "address": "420 Old Shettleston Rd, Glasgow G32 7JZ, UK",
+    "phone": "0141 531 6220",
+    "place_id": "ChIJGTEEyHBBiEgRrloCKS7GYJQ"
+  },
+  {
+    "name": "The Charleston Surgery",
+    "lat": 55.8382559,
+    "lng": -4.4223457,
+    "website": "http://www.charlestonsurgery.org.uk/",
+    "address": "The Charleston Surgery, 5 S Campbell St, Paisley PA2 6LR, UK",
+    "phone": "0141 889 4373",
+    "place_id": "ChIJdx8GGT9JiEgRAYj1cquxRnM"
+  },
+  {
+    "name": "Craigallian Avenue Practice",
+    "lat": 55.8117382,
+    "lng": -4.1466156,
+    "website": "https://www.craigallianavenuepractice.co.uk/",
+    "address": "11 Craigallian Ave, Cambuslang, Glasgow G72 8RW, UK",
+    "phone": "0141 641 3129",
+    "place_id": "ChIJiyE2v1BAiEgRmkGCX97XiCs"
+  },
+  {
+    "name": "Central Health Centre",
+    "lat": 55.9460625,
+    "lng": -3.9869735,
+    "website": "https://www.theglenmedicalpractice.co.uk/contact1.aspx?p=L61343",
+    "address": "N Carbrain Rd, Cumbernauld, Glasgow G67 1BJ, UK",
+    "phone": "01698 755025",
+    "place_id": "ChIJy82s305viEgR2r_JAdFJ_4E"
+  },
+  {
+    "name": "Greenlaw Practice",
+    "lat": 55.84855109999999,
+    "lng": -4.420109699999999,
+    "website": "https://www.greenlawpractice.co.uk/",
+    "address": "N Croft St, Paisley PA3 4AD, UK",
+    "phone": "0141 889 8465",
+    "place_id": "ChIJbfwKKzFJiEgRzd9zN5Gng84"
+  },
+  {
+    "name": "The Ker Practice",
+    "lat": 55.80979620000001,
+    "lng": -4.242166699999999,
+    "website": "https://www.thekerpractice.co.uk/",
+    "address": "30 Croftfoot Rd, Glasgow G44 5JT, UK",
+    "phone": "0141 471 5050",
+    "place_id": "ChIJwbqdiSJHiEgR7Da9Me1VQrQ"
+  },
+  {
+    "name": "Murray Surgery",
+    "lat": 55.7528009,
+    "lng": -4.1853528,
+    "website": "http://www.themurraysurgery.scot.nhs.uk/",
+    "address": "50 The Murray Rd, East Kilbride, Glasgow G75 0RT, UK",
+    "phone": "01355 225374",
+    "place_id": "ChIJKx6Vmjg_iEgR8AJaF--aT8M"
+  },
+  {
+    "name": "The New Surgery",
+    "lat": 55.893655,
+    "lng": -4.627143,
+    "website": "https://www.thenewsurgery.scot.nhs.uk/",
+    "address": "The Cargill Campus, Lochwinnoch Rd, Kilmacolm PA13 4LE, UK",
+    "phone": "01505 872844",
+    "place_id": "ChIJQbJ-pOKyiUgRtSGcjvqkutw"
+  },
+  {
+    "name": "The Peat Road Medical Practice",
+    "lat": 55.82257,
+    "lng": -4.3457807,
+    "website": "http://peatroadmedicalpractice.co.uk/",
+    "address": "21 Cowglen Rd, Pollok, Glasgow G53 6EQ, UK",
+    "phone": "0141 531 6860",
+    "place_id": "ChIJnzjtroVIiEgRY8Fs0G4tMuM"
+  },
+  {
+    "name": "Princess Royal Maternity Hospital",
+    "lat": 55.8656271,
+    "lng": -4.2311979,
+    "website": "https://www.nhsggc.org.uk/locations/hospitals/princess-royal-maternity/",
+    "address": "16 Alexandra Parade, Glasgow G31 2ER, UK",
+    "phone": "0141 211 5400",
+    "place_id": "ChIJkYmQnAFEiEgRc3aRwCzRzYg"
+  },
+  {
+    "name": "Roxburgh Practice",
+    "lat": 55.9465352,
+    "lng": -4.7683209,
+    "website": "https://www.roxburghpractice.co.uk/",
+    "address": "Station View Health Centre, 84 Holmscroft St, Greenock PA15 4DG, UK",
+    "phone": "01475 558300",
+    "place_id": "ChIJIxdL5TKuiUgRvvMLAoqPEb8"
+  },
+  {
+    "name": "The Surgery",
+    "lat": 55.8277546,
+    "lng": -4.2838924,
+    "website": "http://www.kilmarnockroadsurgery.co.uk/",
+    "address": "119-123 Kilmarnock Rd, Shawlands, Glasgow G41 3YT, UK",
+    "phone": "0141 649 6231",
+    "place_id": "ChIJ6WjwqFBGiEgROGD0cFf6qlg"
+  },
+  {
+    "name": "Whitevale Medical Group",
+    "lat": 55.8571524,
+    "lng": -4.2167008,
+    "website": "http://www.whitevalemedicalgroup.co.uk/",
+    "address": "30 Whitevale St, Glasgow G31 1QS, UK",
+    "phone": "0141 554 4536",
+    "place_id": "ChIJKVDldVRBiEgR8sP5C9X3bzI"
+  },
+  {
+    "name": "Thornhill Health Centre",
+    "lat": 55.235966,
+    "lng": -3.7676722,
+    "website": null,
+    "address": "Thornhill DG3 5AA, UK",
+    "phone": "01848 332900",
+    "place_id": "ChIJcfEpRg2wYkgRtq20AGR25qw"
+  },
+  {
+    "name": "Thurston Road Surgery",
+    "lat": 55.85069619999999,
+    "lng": -4.3581303,
+    "website": null,
+    "address": "140 Thurston Rd, Glasgow G52 2AZ, UK",
+    "phone": "0141 883 8838",
+    "place_id": "ChIJjQyEAbFIiEgRB5RQjRHmKI4"
+  },
+  {
+    "name": "Tillicoultry Medical Practice",
+    "lat": 56.1527422,
+    "lng": -3.7467486,
+    "website": "http://www.tillicoultrymedicalpractice.co.uk/",
+    "address": "Park St, Tillicoultry FK13 6AG, UK",
+    "phone": "01259 750531",
+    "place_id": "ChIJgz9Gr4SAiEgRUh178kRGRcA"
+  },
+  {
+    "name": "Tryst Medical Centre",
+    "lat": 56.0276345,
+    "lng": -3.812744,
+    "website": "https://www.trystmedicalcentre.scot.nhs.uk/",
+    "address": "Tryst Medical Centre, 431 King St, Stenhousemuir, Larbert FK5 4HT, UK",
+    "phone": "01324 551555",
+    "place_id": "ChIJ-9AH_7t7iEgRZIqXEh4b_qI"
+  },
+  {
+    "name": "Turriff Health Centre",
+    "lat": 57.53723139999999,
+    "lng": -2.4511957,
+    "website": "http://www.turriffmedicalpractice.co.uk/",
+    "address": "Balmellie Rd, Turriff AB53 4DQ, UK",
+    "phone": "0345 337 6320",
+    "place_id": "ChIJk-r-kX1ehEgRc2V_M-_yZJA"
+  },
+  {
+    "name": "Tweeddale Medical Practice",
+    "lat": 56.8392278,
+    "lng": -5.0786957,
+    "website": "http://www.tweeddale.com/",
+    "address": "Fort William Health Centre, Camaghael, Fort William PH33 7AQ, UK",
+    "phone": "01397 703136",
+    "place_id": "ChIJue8C7sLMjkgRGqmPtPU3A-4"
+  },
+  {
+    "name": "University Hospital Ayr",
+    "lat": 55.4305957,
+    "lng": -4.5937708,
+    "website": "https://www.nhsaaa.net/services/hospitals/university-hospital-ayr/",
+    "address": "Dalmellington Rd, Ayr KA6 6DX, UK",
+    "phone": "01292 610555",
+    "place_id": "ChIJySrF1sDViUgRDHXukOxbDw4"
+  },
+  {
+    "name": "University Hospital Crosshouse",
+    "lat": 55.6134858,
+    "lng": -4.5395645,
+    "website": "https://www.nhsaaa.net/hospitals/university-hospital-crosshouse/",
+    "address": "Kilmarnock Rd, Crosshouse, Kilmarnock KA2 0BE, UK",
+    "phone": "01563 521133",
+    "place_id": "ChIJq6S5mzPNiUgRCi6oi0PU3Zw"
+  },
+  {
+    "name": "University Hospital Hairmyres",
+    "lat": 55.759529,
+    "lng": -4.2216682,
+    "website": "https://www.nhslanarkshire.scot.nhs.uk/hospitals/university-hospital-hairmyres/",
+    "address": "218 Eaglesham Rd, East Kilbride, Glasgow G75 8RG, UK",
+    "phone": "01355 585000",
+    "place_id": "ChIJJxzIZrA4iEgRcoWtFFvo3qw"
+  },
+  {
+    "name": "University Hospital Monklands",
+    "lat": 55.8660205,
+    "lng": -4.000127,
+    "website": "https://www.nhslanarkshire.scot.nhs.uk/hospitals/university-hospital-monklands/",
+    "address": "Monkscourt Ave, Airdrie ML6 0JS, UK",
+    "phone": "01236 748748",
+    "place_id": "ChIJPeuaePxriEgRIk_C_gBt8p8"
+  },
+  {
+    "name": "University Hospital Wishaw",
+    "lat": 55.7737042,
+    "lng": -3.9430662,
+    "website": "https://www.nhslanarkshire.scot.nhs.uk/hospitals/university-hospital-wishaw/",
+    "address": "50 Netherton St, Wishaw ML2 0DP, UK",
+    "phone": "01698 361100",
+    "place_id": "ChIJJ6goVzcTiEgRVc6Hkd_hSOM"
+  },
+  {
+    "name": "Victoria Hospital",
+    "lat": 56.1254347,
+    "lng": -3.1594377,
+    "website": "https://www.nhsfife.org/services/hospitals-and-health-centres/hospitals/victoria-hospital/",
+    "address": "Hayfield Rd, Kirkcaldy KY2 5AH, UK",
+    "phone": "01592 643355",
+    "place_id": "ChIJxZYz4tu1h0gR8B4eefa_HqA"
+  },
+  {
+    "name": "Viewpoint Practice",
+    "lat": 56.0248766,
+    "lng": -3.8190441,
+    "website": "https://www.viewpointpractice.co.uk/",
+    "address": "Stenhousemuir, Larbert FK5 3BB, UK",
+    "phone": "01324 552200",
+    "place_id": "ChIJye3jxKR7iEgRvt5by5ef9GQ"
+  },
+  {
+    "name": "Waverley Park Medical Practice",
+    "lat": 55.8319965,
+    "lng": -4.2854389,
+    "website": "https://waverleyparkmedicalpractice.gp.scot/",
+    "address": "19 Dinmont Rd, Shawlands, Glasgow G41 3UJ, UK",
+    "phone": "0141 632 8883",
+    "place_id": "ChIJexoLwVtGiEgRbs5telkzG2A"
+  },
+  {
+    "name": "Western General Hospital",
+    "lat": 55.9623266,
+    "lng": -3.2350851,
+    "website": "https://www.nhslothian.scot/goingtohospital/western-general-hospital/",
+    "address": "Crewe Rd S, Edinburgh EH4 2XU, UK",
+    "phone": "0131 537 1000",
+    "place_id": "ChIJXwQvw8zHh0gRwaCoTcnkqDI"
+  },
+  {
+    "name": "Western Isles Hospital",
+    "lat": 58.22099040000001,
+    "lng": -6.3842279,
+    "website": "http://www.wihb.scot.nhs.uk/",
+    "address": "Macaulay Rd, Stornoway HS1 2AF, UK",
+    "phone": "01851 704704",
+    "place_id": "ChIJjY76Xy4IkkgRkfgNMLxqNok"
+  },
+  {
+    "name": "Westgate Medical Practice",
+    "lat": 56.4647655,
+    "lng": -3.0443326,
+    "website": "http://www.westgatemedicalpractice.co.uk/",
+    "address": "Charleston Dr, Dundee DD2 4AD, UK",
+    "phone": "01382 668189",
+    "place_id": "ChIJeWeduhFDhkgRZ47h7Cw9MqA"
+  },
+  {
+    "name": "Woodend Hospital",
+    "lat": 57.1479872,
+    "lng": -2.1733543,
+    "website": "https://www.nhsgrampian.org/hospital-hub/woodend-hospital/",
+    "address": "Woodend Hospital, Eday Rd, Aberdeen AB15 6XS, UK",
+    "phone": "0345 456 6000",
+    "place_id": "ChIJkw9KrqERhEgRPvkh1E51QyU"
+  },
+  {
+    "name": "Woodland View Hospital",
+    "lat": 55.63479239999999,
+    "lng": -4.6729543,
+    "website": "https://www.nhsaaa.net/services/hospitals/woodland-view/",
+    "address": "Ayrshire Central Hosp, Kilwinning Rd, Irvine KA12 8SS, UK",
+    "phone": "01294 274191",
+    "place_id": "ChIJYwQ51o7OiUgRetfot5byPck"
+  },
+  {
+    "name": "Woodside Health & Care Centre",
+    "lat": 55.8795483,
+    "lng": -4.2707162,
+    "website": "https://www.nhsggc.scot/hospitals-services/health-centres-and-clinics/woodside-health-and-care-centre/",
+    "address": "891 Garscube Rd, Glasgow G20 7ET, UK",
+    "phone": "0141 201 5500",
+    "place_id": "ChIJ33FJBKhFiEgR3_0Oy6pkdks"
+  }
+]
